@@ -1,20 +1,18 @@
 services:
-  mongo:
+  postgres:
     ports:
-      - ${MONGODB_PORT}:27017
-    container_name: mongo
+      - ${POSTGRES_PORT:-5432}:5432
+    container_name: postgres
     logging:
       options:
         max-size: 1g
     volumes:
-      - mongo_db:/data/db
-      - mongo_config:/data/configdb
+      - postgres_db:/var/lib/postgresql/data
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=admin
-      - MONGO_INITDB_DATABASE=lesbarkeitsindex
-    image: mongo:6.0
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=lesbarkeitsindex
+    image: postgres:16
 
 volumes:
-  mongo_db:
-  mongo_config:
+  postgres_db:

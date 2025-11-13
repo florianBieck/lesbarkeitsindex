@@ -88,7 +88,7 @@ const apiBase = runtime.public.apiBase
 
 async function loadPublicConfig() {
   try {
-    const res = await $fetch(`${apiBase}/config/public`, { credentials: 'include' })
+    const res = await $fetch(`${apiBase}/config`, { credentials: 'include' })
     // @ts-ignore
     weights.value = res.weights || {}
   } catch (e) {

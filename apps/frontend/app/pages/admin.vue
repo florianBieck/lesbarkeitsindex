@@ -2,13 +2,11 @@
   <div class="px-6 py-8 md:px-20 lg:px-80">
     <div class="bg-surface-0 dark:bg-surface-900 p-8 md:p-12 shadow-sm rounded-2xl w-full max-w-[50rem] mx-auto flex flex-col gap-6">
       <div class="flex items-center justify-between">
-        <div class="text-xl font-semibold">Admin: Gewichte für Textkomplexität</div>
+        <div class="text-xl font-semibold">Gewichtung für Textkomplexität</div>
         <div class="text-sm text-surface-500" v-if="updatedAt">Zuletzt aktualisiert: {{ new Date(updatedAt).toLocaleString() }}</div>
       </div>
 
-      <div v-if="!authorized" class="text-surface-500">Prüfe Berechtigung...</div>
-
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2 p-4 border rounded-md">
           <label>Anzahl Wörter</label>
           <InputNumber v-model="form.wordCount" inputClass="w-full" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" />
@@ -35,7 +33,7 @@
         </div>
       </div>
 
-      <div v-if="authorized" class="flex items-center gap-2">
+      <div class="flex items-center gap-2">
         <Button :loading="saving" label="Speichern" icon="pi pi-save" @click="save" />
         <Button label="Neu laden" icon="pi pi-refresh" severity="secondary" text @click="loadConfig" />
         <div class="text-sm text-surface-500">Summe der Gewichte: <b>{{ sumWeights.toFixed(2) }}</b> (Hinweis: Die Werte müssen nicht 1 ergeben.)</div>
@@ -49,10 +47,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
+import {useAuthClient} from "~/composables/useAuthClient";
 
 const runtime = useRuntimeConfig()
 const apiBase = runtime.public.apiBase
-const authorized = ref(false)
+const client = useAuthClient();
+const session = client.useSession();
+
 const saving = ref(false)
 const message = ref('')
 const updatedAt = ref<string | null>(null)
@@ -67,17 +68,6 @@ const form = reactive({
 })
 
 const sumWeights = computed(() => Object.values(form).reduce((a: number, b: any) => a + Number(b || 0), 0))
-
-async function checkAuth() {
-  try {
-    await $fetch(`${apiBase}/user`, { credentials: 'include' })
-    // backend enforces admin by email list on protected endpoints
-    authorized.value = true
-  } catch {
-    authorized.value = false
-    await navigateTo('/login')
-  }
-}
 
 async function loadConfig() {
   try {
@@ -94,7 +84,7 @@ async function save() {
   message.value = ''
   try {
     const updated: any = await $fetch(`${apiBase}/config`, {
-      method: 'PUT',
+      method: 'POST',
       credentials: 'include',
       body: { ...form }
     })
@@ -109,7 +99,6 @@ async function save() {
 }
 
 onMounted(async () => {
-  await checkAuth()
-  if (authorized.value) await loadConfig()
+  await loadConfig()
 })
 </script>

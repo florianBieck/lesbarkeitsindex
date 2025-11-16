@@ -9,15 +9,26 @@
         Parametern. Unten sehen Sie die Aufteilung der Teilwerte.</p>
     </div>
     <div class="flex gap-6 w-full">
-      <div class="flex flex-col items-center gap-2 w-full">
-        <Editor class="w-full" editorStyle="height: 280px; width: 100%;" @text-change="(event) => text = event.textValue"/>
-      </div>
+      <DataTable :value="results" tableStyle="min-width: 50rem">
+        <Column field="id" header="ID">
+          <template #body="slotProps">
+            <div class="truncate max-w-[100px]">{{ slotProps.data.id }}</div>
+          </template>
+        </Column>
+        <Column field="text" header="Text">
+          <template #body="slotProps">
+            <div class="truncate max-w-[200px]">{{ slotProps.data.text }}</div>
+          </template>
+        </Column>
+        <Column field="score" header="LÜ-LIX"></Column>
+        <Column field="hashText" header="Hash">
+          <template #body="slotProps">
+            <div class="truncate text-xs max-w-[100px]">{{ slotProps.data.hashText }}</div>
+          </template>
+        </Column>
+      </DataTable>
     </div>
-    <div class="flex items-center gap-4">
-      <Button :loading="loading" label="Berechnen" icon="pi pi-calculator" class="py-2 rounded-lg" @click="calculate"/>
-    </div>
-    <result-view v-if="result" :result="result" />
-    <div v-else class="text-surface-500">Geben Sie Text ein und klicken Sie auf Berechnen.</div>
+    <result-view v-if="selected" :result="selected" />
   </div>
 </template>
 <script setup lang="ts">
@@ -34,22 +45,25 @@ const client = treaty<App>('localhost:3000', {
   }
 });
 type ResultData = Treaty.Data<typeof client.calculate.post>
+type ResultsData = Treaty.Data<typeof client.results.get>
 
-const text = ref('');
 const loading = ref(false);
-const result = ref<ResultData | null>(null);
+const results = ref<ResultsData | null>(null);
+const selected = ref<ResultData | null>(null);
 
-async function calculate() {
+async function loadResults() {
   loading.value = true
   try {
-    const { data } = await client.calculate.post({
-      text: text.value,
-    });
-    result.value = data;
+    const { data } = await client.results.get();
+    results.value = data;
   } catch (e) {
     console.error(e);
   } finally {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  loadResults();
+})
 </script>

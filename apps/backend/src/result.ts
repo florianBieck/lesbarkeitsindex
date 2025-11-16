@@ -1,5 +1,6 @@
 import {PrismaClient} from '../generated/prisma';
 import type { Prisma } from '../generated/prisma';
+import { createHash } from 'crypto';
 
 const prisma = new PrismaClient();
 type Config = Prisma.ConfigGetPayload<{}>;
@@ -330,6 +331,8 @@ export async function calculateIndex(text: string, config: Config) {
             averageSyllablesPerPhrase,
             proportionOfLongWords,
             score,
+            text,
+            hashText: createHash('sha256').update(text, 'utf8').digest('hex'),
             configId: config.id,
         },
         include: {

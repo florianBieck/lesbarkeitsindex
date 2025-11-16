@@ -83,6 +83,9 @@ const app = new Elysia()
             text: t.String()
         })
     })
+    .get("/results", async () => {
+        return prisma.result.findMany();
+    })
     .listen(3000);
 
 async function onStartup() {

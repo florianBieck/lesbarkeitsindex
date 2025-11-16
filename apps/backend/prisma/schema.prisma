@@ -46,6 +46,8 @@ model Result {
   averageSyllablesPerPhrase Decimal // ∅Silben/Satz
   proportionOfLongWords     Decimal // Anteil an langen Wörtern
   score                     Decimal // Ergebnis
+  text                      String
+  hashText                  String
   config                    Config  @relation(fields: [configId], references: [id])
   configId                  String
 }

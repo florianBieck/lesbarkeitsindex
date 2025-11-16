@@ -24,5 +24,5 @@ npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma 
 
 ## Run migration
 ```
-npx prisma migrate dev                                                                                                           
+npx prisma migrate dev
 ```

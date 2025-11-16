@@ -59,15 +59,21 @@ const session = client.useSession();
 const menu = ref();
 const items = computed(() => {
   if (session.value.data) {
-    return [{
-      label: 'Startseite',
-      icon: 'pi pi-home',
-      to: '/'
-    },
+    return [
+      {
+        label: 'Startseite',
+        icon: 'pi pi-home',
+        to: '/'
+      },
       {
         label: 'Gewichtung',
         icon: 'pi pi-cog',
         to: '/admin'
+      },
+      {
+        label: 'Ergebnisse',
+        icon: 'pi pi-list',
+        to: '/results'
       },
       {
         label: 'Abmelden',

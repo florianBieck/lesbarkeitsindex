@@ -1,6 +1,5 @@
 <template>
-  <div class="bg-surface-50 dark:bg-surface-950 px-6 py-20 md:px-20 lg:px-80">
-    <div class="bg-surface-0 dark:bg-surface-900 p-8 md:p-12 shadow-sm rounded-2xl w-full max-w-lg mx-auto flex flex-col gap-8">
+    <div class="flex flex-col gap-4">
       <div class="flex flex-col items-center gap-4">
         <div class="flex items-center gap-4">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" width="33" height="32" viewBox="0 0 33 32" fill="none">
@@ -40,7 +39,6 @@
         </template>
       </Button>
     </div>
-  </div>
 </template>
 <script lang="ts" setup>
 import Button from 'primevue/button';

@@ -10,7 +10,7 @@
     "@elysiajs/openapi": "^1.4.11",
     "@prisma/client": "^6.19.0",
     "better-auth": "^1.3.34",
-    "elysia": "latest",
+    "elysia": "1.4.16",
     "prismabox": "^1.1.25"
   },
   "devDependencies": {

@@ -1,0 +1,65 @@
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://admin:admin@postgres:5432/lesbarkeitsindex
+      - NODE_ENV=production
+    depends_on:
+      - postgres
+    expose:
+      - "3000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NUXT_PUBLIC_API_BASE=/api
+    depends_on:
+      - backend
+    expose:
+      - "3000"
+
+  postgres:
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
+    container_name: postgres
+    logging:
+      options:
+        max-size: 1g
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=lesbarkeitsindex
+    image: postgres:16
+
+volumes:
+  postgres_db:
+  caddy_data:
+  caddy_config:

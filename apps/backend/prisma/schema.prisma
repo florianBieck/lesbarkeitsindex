@@ -9,21 +9,45 @@ datasource db {
 }
 
 generator prismabox {
-  provider = "prismabox"
+  provider                    = "prismabox"
   typeboxImportDependencyName = "elysia"
-  typeboxImportVariableName = "t"
-  inputModel = true
-  output   = "../generated/prismabox"
+  typeboxImportVariableName   = "t"
+  inputModel                  = true
+  output                      = "../generated/prismabox"
 }
 
 model Config {
-  id    	String  @id @default(cuid())
-  parameter1     Int
-  parameter2     Int
-  parameter3     Int
-  parameter4     Int
-  parameter5     Int
-  parameter6     Int
+  id                                 String   @id @default(cuid())
+  parameterSyllableComplexity        Decimal // Silbenkomplexität (≥3 Vokalgruppen)
+  parameterMultiMemberedGraphemes    Decimal // mehrgliedrige Grapheme (sch, ch, ck, ng, etc.)
+  parameterRareGraphemes             Decimal // seltene Grapheme (ä, ö, ü, ß, c, q, x, y)
+  parameterConsonantClusters         Decimal // Konsonantencluster (Str-, Spr-, -nkt, -cht)
+  parameterCountWords                Decimal // Anzahl Wörter
+  parameterAverageWordLength         Decimal // Durchschnittliche Wortlänge
+  parameterAverageSyllablesPerWord   Decimal // ∅Silben/Wort
+  parameterCountPhrases              Decimal // Anzahl Sätze
+  parameterAveragePhraseLength       Decimal // Durchschnittliche Satzlänge
+  parameterAverageSyllablesPerPhrase Decimal // ∅Silben/Satz
+  parameterProportionOfLongWords     Decimal // Anteil an langen Wörtern
+  results                            Result[]
+}
+
+model Result {
+  id                        String  @id @default(cuid())
+  syllableComplexity        Decimal // Silbenkomplexität (≥3 Vokalgruppen)
+  multiMemberedGraphemes    Decimal // mehrgliedrige Grapheme (sch, ch, ck, ng, etc.)
+  rareGraphemes             Decimal // seltene Grapheme (ä, ö, ü, ß, c, q, x, y)
+  consonantClusters         Decimal // Konsonantencluster (Str-, Spr-, -nkt, -cht)
+  countWords                Decimal // Anzahl Wörter
+  averageWordLength         Decimal // Durchschnittliche Wortlänge
+  averageSyllablesPerWord   Decimal // ∅Silben/Wort
+  countPhrases              Decimal // Anzahl Sätze
+  averagePhraseLength       Decimal // Durchschnittliche Satzlänge
+  averageSyllablesPerPhrase Decimal // ∅Silben/Satz
+  proportionOfLongWords     Decimal // Anteil an langen Wörtern
+  score                     Decimal // Ergebnis
+  config                    Config  @relation(fields: [configId], references: [id])
+  configId                  String
 }
 
 model User {
@@ -34,6 +58,10 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
+  role          String?
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
   sessions      Session[]
   accounts      Account[]
 
@@ -42,15 +70,16 @@ model User {
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
 
   @@unique([token])
   @@map("session")

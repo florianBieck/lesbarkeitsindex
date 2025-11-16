@@ -13,3 +13,16 @@ bun run dev
 ```
 
 Open http://localhost:3000/ with your browser to see the result.
+
+
+# Migration
+
+## Create migration
+```
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
+```
+
+## Run migration
+```
+npx prisma migrate dev                                                                                                           
+```

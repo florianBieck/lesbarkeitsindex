@@ -1,0 +1,34 @@
+name: Deploy to Environment
+
+on:
+  workflow_dispatch:
+
+env:
+  COMPOSE_PROJECT_NAME: lesbarkeitsindex-prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy configuration files to server
+        run: |
+          ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh root@${{ secrets.SSH_HOST }} mkdir -p /opt/lesbarkeitsindex
+          scp -r docker-compose-prod.yml Caddyfile root@${{ secrets.SSH_HOST }}:/opt/lesbarkeitsindex/
+
+      - name: Deploy new docker stack at Hetzner Server
+        run: |
+          ssh-keyscan ${{ secrets.SSH_HOST }} >> known_hosts
+          docker context create prod --docker "host=ssh://root@${{ secrets.SSH_HOST }}"
+          docker context use prod
+          docker compose pull
+          docker compose up -d
+          docker compose restart caddy

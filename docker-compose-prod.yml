@@ -26,6 +26,7 @@ services:
       - DATABASE_URL=postgresql://admin:admin@postgres:5432/lesbarkeitsindex
       # Public base URL used by Better-Auth (same-origin via Caddy)
       - BETTER_AUTH_URL=https://lix.florianbieck.com
+      - BETTER_AUTH_SECRET=change-to-secret
       - NODE_ENV=production
     depends_on:
       - postgres

@@ -1,0 +1,105 @@
+name: Deploy Docker Compose (production)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths:
+      - "docker-compose-prod.yml"
+      - "Caddyfile"
+      - "Dockerfile.backend"
+      - "Dockerfile.frontend"
+      - "apps/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+# Prevent overlapping deployments
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  # Required repository secrets (must be configured in GitHub → Settings → Secrets and variables → Actions):
+  # - SSH_HOST: remote server hostname or IP
+  # - SSH_USER: SSH user on the remote server
+  # - SSH_PRIVATE_KEY: private key for SSH auth (PEM/OpenSSH format)
+  # - DEPLOY_PATH: absolute path on the remote server where the app should live (e.g., /opt/lesbarkeitsindex)
+  DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+  SSH_HOST: ${{ secrets.SSH_HOST }}
+  SSH_USER: ${{ secrets.SSH_USER }}
+  COMPOSE_FILE: docker-compose-prod.yml
+
+jobs:
+  deploy:
+    name: Build and Deploy with docker-compose-prod.yml
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure DEPLOY_PATH is set
+        run: |
+          if [ -z "${DEPLOY_PATH}" ]; then
+            echo "Missing configuration: Please set DEPLOY_PATH in repository Action variables (Secrets)." && exit 1
+          fi
+
+      - name: Remove heavy local folders before upload
+        run: |
+          rm -rf .git || true
+          rm -rf node_modules || true
+          rm -rf .github || true
+          find apps -type d -name node_modules -prune -exec rm -rf {} + || true
+
+      - name: Copy repository to remote server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./"
+          target: "${{ env.DEPLOY_PATH }}"
+          overwrite: true
+          strip_components: 0
+
+      - name: Build and deploy on remote with Docker Compose
+        uses: appleboy/ssh-action@v1.1.0
+        env:
+          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
+          COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DEPLOY_PATH,COMPOSE_FILE
+          script_stop: true
+          script: |
+            set -euxo pipefail
+            mkdir -p "$DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+
+            # Determine docker compose command
+            if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+              DC="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              DC="docker-compose"
+            else
+              echo "Docker Compose is not installed on the remote host" >&2
+              exit 1
+            fi
+
+            # Optional: pull registry-backed images (e.g., postgres, caddy)
+            set +e
+            $DC -f "$COMPOSE_FILE" pull
+            set -e
+
+            # Build images defined with 'build:' and start the stack
+            $DC -f "$COMPOSE_FILE" up -d --build --remove-orphans
+
+            # Clean up unused images/layers to save space
+            docker image prune -f || true
+            docker builder prune -f || true
+
+    # Notes:
+    # - The remote server must have Docker (and ideally the Docker Compose plugin) installed.
+    # - The repository's .env (if present) will be used by docker-compose-prod.yml automatically when running in DEPLOY_PATH.
+    # - Ensure that any domain/SSL settings referenced by Caddyfile are valid for the target server.

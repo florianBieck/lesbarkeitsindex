@@ -1,5 +1,5 @@
-lix.localhost {
-	tls internal
+lix.florianbieck.com {
+	tls info@florianbieck.com
 	# Same-origin API proxy to avoid third-party cookies/CORS
 	# 1) Auth endpoints are already prefixed with /api/auth in the backend – keep path as-is
 	handle /api/auth/* {
@@ -18,9 +18,4 @@ lix.localhost {
 	}
 	# Everything else goes to the frontend
 	reverse_proxy frontend:3000
-}
-
-api-lix.localhost {
-	reverse_proxy backend:3000
-	tls internal
 }

@@ -17,9 +17,7 @@ services:
       - frontend
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: ghcr.io/florianbieck/lesbarkeitsindex/backend:latest
     container_name: backend
     restart: unless-stopped
     environment:
@@ -34,9 +32,7 @@ services:
       - "3000"
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: ghcr.io/florianbieck/lesbarkeitsindex/frontend:latest
     container_name: frontend
     restart: unless-stopped
     environment:

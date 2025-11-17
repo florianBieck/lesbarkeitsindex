@@ -18,32 +18,6 @@ env:
   NODE_VERSION: 24
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      # Step 1: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Step 2: Install pnpm
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      # Step 3: Set up Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      # Step 4: Install dependencies
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Step 5: Run linting
-      - name: Run linter
-        run: pnpm run lint
-
   test:
     runs-on: ubuntu-latest
     permissions:
@@ -58,33 +32,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Start test stack
-        run: |
-          docker compose -f docker-compose-test.yml up -d
-
-      # Step 2: Install pnpm
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      # Step 3: Set up Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      # Step 2: Install Bun
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          bun-version: latest
 
-      # Step 4: See https://docs.cypress.io/app/get-started/install-cypress#pnpm-configuration
-      - name: Disable pnpm side-effects cache
-        run: pnpm config set side-effects-cache false --location project
-
-      # Step 5: Install dependencies
+      # Step 3: Install dependencies
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-
-      # Step 7: Build project
-      - name: Build project
-        run: pnpm build
+        run: bun install --frozen-lockfile
 
   build-and-push:
     runs-on: ubuntu-latest

@@ -39,7 +39,9 @@ import {type Treaty, treaty} from "@elysiajs/eden";
 import type {App} from "../../../backend/src";
 import ResultView from "~/components/result-view.vue";
 
-const client = treaty<App>('localhost:3000', {
+const runtime = useRuntimeConfig();
+const apiBase = runtime.public.apiBase;
+const client = treaty<App>(apiBase, {
   fetch: {
     credentials: 'include'
   }

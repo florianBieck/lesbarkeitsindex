@@ -4,8 +4,14 @@ export const plugins = [
 ]
 
 export const useAuthClient = () => {
+    const runtime = useRuntimeConfig();
+    const apiBase = runtime.public.apiBase;
+
     return createAuthClient({
-        baseURL: "http://localhost:3000",
+        baseURL: apiBase,
+        fetchOptions: {
+            credentials: 'include'
+        },
         plugins,
     })
 }

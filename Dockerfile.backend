@@ -1,0 +1,54 @@
+# ---------- Base image ----------
+FROM oven/bun:1 AS base
+WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apt-get update -y \
+  && apt-get install -y openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+# ---------- Dependencies layer ----------
+FROM base AS deps
+# Copy only files needed for dependency resolution
+COPY package.json bun.lock ./
+# If you use workspaces or additional manifests, copy them too:
+# COPY packages/*/package.json ./
+
+RUN bun install
+
+# ---------- Build layer ----------
+FROM deps AS build
+# Remove preinstalled deps to avoid conflicts when copying project files
+RUN rm -rf /app/node_modules
+# Copy the rest of the source code
+COPY . .
+# Reinstall dependencies after sources are in place (ensures correct workspace resolution)
+RUN bun install
+
+# Generate Prisma client (if using Prisma)
+# Switch to backend workspace so bunx can resolve local prisma binary
+WORKDIR /app/apps/backend
+RUN bunx prisma generate
+WORKDIR /app
+
+# ---------- Runtime image ----------
+FROM base AS runner
+WORKDIR /app
+
+# Only copy what is needed to run the app
+# Take node_modules from the build stage (after reinstall)
+COPY --from=build /app/node_modules ./node_modules
+# Copy backend source and prisma directory
+COPY --from=build /app/apps/backend ./apps/backend
+COPY --from=build /app/apps/backend/prisma ./apps/backend/prisma
+COPY package.json bun.lock ./
+
+# Environment
+ENV NODE_ENV=production
+# Change this if your app uses a different port
+ENV PORT=3000
+EXPOSE 3000
+
+# Run DB migrations, then start the app from the backend workspace
+# Use bunx (npx is not available in the Bun image) and run within apps/backend
+CMD ["sh", "-c", "cd apps/backend && bunx prisma migrate deploy && bun run start"]

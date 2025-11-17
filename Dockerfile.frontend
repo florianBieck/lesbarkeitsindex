@@ -1,0 +1,41 @@
+# === Build stage ===
+FROM oven/bun:1 AS builder
+
+WORKDIR /app
+
+# Install dependencies
+COPY package.json bun.lock ./
+# If you use pnpm-lock.yaml/yarn.lock instead of bun.lock, adjust accordingly
+RUN bun install
+
+# Copy the rest of the source
+# Remove preinstalled deps to avoid conflicts when copying project files
+RUN rm -rf /app/node_modules
+# Copy the rest of the source
+COPY . .
+# Reinstall after sources are in place (handles workspaces/changed manifests)
+RUN bun install
+
+# Build the Nuxt app (Nuxt 3/4) from the frontend workspace
+RUN bun run --cwd apps/frontend build
+
+# === Runtime stage ===
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Copy the built output from the builder
+# For Nuxt 3/4, .output contains both server and client build
+COPY --from=builder /app/apps/frontend/.output ./.output
+
+# If you have runtime config files (e.g. .env), mount them at runtime or copy here
+
+# Nuxt/Nitro runtime settings
+ENV NITRO_PORT=3000
+ENV NITRO_HOST=0.0.0.0
+
+EXPOSE 3000
+
+# Start the Nuxt server
+CMD ["node", ".output/server/index.mjs"]

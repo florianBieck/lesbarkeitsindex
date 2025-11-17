@@ -24,6 +24,8 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://admin:admin@postgres:5432/lesbarkeitsindex
+      # Public base URL used by Better-Auth (same-origin via Caddy)
+      - BETTER_AUTH_URL=https://lix.localhost
       - NODE_ENV=production
     depends_on:
       - postgres
@@ -38,7 +40,9 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_BASE=/api
+      # Use same-origin API via Caddy to avoid third-party cookies and CORS
+      # Base is the site origin; Better‑Auth appends /api/auth itself and app endpoints are at root
+      - NUXT_PUBLIC_API_BASE=https://lix.localhost
     depends_on:
       - backend
     expose:

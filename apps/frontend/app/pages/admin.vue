@@ -50,15 +50,16 @@ import type { App } from '../../../backend/src'
 import {treaty} from "@elysiajs/eden";
 import type {Treaty} from "@elysiajs/eden";
 
-const client = treaty<App>('localhost:3000', {
+const runtime = useRuntimeConfig();
+const apiBase = runtime.public.apiBase;
+
+const client = treaty<App>(apiBase, {
   fetch: {
     credentials: 'include'
   }
 });
 type ConfigData = Treaty.Data<typeof client.config.get>
 
-const runtime = useRuntimeConfig()
-const apiBase = runtime.public.apiBase
 const authClient = useAuthClient();
 const session = authClient.useSession();
 

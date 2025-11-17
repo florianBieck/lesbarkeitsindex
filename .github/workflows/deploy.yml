@@ -23,9 +23,19 @@ env:
   # - SSH_USER: SSH user on the remote server
   # - SSH_PRIVATE_KEY: private key for SSH auth (PEM/OpenSSH format)
   # - DEPLOY_PATH: absolute path on the remote server where the app should live (e.g., /opt/lesbarkeitsindex)
+  # Optional secrets (set as needed):
+  # - SSH_PORT: custom SSH port (default 22)
+  # - SSH_PASSWORD: SSH password (used if no key or as fallback)
+  # - SSH_PASSPHRASE: passphrase for encrypted SSH_PRIVATE_KEY
+  # - SSH_FINGERPRINT: server host key fingerprint for strict host key verification
   DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
   SSH_HOST: ${{ secrets.SSH_HOST }}
   SSH_USER: ${{ secrets.SSH_USER }}
+  SSH_PORT: ${{ secrets.SSH_PORT }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+  SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
+  SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
   COMPOSE_FILE: docker-compose-prod.yml
 
 jobs:
@@ -40,7 +50,14 @@ jobs:
       - name: Ensure DEPLOY_PATH is set
         run: |
           if [ -z "${DEPLOY_PATH}" ]; then
-            echo "Missing configuration: Please set DEPLOY_PATH in repository Action variables (Secrets)." && exit 1
+            echo "Missing configuration: Please set DEPLOY_PATH in repository Actions settings." && exit 1
+          fi
+
+      - name: Verify SSH auth configuration (key or password)
+        run: |
+          if [ -z "${SSH_PRIVATE_KEY}" ] && [ -z "${SSH_PASSWORD}" ]; then
+            echo "No SSH credentials provided. Set SSH_PRIVATE_KEY or SSH_PASSWORD as repository variables." >&2
+            exit 1
           fi
 
       - name: Remove heavy local folders before upload
@@ -50,18 +67,42 @@ jobs:
           rm -rf .github || true
           find apps -type d -name node_modules -prune -exec rm -rf {} + || true
 
-      - name: Copy repository to remote server
+      # Copy repository using SSH key (if provided)
+      - name: Copy repository to remote server (SSH key)
+        id: scp_key
+        continue-on-error: true
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.SSH_HOST }}
           username: ${{ env.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          passphrase: ${{ env.SSH_PASSPHRASE }}
+          port: ${{ env.SSH_PORT || '22' }}
+          fingerprint: ${{ env.SSH_FINGERPRINT }}
           source: "./"
           target: "${{ env.DEPLOY_PATH }}"
           overwrite: true
           strip_components: 0
 
-      - name: Build and deploy on remote with Docker Compose
+      # Fallback: Copy repository using password (if provided and key upload failed or no key)
+      - name: Copy repository to remote server (password)
+        if: ${{ steps.scp_key.outcome == 'failure' && env.SSH_PASSWORD != '' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          password: ${{ env.SSH_PASSWORD }}
+          port: ${{ env.SSH_PORT || '22' }}
+          fingerprint: ${{ env.SSH_FINGERPRINT }}
+          source: "./"
+          target: "${{ env.DEPLOY_PATH }}"
+          overwrite: true
+          strip_components: 0
+
+      # Run remote deployment using SSH key (if provided)
+      - name: Build and deploy on remote with Docker Compose (SSH key)
+        id: ssh_key
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.1.0
         env:
           DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
@@ -69,7 +110,52 @@ jobs:
         with:
           host: ${{ env.SSH_HOST }}
           username: ${{ env.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          passphrase: ${{ env.SSH_PASSPHRASE }}
+          port: ${{ env.SSH_PORT || '22' }}
+          fingerprint: ${{ env.SSH_FINGERPRINT }}
+          envs: DEPLOY_PATH,COMPOSE_FILE
+          script_stop: true
+          script: |
+            set -euxo pipefail
+            mkdir -p "$DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+
+            # Determine docker compose command
+            if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+              DC="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              DC="docker-compose"
+            else
+              echo "Docker Compose is not installed on the remote host" >&2
+              exit 1
+            fi
+
+            # Optional: pull registry-backed images (e.g., postgres, caddy)
+            set +e
+            $DC -f "$COMPOSE_FILE" pull
+            set -e
+
+            # Build images defined with 'build:' and start the stack
+            $DC -f "$COMPOSE_FILE" up -d --build --remove-orphans
+
+            # Clean up unused images/layers to save space
+            docker image prune -f || true
+            docker builder prune -f || true
+
+      # Fallback: Run remote deployment using password (if provided and key path failed or no key)
+      - name: Build and deploy on remote with Docker Compose (password)
+        if: ${{ steps.ssh_key.outcome == 'failure' && env.SSH_PASSWORD != '' }}
+        uses: appleboy/ssh-action@v1.1.0
+        env:
+          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
+          COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          password: ${{ env.SSH_PASSWORD }}
+          port: ${{ env.SSH_PORT || '22' }}
+          fingerprint: ${{ env.SSH_FINGERPRINT }}
           envs: DEPLOY_PATH,COMPOSE_FILE
           script_stop: true
           script: |

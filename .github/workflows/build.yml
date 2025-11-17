@@ -78,7 +78,6 @@ jobs:
           context: .
           file: ./Dockerfile.backend
           platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          target: production
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-production.outputs.tags }}
           labels: ${{ steps.meta-production.outputs.labels }}
@@ -91,7 +90,6 @@ jobs:
           context: .
           file: ./Dockerfile.frontend
           platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          target: production
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-production.outputs.tags }}
           labels: ${{ steps.meta-production.outputs.labels }}

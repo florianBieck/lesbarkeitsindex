@@ -17,31 +17,31 @@ generator prismabox {
 }
 
 model Config {
-  id                                            String   @id @default(cuid())
-  createdAt     DateTime  @default(now())
-  parameterCountWords                           Decimal // Anzahl Wörter
-  parameterCountPhrases                         Decimal // Anzahl Sätze
-  parameterCountMultipleWords                   Decimal // Anzahl an mehrfach vorkommenden Wörtern
-  parameterCountWordsWithComplexSyllables       Decimal // Silbenkomplexität (≥3 Vokalgruppen)
-  parameterCountWordsWithConsonantClusters      Decimal // Konsonantencluster (Str-, Spr-, -nkt, -cht)
-  parameterCountWordsWithMultiMemberedGraphemes Decimal // mehrgliedrige Grapheme (sch, ch, ck, ng, etc.)
-  parameterCountWordsWithRareGraphemes          Decimal // seltene Grapheme (ä, ö, ü, ß, c, q, x, y)
-  parameterAverageWordLength                    Decimal // Durchschnittliche Wortlänge
-  parameterAveragePhraseLength                  Decimal // Durchschnittliche Satzlänge
-  parameterAverageSyllablesPerWord              Decimal // Durchschnittliche Anzahl an Silben pro Wort
-  parameterAverageSyllablesPerPhrase            Decimal // Durchschnittliche Anzahl an Silben pro Satz
-  parameterProportionOfLongWords                Decimal // Anteil an langen Wörtern
-  parameterLix                Decimal // LIX
-  parameterProportionOfWordsWithComplexSyllables                Decimal // Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)
-  parameterProportionOfWordsWithConsonantClusters                Decimal // Anteil an Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)
-  parameterProportionOfWordsWithMultiMemberedGraphemes                Decimal // Anteil an Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)
-  parameterProportionOfWordsWithRareGraphemes                Decimal // Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)
-  results                                       Result[]
+  id                                                   String   @id @default(cuid())
+  createdAt                                            DateTime @default(now())
+  parameterCountWords                                  Decimal // Anzahl Wörter
+  parameterCountPhrases                                Decimal // Anzahl Sätze
+  parameterCountMultipleWords                          Decimal // Anzahl an mehrfach vorkommenden Wörtern
+  parameterCountWordsWithComplexSyllables              Decimal // Silbenkomplexität (≥3 Vokalgruppen)
+  parameterCountWordsWithConsonantClusters             Decimal // Konsonantencluster (Str-, Spr-, -nkt, -cht)
+  parameterCountWordsWithMultiMemberedGraphemes        Decimal // mehrgliedrige Grapheme (sch, ch, ck, ng, etc.)
+  parameterCountWordsWithRareGraphemes                 Decimal // seltene Grapheme (ä, ö, ü, ß, c, q, x, y)
+  parameterAverageWordLength                           Decimal // Durchschnittliche Wortlänge
+  parameterAveragePhraseLength                         Decimal // Durchschnittliche Satzlänge
+  parameterAverageSyllablesPerWord                     Decimal // Durchschnittliche Anzahl an Silben pro Wort
+  parameterAverageSyllablesPerPhrase                   Decimal // Durchschnittliche Anzahl an Silben pro Satz
+  parameterProportionOfLongWords                       Decimal // Anteil an langen Wörtern
+  parameterLix                                         Decimal // LIX
+  parameterProportionOfWordsWithComplexSyllables       Decimal // Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)
+  parameterProportionOfWordsWithConsonantClusters      Decimal // Anteil an Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)
+  parameterProportionOfWordsWithMultiMemberedGraphemes Decimal // Anteil an Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)
+  parameterProportionOfWordsWithRareGraphemes          Decimal // Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)
+  results                                              Result[]
 }
 
 model Result {
   id                                          String   @id @default(cuid())
-  createdAt     DateTime  @default(now())
+  createdAt                                   DateTime @default(now())
   countWords                                  Decimal // Anzahl Wörter
   countPhrases                                Decimal // Anzahl Sätze
   countMultipleWords                          Decimal // Anzahl an mehrfach vorkommenden Wörtern

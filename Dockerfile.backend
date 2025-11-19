@@ -51,4 +51,4 @@ EXPOSE 3000
 
 # Run DB migrations, then start the app from the backend workspace
 # Use bunx (npx is not available in the Bun image) and run within apps/backend
-CMD ["sh", "-c", "cd apps/backend && bunx prisma migrate deploy && bun run start"]
+CMD ["sh", "-c", "cd apps/backend && bunx prisma migrate deploy && bunx prisma generate && bun run start"]

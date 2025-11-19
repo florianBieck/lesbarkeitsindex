@@ -4,7 +4,7 @@ import { PrismaClient } from '../generated/prisma'
 import { cors } from '@elysiajs/cors'
 import {Config} from "../generated/prismabox/Config";
 import {Result} from "../generated/prismabox/Result";
-import {calculateIndex} from "./result";
+import {calculateIndex, debugText} from "./result";
 import {APIError} from "better-auth";
 
 const prisma = new PrismaClient();
@@ -37,7 +37,11 @@ const app = new Elysia()
     .use(betterAuth)
     .get("/", () => "Hello World")
     .get("/config", async ({ status }) => {
-        const config = await prisma.config.findFirst();
+        const config = await prisma.config.findFirst({
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
         if (!config) return status(404);
         return config;
     })
@@ -83,8 +87,32 @@ const app = new Elysia()
             text: t.String()
         })
     })
-    .get("/results", async () => {
-        return prisma.result.findMany();
+    .get("/results", async ({ query: { page = 1, limit = 10 } }) => {
+        const [data, total] = await Promise.all([
+            prisma.result.findMany({
+                skip: (page - 1) * limit,
+                take: limit,
+                include: {
+                    config: true
+                }
+            }),
+            prisma.result.count()
+        ]);
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+    }, {
+        query: t.Object({
+            page: t.Optional(t.Numeric()),
+            limit: t.Optional(t.Numeric())
+        })
     })
     .listen(3000);
 
@@ -103,29 +131,43 @@ async function onStartup() {
             console.log("Can be ignored: Admin Account already exists.")
         }
     }
-    const config = await prisma.config.findFirst();
+    try {
+        await auth.api.createUser({
+            body: {
+                name: "Beate Lessmann",
+                email: "info@beate-lessmann.de",
+                password: "#Test1234",
+                role: "admin"
+            },
+        });
+    } catch (error) {
+        if (error instanceof APIError) {
+            console.log("Can be ignored: Admin Account already exists.")
+        }
+    }
+    let config = await prisma.config.findFirst();
     if (!config) {
-        const numberOfParameters = 11;
-        const weightPerParameter = 1 / numberOfParameters;
-        await prisma.config.create({
+        config = await prisma.config.create({
             data: {
-                parameterSyllableComplexity: weightPerParameter,
-                parameterMultiMemberedGraphemes: weightPerParameter,
-                parameterRareGraphemes: weightPerParameter,
-                parameterConsonantClusters: weightPerParameter,
-                parameterCountWords: weightPerParameter,
-                parameterAverageWordLength: weightPerParameter,
-                parameterAverageSyllablesPerWord: weightPerParameter,
-                parameterCountPhrases: weightPerParameter,
-                parameterAveragePhraseLength: weightPerParameter,
-                parameterAverageSyllablesPerPhrase: weightPerParameter,
-                parameterProportionOfLongWords: weightPerParameter,
+                parameterCountWords: 0,
+                parameterCountPhrases: 0,
+                parameterCountMultipleWords: 0,
+                parameterCountWordsWithComplexSyllables: 0,
+                parameterCountWordsWithConsonantClusters: 0,
+                parameterCountWordsWithMultiMemberedGraphemes: 0,
+                parameterCountWordsWithRareGraphemes: 0,
+                parameterAverageWordLength: 0,
+                parameterAveragePhraseLength: 0,
+                parameterAverageSyllablesPerWord: 0,
+                parameterAverageSyllablesPerPhrase: 0,
+                parameterProportionOfLongWords: 0,
+                parameterLix: 0.6,
+                parameterProportionOfWordsWithComplexSyllables: 0.2,
+                parameterProportionOfWordsWithConsonantClusters: 0.05,
+                parameterProportionOfWordsWithMultiMemberedGraphemes: 0.1,
+                parameterProportionOfWordsWithRareGraphemes: 0.05
             }
-        })
-    } else {
-        const text = "Die Lesbarkeit eines Textes wird beim klassischen LIX über die Anzahl von Wörtern und Sätzen sowie über die durchschnittliche Satzlänge und über den prozentualen Anteil langer Wörter (6 und mehr Buchstaben) berechnet. Für Leselernende spielen weitere Faktoren eine wichtige Rolle. Vor allem die Komplexität von Wörtern erleichtert oder erschwert das Lesen.";
-        const result = await calculateIndex(text, config);
-        console.log(result);
+        });
     }
     console.log(
         `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`

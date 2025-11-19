@@ -27,59 +27,29 @@ const chartOptions = ref();
 const meters = computed(() => {
   return [
     {
-      label: "Anzahl Wörter",
+      label: "Lesbarkeitsindex (LIX)",
       color: '#1F77B4',
-      value: Math.round(Number(props.result.config.parameterCountWords) * 100)
+      value: Math.round(Number(props.result.config.parameterLix) * 100)
     },
     {
-      label: "Silbenkomplexität",
+      label: "Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)",
       color: '#FF7F0E',
-      value: Math.round(Number(props.result.config.parameterSyllableComplexity) * 100)
+      value: Math.round(Number(props.result.config.parameterProportionOfWordsWithComplexSyllables) * 100)
     },
     {
-      label: "Mehrgliedrige Grapheme",
+      label: "Anteil an Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)",
       color: '#2CA02C',
-      value: Math.round(Number(props.result.config.parameterMultiMemberedGraphemes) * 100)
+      value: Math.round(Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100)
     },
     {
-      label: "Seltene Grapheme",
+      label: "Anteil an Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
       color: '#D62728',
-      value: Math.round(Number(props.result.config.parameterRareGraphemes) * 100)
+      value: Math.round(Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100)
     },
     {
-      label: "Konsonantencluster",
+      label: "Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)",
       color: '#9467BD',
-      value: Math.round(Number(props.result.config.parameterConsonantClusters) * 100)
-    },
-    {
-      label: "Durchschnittliche Wortlänge",
-      color: '#8C564B',
-      value: Math.round(Number(props.result.config.parameterAverageWordLength) * 100)
-    },
-    {
-      label: "∅Silben/Wort",
-      color: '#E377C2',
-      value: Math.round(Number(props.result.config.parameterAverageSyllablesPerWord) * 100)
-    },
-    {
-      label: "Anzahl Sätze",
-      color: '#7F7F7F',
-      value: Math.round(Number(props.result.config.parameterCountPhrases) * 100)
-    },
-    {
-      label: "Durchschnittliche Satzlänge",
-      color: '#BCBD22',
-      value: Math.round(Number(props.result.config.parameterAveragePhraseLength) * 100)
-    },
-    {
-      label: "∅Silben/Satz",
-      color: '#34d399',
-      value: Math.round(Number(props.result.config.parameterAverageSyllablesPerPhrase) * 100)
-    },
-    {
-      label: "Anteil an langen Wörtern",
-      color: '#17BECF',
-      value: Math.round(Number(props.result.config.parameterProportionOfLongWords) * 100)
+      value: Math.round(Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100)
     },
   ];
 });
@@ -87,39 +57,34 @@ const meters = computed(() => {
 const resultValues = computed(() => {
   return [
     {
+      label: "Lübecker Lesbarkeitsindex (LÜ-LIX)",
+      color: '#1F77B4',
+      value: Math.round(Number(props.result.score) * 100) / 100
+    },
+    {
+      label: "Lesbarkeitsindex (LIX)",
+      color: '#1F77B4',
+      value: Math.round(Number(props.result.lix) * 100) / 100
+    },
+    {
+      label: "gSMOG",
+      color: '#1F77B4',
+      value: Math.round(Number(props.result.gsmog) * 100) / 100
+    },
+    {
+      label: "WST4",
+      color: '#1F77B4',
+      value: Math.round(Number(props.result.wst4) * 100) / 100
+    },
+    {
+      label: "FLESCH.Kincaid",
+      color: '#1F77B4',
+      value: Math.round(Number(props.result.fleschKincaid) * 100) / 100
+    },
+    {
       label: "Anzahl Wörter",
       color: '#1F77B4',
       value: Number(props.result.countWords)
-    },
-    {
-      label: "Silbenkomplexität",
-      color: '#FF7F0E',
-      value: Number(props.result.syllableComplexity)
-    },
-    {
-      label: "Mehrgliedrige Grapheme",
-      color: '#2CA02C',
-      value: Number(props.result.multiMemberedGraphemes)
-    },
-    {
-      label: "Seltene Grapheme",
-      color: '#D62728',
-      value: Number(props.result.rareGraphemes)
-    },
-    {
-      label: "Konsonantencluster",
-      color: '#9467BD',
-      value: Number(props.result.consonantClusters)
-    },
-    {
-      label: "Durchschnittliche Wortlänge",
-      color: '#8C564B',
-      value: Number(props.result.averageWordLength)
-    },
-    {
-      label: "∅Silben/Wort",
-      color: '#E377C2',
-      value: Number(props.result.averageSyllablesPerWord)
     },
     {
       label: "Anzahl Sätze",
@@ -127,19 +92,74 @@ const resultValues = computed(() => {
       value: Number(props.result.countPhrases)
     },
     {
-      label: "Durchschnittliche Satzlänge",
-      color: '#BCBD22',
-      value: Number(props.result.averagePhraseLength)
+      label: "Anzahl an mehrfach vorkommenden Wörtern ",
+      color: '#7F7F7F',
+      value: Number(props.result.countMultipleWords)
     },
     {
-      label: "∅Silben/Satz",
+      label: "Anzahl Wörter mit komplexen Silben (≥3 Vokalgruppen)",
+      color: '#FF7F0E',
+      value: Number(props.result.countWordsWithComplexSyllables)
+    },
+    {
+      label: "Anzahl Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)",
+      color: '#9467BD',
+      value: Number(props.result.countWordsWithConsonantClusters)
+    },
+    {
+      label: "Anzahl Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
+      color: '#2CA02C',
+      value: Number(props.result.countWordsWithMultiMemberedGraphemes)
+    },
+    {
+      label: "Anzahl Wörter mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)",
+      color: '#D62728',
+      value: Number(props.result.countWordsWithRareGraphemes)
+    },
+    {
+      label: "Durchschnittliche Wortlänge",
+      color: '#8C564B',
+      value: Math.round(Number(props.result.averageWordLength) * 100) / 100
+    },
+    {
+      label: "Durchschnittliche Satzlänge",
+      color: '#BCBD22',
+      value: Math.round(Number(props.result.averagePhraseLength) * 100) / 100
+    },
+    {
+      label: "Durchschnittliche Anzahl an Silben pro Wort",
+      color: '#E377C2',
+      value: Math.round(Number(props.result.averageSyllablesPerWord) * 100) / 100
+    },
+    {
+      label: "Durchschnittliche Anzahl an Silben pro Satz",
       color: '#34d399',
-      value: Number(props.result.averageSyllablesPerPhrase)
+      value: Math.round(Number(props.result.averageSyllablesPerPhrase) * 100) / 100
     },
     {
       label: "Anteil an langen Wörtern",
       color: '#17BECF',
-      value: Number(props.result.proportionOfLongWords)
+      value: `${Math.round(Number(props.result.proportionOfLongWords) * 10000) / 100}%`
+    },
+    {
+      label: "Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)",
+      color: '#17BECF',
+      value: `${Math.round(Number(props.result.proportionOfWordsWithComplexSyllables) * 10000) / 100}%`
+    },
+    {
+      label: "Anteil an Wörtern mit Konsonantencluster (Str-, Spr-, -nkt, -cht)",
+      color: '#17BECF',
+      value: `${Math.round(Number(props.result.proportionOfWordsWithConsonantClusters) * 10000) / 100}%`
+    },
+    {
+      label: "Anteil an Wörtern mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
+      color: '#17BECF',
+      value: `${Math.round(Number(props.result.proportionOfWordsWithMultiMemberedGraphemes) * 10000) / 100}%`
+    },
+    {
+      label: "Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)",
+      color: '#17BECF',
+      value: `${Math.round(Number(props.result.proportionOfWordsWithRareGraphemes) * 10000) / 100}%`
     },
   ];
 });
@@ -149,13 +169,20 @@ const setChartData = () => {
 
   const score = Math.round(Number(props.result.score));
 
+  let color = documentStyle.getPropertyValue('--p-green-500');
+  if (score >= 33 && score < 66) {
+    color = documentStyle.getPropertyValue('--p-yellow-500');
+  } else if (score >= 66) {
+    color = documentStyle.getPropertyValue('--p-red-500');
+  }
+
   return {
     datasets: [
       {
         data: [score, 100 - score],
-        backgroundColor: [documentStyle.getPropertyValue('--p-green-500'), 'white'],
-        hoverBackgroundColor: [documentStyle.getPropertyValue('--p-green-400'), 'white'],
-        borderColor: documentStyle.getPropertyValue('--p-green-500'),
+        backgroundColor: [color, 'white'],
+        hoverBackgroundColor: [color, 'white'],
+        borderColor: color,
         borderWidth: 1,
       }
     ]
@@ -166,7 +193,7 @@ const setChartOptions = () => {
   const documentStyle = getComputedStyle(document.documentElement);
   const textColor = documentStyle.getPropertyValue('--p-text-color');
 
-  const score = props.result === null ? 0 : Math.round(Number(props.result.score));
+  const score = props.result === null ? 0 : Math.round(Number(props.result.score) * 100) / 100;
 
   return {
     hover: {
@@ -216,6 +243,16 @@ onMounted(() => {
       <Fieldset legend="Original Text">
         <p class="m-0">{{ result.text }}</p>
         <p class="pt-5 text-xs text-gray-300">Hash: {{ result.hashText }}</p>
+      </Fieldset>
+    </div>
+    <div class="flex flex-col gap-2 p-2">
+      <Fieldset legend="Spaltung in Sätze">
+        <Chip v-for="(phrase, index) in result.phrases" :key="index" class="my-1" :label="phrase" />
+      </Fieldset>
+    </div>
+    <div class="flex flex-col gap-2 p-2">
+      <Fieldset legend="Spaltung in Wörter">
+        <Chip v-for="(word, index) in result.words" :key="index" class="m-1" :label="word" />
       </Fieldset>
     </div>
   </div>

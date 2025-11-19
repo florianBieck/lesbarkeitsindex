@@ -12,14 +12,6 @@ export const auth = betterAuth({
         "https://lix.localhost",
         "https://lix.florianbieck.com"
     ],
-    // Ensure cookies work cross-site between https://lix.localhost and https://api-lix.localhost
-    // Required because frontend and backend run on different subdomains locally via Caddy TLS
-    session: {
-        cookie: {
-            sameSite: "none",
-            secure: true,
-        }
-    },
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),

@@ -8,22 +8,26 @@
       <p class="text-surface-700 dark:text-surface-200 leading-normal">Dieser Prototyp berechnet eine Erweiterung mit verschiedenen
         Parametern. Unten sehen Sie die Aufteilung der Teilwerte.</p>
     </div>
-    <div class="flex gap-6 w-full">
-      <DataTable :value="results" tableStyle="min-width: 50rem">
+    <div class="w-full">
+      <DataTable :value="results?.data" scrollable :selection="selected" selectionMode="single" @row-select="onRowSelectedEvent" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20, 50]" @page="onPageEvent">
         <Column field="id" header="ID">
           <template #body="slotProps">
-            <div class="truncate max-w-[100px]">{{ slotProps.data.id }}</div>
+            <div class="truncate max-w-[300px] min-w-[150px]">{{ slotProps.data.id }}</div>
           </template>
         </Column>
         <Column field="text" header="Text">
           <template #body="slotProps">
-            <div class="truncate max-w-[200px]">{{ slotProps.data.text }}</div>
+            <div class="truncate max-w-[400px] min-w-[250px]">{{ slotProps.data.text }}</div>
           </template>
         </Column>
-        <Column field="score" header="LÜ-LIX"></Column>
+        <Column field="score" header="LÜ-LIX">
+          <template #body="slotProps">
+            <div class="truncate max-w-[50px] min-w-[75px]">{{ Math.round(Number(slotProps.data.score) * 100) / 100 }}</div>
+          </template>
+        </Column>
         <Column field="hashText" header="Hash">
           <template #body="slotProps">
-            <div class="truncate text-xs max-w-[100px]">{{ slotProps.data.hashText }}</div>
+            <div class="truncate text-xs max-w-[100px] min-w-[50px]">{{ slotProps.data.hashText }}</div>
           </template>
         </Column>
       </DataTable>
@@ -38,6 +42,7 @@ import Editor from 'primevue/editor';
 import {type Treaty, treaty} from "@elysiajs/eden";
 import type {App} from "../../../backend/src";
 import ResultView from "~/components/result-view.vue";
+import type {DataTablePageEvent, DataTableRowSelectEvent} from "primevue";
 
 const runtime = useRuntimeConfig();
 const apiBase = runtime.public.apiBase;
@@ -52,12 +57,21 @@ type ResultsData = Treaty.Data<typeof client.results.get>
 const loading = ref(false);
 const results = ref<ResultsData | null>(null);
 const selected = ref<ResultData | null>(null);
+const page = ref(1);
+const totalRecords = ref(0);
+const rowsPerPage = ref(10);
 
-async function loadResults() {
+async function loadResults(pageToLoad: number, limit: number) {
   loading.value = true
   try {
-    const { data } = await client.results.get();
+    const { data } = await client.results.get({
+      query: {
+        page: pageToLoad <= 0 ? 1 : pageToLoad,
+        limit
+      }
+    });
     results.value = data;
+    totalRecords.value = data?.meta.total ?? 0;
   } catch (e) {
     console.error(e);
   } finally {
@@ -65,7 +79,17 @@ async function loadResults() {
   }
 }
 
+const onPageEvent = (e: DataTablePageEvent) => {
+  // rowsPerPage.value = e.rows;
+  loadResults(e.page, rowsPerPage.value);
+}
+
+const onRowSelectedEvent = (e: DataTableRowSelectEvent) => {
+  // rowsPerPage.value = e.rows;
+  selected.value = e.data as ResultData;
+}
+
 onMounted(() => {
-  loadResults();
+  loadResults(page.value, rowsPerPage.value);
 })
 </script>

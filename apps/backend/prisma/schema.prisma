@@ -17,39 +17,61 @@ generator prismabox {
 }
 
 model Config {
-  id                                 String   @id @default(cuid())
-  parameterSyllableComplexity        Decimal // Silbenkomplexität (≥3 Vokalgruppen)
-  parameterMultiMemberedGraphemes    Decimal // mehrgliedrige Grapheme (sch, ch, ck, ng, etc.)
-  parameterRareGraphemes             Decimal // seltene Grapheme (ä, ö, ü, ß, c, q, x, y)
-  parameterConsonantClusters         Decimal // Konsonantencluster (Str-, Spr-, -nkt, -cht)
-  parameterCountWords                Decimal // Anzahl Wörter
-  parameterAverageWordLength         Decimal // Durchschnittliche Wortlänge
-  parameterAverageSyllablesPerWord   Decimal // ∅Silben/Wort
-  parameterCountPhrases              Decimal // Anzahl Sätze
-  parameterAveragePhraseLength       Decimal // Durchschnittliche Satzlänge
-  parameterAverageSyllablesPerPhrase Decimal // ∅Silben/Satz
-  parameterProportionOfLongWords     Decimal // Anteil an langen Wörtern
-  results                            Result[]
+  id                                            String   @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  parameterCountWords                           Decimal // Anzahl Wörter
+  parameterCountPhrases                         Decimal // Anzahl Sätze
+  parameterCountMultipleWords                   Decimal // Anzahl an mehrfach vorkommenden Wörtern
+  parameterCountWordsWithComplexSyllables       Decimal // Silbenkomplexität (≥3 Vokalgruppen)
+  parameterCountWordsWithConsonantClusters      Decimal // Konsonantencluster (Str-, Spr-, -nkt, -cht)
+  parameterCountWordsWithMultiMemberedGraphemes Decimal // mehrgliedrige Grapheme (sch, ch, ck, ng, etc.)
+  parameterCountWordsWithRareGraphemes          Decimal // seltene Grapheme (ä, ö, ü, ß, c, q, x, y)
+  parameterAverageWordLength                    Decimal // Durchschnittliche Wortlänge
+  parameterAveragePhraseLength                  Decimal // Durchschnittliche Satzlänge
+  parameterAverageSyllablesPerWord              Decimal // Durchschnittliche Anzahl an Silben pro Wort
+  parameterAverageSyllablesPerPhrase            Decimal // Durchschnittliche Anzahl an Silben pro Satz
+  parameterProportionOfLongWords                Decimal // Anteil an langen Wörtern
+  parameterLix                Decimal // LIX
+  parameterProportionOfWordsWithComplexSyllables                Decimal // Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)
+  parameterProportionOfWordsWithConsonantClusters                Decimal // Anteil an Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)
+  parameterProportionOfWordsWithMultiMemberedGraphemes                Decimal // Anteil an Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)
+  parameterProportionOfWordsWithRareGraphemes                Decimal // Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)
+  results                                       Result[]
 }
 
 model Result {
-  id                        String  @id @default(cuid())
-  syllableComplexity        Decimal // Silbenkomplexität (≥3 Vokalgruppen)
-  multiMemberedGraphemes    Decimal // mehrgliedrige Grapheme (sch, ch, ck, ng, etc.)
-  rareGraphemes             Decimal // seltene Grapheme (ä, ö, ü, ß, c, q, x, y)
-  consonantClusters         Decimal // Konsonantencluster (Str-, Spr-, -nkt, -cht)
-  countWords                Decimal // Anzahl Wörter
-  averageWordLength         Decimal // Durchschnittliche Wortlänge
-  averageSyllablesPerWord   Decimal // ∅Silben/Wort
-  countPhrases              Decimal // Anzahl Sätze
-  averagePhraseLength       Decimal // Durchschnittliche Satzlänge
-  averageSyllablesPerPhrase Decimal // ∅Silben/Satz
-  proportionOfLongWords     Decimal // Anteil an langen Wörtern
-  score                     Decimal // Ergebnis
-  text                      String
-  hashText                  String
-  config                    Config  @relation(fields: [configId], references: [id])
-  configId                  String
+  id                                          String   @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  countWords                                  Decimal // Anzahl Wörter
+  countPhrases                                Decimal // Anzahl Sätze
+  countMultipleWords                          Decimal // Anzahl an mehrfach vorkommenden Wörtern
+  countWordsWithComplexSyllables              Decimal // Anzahl Wörter mit komplexen Silben (≥3 Vokalgruppen)
+  countWordsWithConsonantClusters             Decimal // Anzahl Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)
+  countWordsWithMultiMemberedGraphemes        Decimal // Anzahl Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)
+  countWordsWithRareGraphemes                 Decimal // Anzahl Wörter mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)
+  averageWordLength                           Decimal // Durchschnittliche Wortlänge
+  averagePhraseLength                         Decimal // Durchschnittliche Satzlänge
+  averageSyllablesPerWord                     Decimal // Durchschnittliche Anzahl an Silben pro Wort
+  averageSyllablesPerPhrase                   Decimal // Durchschnittliche Anzahl an Silben pro Satz
+  proportionOfLongWords                       Decimal // Anteil an langen Wörtern
+  proportionOfWordsWithComplexSyllables       Decimal // Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)
+  proportionOfWordsWithConsonantClusters      Decimal // Anteil an Wörtern mit Konsonantencluster (Str-, Spr-, -nkt, -cht)
+  proportionOfWordsWithMultiMemberedGraphemes Decimal // Anteil an Wörtern mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)
+  proportionOfWordsWithRareGraphemes          Decimal // Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)
+  lix                                         Decimal // Lesbarkeitsindex
+  ratte                                       Decimal // RATTE Wert
+  ratteLevel                                  Decimal // RATTE Level
+  gsmog                                       Decimal // gSMOG
+  wst4                                        Decimal // WST4
+  fleschKincaid                               Decimal // FLESCH.Kincaid
+  score                                       Decimal // Ergebnis LÜ-LIX
+  scoreLevel                                  Decimal // Ergebnis LÜ-LIX Level
+  text                                        String
+  words                                       String[]
+  phrases                                     String[]
+  hashText                                    String
+  config                                      Config   @relation(fields: [configId], references: [id])
+  configId                                    String
 }
 
 model User {

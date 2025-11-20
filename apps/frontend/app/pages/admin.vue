@@ -148,8 +148,11 @@ async function save() {
     message.value = ''
     try {
       const {data} = await client.config.post({
-        ...config.value,
-        results: [],
+        parameterLix: parameterLix.value,
+        parameterProportionOfWordsWithComplexSyllables: parameterProportionOfWordsWithComplexSyllables.value,
+        parameterProportionOfWordsWithConsonantClusters: parameterProportionOfWordsWithConsonantClusters.value,
+        parameterProportionOfWordsWithMultiMemberedGraphemes: parameterProportionOfWordsWithMultiMemberedGraphemes.value,
+        parameterProportionOfWordsWithRareGraphemes: parameterProportionOfWordsWithRareGraphemes.value,
       });
       config.value = data;
       message.value = 'Gespeichert.'

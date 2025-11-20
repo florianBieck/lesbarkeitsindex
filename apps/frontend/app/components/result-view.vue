@@ -217,6 +217,11 @@ const setChartOptions = () => {
   };
 };
 
+watch(() => props.result, () => {
+  chartData.value = setChartData();
+  chartOptions.value = setChartOptions();
+}, { deep: true });
+
 onMounted(() => {
   chartData.value = setChartData();
   chartOptions.value = setChartOptions();

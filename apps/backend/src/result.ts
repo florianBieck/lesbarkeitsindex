@@ -432,39 +432,13 @@ export function calculateWstf(text: string) {
     const words = splitIntoWords(text);
     let wordsWithThreeOrMoreSyllables = 0;
 
-    let with1 = 0;
-    let with2 = 0;
-    let with3 = 0;
-    let with4 = 0;
-    let with5 = 0;
-    let with6 = 0;
     for (const word of words) {
         const syllableCount = countSyllables(word);
-        if (syllableCount === 1) {
-            with1++;
-        }
-        if (syllableCount === 2) {
-            with2++;
-        }
-        if (syllableCount === 3) {
-            with3++;
-        }
-        if (syllableCount === 4) {
-            with4++;
-            console.log(word, syllableCount);
-        }
-        if (syllableCount === 5) {
-            with5++;
-        }
-        if (syllableCount === 6) {
-            with6++;
-        }
 
         if (syllableCount >= 3) {
             wordsWithThreeOrMoreSyllables++;
         }
     }
-    console.log(with1, with2, with3, with4, with5, with6);
 
     // WSTF formula: 0.2656 * (Words / Sentences) + 0.2744 * (Words with 3+ syllables / Words) * 100 - 1.693
     const averageWordsPerSentence = wordCount / sentenceCount;

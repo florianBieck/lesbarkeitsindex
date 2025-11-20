@@ -46,38 +46,43 @@ const app = new Elysia()
         return config;
     })
     .post("/config", async ({ body, status, user }) => {
-        const config = await prisma.config.findFirst();
-        if (config) {
-            return status(409);
-        }
-        const { results, id, ...rest } = body;
         return prisma.config.create({
             data: {
-                // all scalar fields from Config except id/results
-                ...rest,
-                // only add results if provided
-                ...(Array.isArray(results) && results.length > 0
-                    ? {
-                        results: {
-                            create: results.map((r) => {
-                                // remove configId if it exists on the type;
-                                // Prisma will link it automatically via the relation
-                                const { configId, ...resultRest } = r as any;
-                                return {
-                                    ...resultRest,
-                                };
-                            }),
-                        },
-                    }
-                    : {}),
+                parameterCountWords: 0,
+                parameterCountPhrases: 0,
+                parameterCountMultipleWords: 0,
+                parameterCountWordsWithComplexSyllables: 0,
+                parameterCountWordsWithConsonantClusters: 0,
+                parameterCountWordsWithMultiMemberedGraphemes: 0,
+                parameterCountWordsWithRareGraphemes: 0,
+                parameterAverageWordLength: 0,
+                parameterAveragePhraseLength: 0,
+                parameterAverageSyllablesPerWord: 0,
+                parameterAverageSyllablesPerPhrase: 0,
+                parameterProportionOfLongWords: 0,
+                parameterLix: body.parameterLix,
+                parameterProportionOfWordsWithComplexSyllables: body.parameterProportionOfWordsWithComplexSyllables,
+                parameterProportionOfWordsWithConsonantClusters: body.parameterProportionOfWordsWithConsonantClusters,
+                parameterProportionOfWordsWithMultiMemberedGraphemes: body.parameterProportionOfWordsWithMultiMemberedGraphemes,
+                parameterProportionOfWordsWithRareGraphemes: body.parameterProportionOfWordsWithRareGraphemes,
             },
         });
     }, {
-        body: Config,
+        body: t.Object({
+            parameterLix: t.Number(),
+            parameterProportionOfWordsWithComplexSyllables: t.Number(),
+            parameterProportionOfWordsWithMultiMemberedGraphemes: t.Number(),
+            parameterProportionOfWordsWithRareGraphemes: t.Number(),
+            parameterProportionOfWordsWithConsonantClusters: t.Number(),
+        }),
         auth: true
     })
     .post("/calculate", async ({ body, status }) => {
-        const config = await prisma.config.findFirst();
+        const config = await prisma.config.findFirst({
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
         if (!config) return status(500);
         const result = await calculateIndex(body.text, config);
         if (!result) return status(500);
@@ -87,13 +92,16 @@ const app = new Elysia()
             text: t.String()
         })
     })
-    .get("/results", async ({ query: { page = 1, limit = 10 } }) => {
+    .get("/results", async ({ query: { page = 0, limit = 10 } }) => {
         const [data, total] = await Promise.all([
             prisma.result.findMany({
-                skip: (page - 1) * limit,
+                skip: page * limit,
                 take: limit,
                 include: {
                     config: true
+                },
+                orderBy: {
+                    createdAt: 'desc'
                 }
             }),
             prisma.result.count()

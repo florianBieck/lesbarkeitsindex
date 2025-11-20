@@ -9,10 +9,15 @@
         Parametern. Unten sehen Sie die Aufteilung der Teilwerte.</p>
     </div>
     <div class="w-full">
-      <DataTable :value="results?.data" scrollable :selection="selected" selectionMode="single" @row-select="onRowSelectedEvent" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20, 50]" @page="onPageEvent">
+      <DataTable :value="results?.data" scrollable :selection="selected" selectionMode="single" @row-select="onRowSelectedEvent" paginator lazy :total-records="totalRecords" :first="first" :rows="rowsPerPage" :rowsPerPageOptions="[10]" @page="onPageEvent">
         <Column field="id" header="ID">
           <template #body="slotProps">
             <div class="truncate max-w-[300px] min-w-[150px]">{{ slotProps.data.id }}</div>
+          </template>
+        </Column>
+        <Column field="createdAt" header="Erstellt am">
+          <template #body="slotProps">
+            <div class="truncate max-w-[300px] min-w-[150px]">{{ dayjs(slotProps.data.createdAt).format('DD.MM.YYYY HH:mm') }}</div>
           </template>
         </Column>
         <Column field="text" header="Text">
@@ -43,6 +48,7 @@ import {type Treaty, treaty} from "@elysiajs/eden";
 import type {App} from "../../../backend/src";
 import ResultView from "~/components/result-view.vue";
 import type {DataTablePageEvent, DataTableRowSelectEvent} from "primevue";
+import dayjs from "dayjs";
 
 const runtime = useRuntimeConfig();
 const apiBase = runtime.public.apiBase;
@@ -57,16 +63,17 @@ type ResultsData = Treaty.Data<typeof client.results.get>
 const loading = ref(false);
 const results = ref<ResultsData | null>(null);
 const selected = ref<ResultData | null>(null);
-const page = ref(1);
+const page = ref(0);
 const totalRecords = ref(0);
 const rowsPerPage = ref(10);
+const first = ref(0);
 
 async function loadResults(pageToLoad: number, limit: number) {
   loading.value = true
   try {
     const { data } = await client.results.get({
       query: {
-        page: pageToLoad <= 0 ? 1 : pageToLoad,
+        page: pageToLoad,
         limit
       }
     });
@@ -81,6 +88,7 @@ async function loadResults(pageToLoad: number, limit: number) {
 
 const onPageEvent = (e: DataTablePageEvent) => {
   // rowsPerPage.value = e.rows;
+  first.value = e.first;
   loadResults(e.page, rowsPerPage.value);
 }
 

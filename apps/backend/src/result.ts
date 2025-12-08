@@ -1,9 +1,8 @@
-import type {Prisma} from '../generated/prisma';
-import {PrismaClient} from '../generated/prisma';
+import type {Prisma} from '../generated/prisma/client';
+import { prisma } from './db';
 import {createHash} from 'crypto';
 import {hyphenateSync as hyphenate} from 'hyphen/de';
 
-const prisma = new PrismaClient();
 type Config = Prisma.ConfigGetPayload<{}>;
 
 /*
@@ -25,7 +24,9 @@ function splitIntoWords(text: string) {
         .filter((w) => {
             if (w.length === 0 || w === '-') return false;
             // Exclude pure numeric tokens (e.g., "1968", "2023")
-            if (/^\d+$/.test(w)) return false;
+            // if (/^\d+$/.test(w)) return false;
+            // Exclude abbreviations (all uppercase, 2+ letters, e.g., "LIX", "USA", "BMW")
+            // if (/^[A-ZÄÖÜ]{2,}$/.test(w)) return false;
             return true;
         });
 }
@@ -56,6 +57,27 @@ function splitSentenceIntoWords(sentence: string) {
 }
 
 /*
+    Helper function to split word into syllables
+ */
+function splitWordIntoSyllables(word: string) {
+    try {
+        // Hyphenate the word using German patterns
+        // The hyphen function uses soft hyphens (\u00AD) by default
+        const hyphenated = hyphenate(word, {
+            minWordLength: 5
+        });
+
+        // Count syllables by splitting on soft hyphens
+        const syllables = hyphenated.split('\u00AD');
+
+        return syllables;
+    } catch (error) {
+        console.log(`Hyphenation failed for "${word}":`, error);
+        return [word];
+    }
+}
+
+/*
     Helper function to count syllables in German text
     Uses the hyphen library with German patterns for accurate syllable counting
  */
@@ -63,24 +85,8 @@ function countSyllables(word: string): number {
     if (!word) return 0;
     if (word.length === 0) return 0;
 
-    try {
-        // Hyphenate the word using German patterns
-        // The hyphen function uses soft hyphens (\u00AD) by default
-        const hyphenated = hyphenate(word);
-
-        // Count syllables by splitting on soft hyphens
-        const syllables = hyphenated.split('\u00AD');
-
-        // Debug first few words
-        if (Math.random() < 0.05) { // Log ~5% of words
-            // console.log(`Word: "${word}" -> Hyphenated: "${hyphenated}" -> Syllables: ${syllables.length}`);
-        }
-
-        return syllables.length;
-    } catch (error) {
-        console.log(`Hyphenation failed for "${word}":`, error);
-        return 1;
-    }
+    const syllables = splitWordIntoSyllables(word);
+    return syllables.length;
 }
 
 /*
@@ -165,12 +171,16 @@ export function calculateRareGraphemes(text: string) {
 }
 
 /*
-    Konsonantencluster (Str-, Spr-, -nkt, -cht)
+    Konsonantencluster (Str-, Spr-, etc.)
+    Note: Following BRELIX/RATTE guidelines
+    - /cht/ is NOT a cluster (it's /ch/ digraph + /t/)
+    - /nkt/ is NOT a special cluster
+    - Focus on word-initial clusters that are phonologically significant
  */
 export function calculateConsonantClusters(text: string) {
-    // We count occurrences of the consonant clusters:
-    // "str", "spr", "nkt", "cht" (case-insensitive) within words.
-    const consonantClusterRegex = /(str|spr|nkt|cht)/gi;
+    // Count occurrences of actual consonant clusters
+    // Focusing on word-initial clusters as per German phonology
+    const consonantClusterRegex = /\b(str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)/gi;
 
     const words = splitIntoWords(text);
     let totalCount = 0;
@@ -478,15 +488,28 @@ export async function calculateIndex(text: string, config: Config) {
         proportionOfWordsWithRareGraphemes * config.parameterProportionOfWordsWithRareGraphemes.toNumber() +
         proportionOfWordsWithConsonantClusters * config.parameterProportionOfWordsWithConsonantClusters.toNumber();
 
+    const syllables = splitIntoWords(text).flatMap(word => splitWordIntoSyllables(word));
+    const wordsWithOneSyllable = splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 1);
+    const wordsWithTwoSyllables = splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 2);
+    const wordsWithThreeSyllables = splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 3);
+    const wordsWithFourSyllables = splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 4);
+    const wordsWithFiveSyllables = splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 5);
+
     return prisma.result.create({
         data: {
             countWords,
             countPhrases,
+            countSyllables: syllables.length,
             countMultipleWords,
             countWordsWithComplexSyllables,
             countWordsWithConsonantClusters,
             countWordsWithMultiMemberedGraphemes,
             countWordsWithRareGraphemes,
+            countWordsWithOneSyllable: splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 1).length,
+            countWordsWithTwoSyllable: splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 2).length,
+            countWordsWithThreeSyllable: splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 3).length,
+            countWordsWithFourSyllable: splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 4).length,
+            countWordsWithFiveSyllable: splitIntoWords(text).filter(word => splitWordIntoSyllables(word).length === 5).length,
             averageWordLength,
             averageSyllablesPerWord,
             averagePhraseLength,
@@ -506,7 +529,13 @@ export async function calculateIndex(text: string, config: Config) {
             scoreLevel: 0,
             text,
             words: splitIntoWords(text),
+            wordsWithOneSyllable,
+            wordsWithTwoSyllables,
+            wordsWithThreeSyllables,
+            wordsWithFourSyllables,
+            wordsWithFiveSyllables,
             phrases: splitIntoPhrases(text),
+            syllables,
             hashText: createHash('sha256').update(text, 'utf8').digest('hex'),
             configId: config.id,
         },

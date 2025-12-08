@@ -1,13 +1,12 @@
 import { Elysia, t } from "elysia";
 import { auth } from "./auth";
-import { PrismaClient } from '../generated/prisma'
+import { prisma } from './db'
 import { cors } from '@elysiajs/cors'
 import {Config} from "../generated/prismabox/Config";
 import {Result} from "../generated/prismabox/Result";
 import {calculateIndex, debugText} from "./result";
 import {APIError} from "better-auth";
 
-const prisma = new PrismaClient();
 
 // user middleware (compute user and session and pass to routes)
 const betterAuth = new Elysia({ name: "better-auth" })

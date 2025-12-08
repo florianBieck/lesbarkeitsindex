@@ -37,7 +37,7 @@ const meters = computed(() => {
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithComplexSyllables) * 100)
     },
     {
-      label: "Anteil an Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)",
+      label: "Anteil an Wörter mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
       color: '#2CA02C',
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100)
     },
@@ -92,6 +92,11 @@ const resultValues = computed(() => {
       value: Number(props.result.countPhrases)
     },
     {
+      label: "Anzahl Silben",
+      color: '#7F7F7F',
+      value: Number(props.result.countSyllables)
+    },
+    {
       label: "Anzahl an mehrfach vorkommenden Wörtern ",
       color: '#7F7F7F',
       value: Number(props.result.countMultipleWords)
@@ -102,7 +107,7 @@ const resultValues = computed(() => {
       value: Number(props.result.countWordsWithComplexSyllables)
     },
     {
-      label: "Anzahl Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)",
+      label: "Anzahl Wörter mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
       color: '#9467BD',
       value: Number(props.result.countWordsWithConsonantClusters)
     },
@@ -115,6 +120,31 @@ const resultValues = computed(() => {
       label: "Anzahl Wörter mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)",
       color: '#D62728',
       value: Number(props.result.countWordsWithRareGraphemes)
+    },
+    {
+      label: "Anzahl Wörter mit einer Silbe",
+      color: '#D62728',
+      value: Number(props.result.countWordsWithOneSyllable)
+    },
+    {
+      label: "Anzahl Wörter mit zwei Silben",
+      color: '#D62728',
+      value: Number(props.result.countWordsWithTwoSyllable)
+    },
+    {
+      label: "Anzahl Wörter mit drei Silben",
+      color: '#D62728',
+      value: Number(props.result.countWordsWithThreeSyllable)
+    },
+    {
+      label: "Anzahl Wörter mit vier Silben",
+      color: '#D62728',
+      value: Number(props.result.countWordsWithFourSyllable)
+    },
+    {
+      label: "Anzahl Wörter mit fünf Silben",
+      color: '#D62728',
+      value: Number(props.result.countWordsWithFiveSyllable)
     },
     {
       label: "Durchschnittliche Wortlänge",
@@ -147,7 +177,7 @@ const resultValues = computed(() => {
       value: `${Math.round(Number(props.result.proportionOfWordsWithComplexSyllables) * 10000) / 100}%`
     },
     {
-      label: "Anteil an Wörtern mit Konsonantencluster (Str-, Spr-, -nkt, -cht)",
+      label: "Anteil an Wörtern mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
       color: '#17BECF',
       value: `${Math.round(Number(props.result.proportionOfWordsWithConsonantClusters) * 10000) / 100}%`
     },
@@ -258,6 +288,36 @@ onMounted(() => {
     <div class="flex flex-col gap-2 p-2">
       <Fieldset legend="Spaltung in Wörter">
         <Chip v-for="(word, index) in result.words" :key="index" class="m-1" :label="word" />
+      </Fieldset>
+    </div>
+    <div class="flex flex-col gap-2 p-2">
+      <Fieldset legend="Spaltung in Silben">
+        <Chip v-for="(syllable, index) in result.syllables" :key="index" class="m-1" :label="syllable" />
+      </Fieldset>
+    </div>
+    <div class="flex flex-col gap-2 p-2">
+      <Fieldset :legend="`${result.countWordsWithOneSyllable} Wörter mit einer Silbe`">
+        <Chip v-for="(word, index) in result.wordsWithOneSyllable" :key="index" class="m-1" :label="word" />
+      </Fieldset>
+    </div>
+    <div class="flex flex-col gap-2 p-2">
+      <Fieldset :legend="`${result.countWordsWithTwoSyllable} Wörter mit zwei Silben`">
+        <Chip v-for="(word, index) in result.wordsWithTwoSyllables" :key="index" class="m-1" :label="word" />
+      </Fieldset>
+    </div>
+    <div class="flex flex-col gap-2 p-2">
+      <Fieldset :legend="`${result.countWordsWithThreeSyllable} Wörter mit drei Silben`">
+        <Chip v-for="(word, index) in result.wordsWithThreeSyllables" :key="index" class="m-1" :label="word" />
+      </Fieldset>
+    </div>
+    <div class="flex flex-col gap-2 p-2">
+      <Fieldset :legend="`${result.countWordsWithFourSyllable} Wörter mit vier Silben`">
+        <Chip v-for="(word, index) in result.wordsWithFourSyllables" :key="index" class="m-1" :label="word" />
+      </Fieldset>
+    </div>
+    <div class="flex flex-col gap-2 p-2">
+      <Fieldset :legend="`${result.countWordsWithFiveSyllable} Wörter mit fünf Silben`">
+        <Chip v-for="(word, index) in result.wordsWithFiveSyllables" :key="index" class="m-1" :label="word" />
       </Fieldset>
     </div>
   </div>

@@ -19,10 +19,10 @@ Open http://localhost:3000/ with your browser to see the result.
 
 ## Create migration
 ```
-npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
+bunx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
 ```
 
 ## Run migration
 ```
-npx prisma migrate dev
+bunx prisma migrate dev
 ```

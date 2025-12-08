@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateTable
 CREATE TABLE "Config" (
     "id" TEXT NOT NULL,
@@ -29,11 +32,17 @@ CREATE TABLE "Result" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "countWords" DECIMAL(65,30) NOT NULL,
     "countPhrases" DECIMAL(65,30) NOT NULL,
+    "countSyllables" DECIMAL(65,30) NOT NULL,
     "countMultipleWords" DECIMAL(65,30) NOT NULL,
     "countWordsWithComplexSyllables" DECIMAL(65,30) NOT NULL,
     "countWordsWithConsonantClusters" DECIMAL(65,30) NOT NULL,
     "countWordsWithMultiMemberedGraphemes" DECIMAL(65,30) NOT NULL,
     "countWordsWithRareGraphemes" DECIMAL(65,30) NOT NULL,
+    "countWordsWithOneSyllable" DECIMAL(65,30) NOT NULL,
+    "countWordsWithTwoSyllable" DECIMAL(65,30) NOT NULL,
+    "countWordsWithThreeSyllable" DECIMAL(65,30) NOT NULL,
+    "countWordsWithFourSyllable" DECIMAL(65,30) NOT NULL,
+    "countWordsWithFiveSyllable" DECIMAL(65,30) NOT NULL,
     "averageWordLength" DECIMAL(65,30) NOT NULL,
     "averagePhraseLength" DECIMAL(65,30) NOT NULL,
     "averageSyllablesPerWord" DECIMAL(65,30) NOT NULL,
@@ -53,7 +62,13 @@ CREATE TABLE "Result" (
     "scoreLevel" DECIMAL(65,30) NOT NULL,
     "text" TEXT NOT NULL,
     "words" TEXT[],
+    "wordsWithOneSyllable" TEXT[],
+    "wordsWithTwoSyllables" TEXT[],
+    "wordsWithThreeSyllables" TEXT[],
+    "wordsWithFourSyllables" TEXT[],
+    "wordsWithFiveSyllables" TEXT[],
     "phrases" TEXT[],
+    "syllables" TEXT[],
     "hashText" TEXT NOT NULL,
     "configId" TEXT NOT NULL,
 

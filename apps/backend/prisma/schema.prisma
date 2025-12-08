@@ -1,11 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator prismabox {
@@ -44,11 +43,17 @@ model Result {
   createdAt                                   DateTime @default(now())
   countWords                                  Decimal // Anzahl Wörter
   countPhrases                                Decimal // Anzahl Sätze
+  countSyllables                              Decimal // Anzahl Silben
   countMultipleWords                          Decimal // Anzahl an mehrfach vorkommenden Wörtern
   countWordsWithComplexSyllables              Decimal // Anzahl Wörter mit komplexen Silben (≥3 Vokalgruppen)
   countWordsWithConsonantClusters             Decimal // Anzahl Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)
   countWordsWithMultiMemberedGraphemes        Decimal // Anzahl Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)
   countWordsWithRareGraphemes                 Decimal // Anzahl Wörter mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)
+  countWordsWithOneSyllable                   Decimal // Anzahl Wörter mit einer Silbe
+  countWordsWithTwoSyllable                   Decimal // Anzahl Wörter mit zwei Silben
+  countWordsWithThreeSyllable                 Decimal // Anzahl Wörter mit drei Silben
+  countWordsWithFourSyllable                  Decimal // Anzahl Wörter mit vier Silben
+  countWordsWithFiveSyllable                  Decimal // Anzahl Wörter mit fünf Silben
   averageWordLength                           Decimal // Durchschnittliche Wortlänge
   averagePhraseLength                         Decimal // Durchschnittliche Satzlänge
   averageSyllablesPerWord                     Decimal // Durchschnittliche Anzahl an Silben pro Wort
@@ -68,7 +73,13 @@ model Result {
   scoreLevel                                  Decimal // Ergebnis LÜ-LIX Level
   text                                        String
   words                                       String[]
+  wordsWithOneSyllable                        String[]
+  wordsWithTwoSyllables                       String[]
+  wordsWithThreeSyllables                     String[]
+  wordsWithFourSyllables                      String[]
+  wordsWithFiveSyllables                      String[]
   phrases                                     String[]
+  syllables                                   String[]
   hashText                                    String
   config                                      Config   @relation(fields: [configId], references: [id])
   configId                                    String

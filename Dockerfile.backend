@@ -48,6 +48,7 @@ ENV NODE_ENV=production
 # Change this if your app uses a different port
 ENV PORT=3000
 EXPOSE 3000
+ENV DATABASE_URL="IGNORE"
 
 # Run DB migrations, then start the app from the backend workspace
 # Use bunx (npx is not available in the Bun image) and run within apps/backend

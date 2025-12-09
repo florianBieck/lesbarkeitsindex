@@ -26,7 +26,6 @@ jobs:
       NODE_VERSION: 24
       BETTER_AUTH_SECRET: "change-to-secret"
       BETTER_AUTH_URL: "https://lix.florianbieck.com"
-      DATABASE_URL: ""
 
     steps:
       # Step 1: Checkout code
@@ -45,8 +44,6 @@ jobs:
 
   build-and-push:
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v4

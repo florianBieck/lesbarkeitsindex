@@ -16,6 +16,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   NODE_VERSION: 24
+  DATABASE_URL: ""
 
 jobs:
   test:

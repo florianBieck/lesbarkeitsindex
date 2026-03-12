@@ -16,8 +16,7 @@
 
     <Fieldset legend="Gewichtung für Textkomplexität" :toggleable="true" :collapsed="true">
       <div class="flex flex-col gap-4">
-        <div v-if="configLoading" class="text-surface-500 text-sm">Lade Gewichtung…</div>
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="flex flex-col gap-2 p-4 border rounded-md">
             <label class="text-sm font-medium">LIX</label>
             <InputNumber v-model="parameterLix" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
@@ -86,7 +85,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import Button from 'primevue/button'
 import Editor from 'primevue/editor'
 import InputNumber from 'primevue/inputnumber'
@@ -108,7 +107,6 @@ const text = ref('')
 const loading = ref(false)
 const result = ref<ResultData | null>(null)
 
-const configLoading = ref(true)
 const parameterLix = ref(0.6)
 const parameterProportionOfWordsWithComplexSyllables = ref(0.2)
 const parameterProportionOfWordsWithConsonantClusters = ref(0.05)
@@ -122,26 +120,6 @@ const sumWeights = computed(() => {
     + parameterProportionOfWordsWithMultiMemberedGraphemes.value
     + parameterProportionOfWordsWithRareGraphemes.value
 })
-
-async function loadConfig() {
-  configLoading.value = true
-  try {
-    const { data } = await client.config.get()
-    if (data) {
-      parameterLix.value = Number(data.parameterLix)
-      parameterProportionOfWordsWithComplexSyllables.value = Number(data.parameterProportionOfWordsWithComplexSyllables)
-      parameterProportionOfWordsWithConsonantClusters.value = Number(data.parameterProportionOfWordsWithConsonantClusters)
-      parameterProportionOfWordsWithMultiMemberedGraphemes.value = Number(data.parameterProportionOfWordsWithMultiMemberedGraphemes)
-      parameterProportionOfWordsWithRareGraphemes.value = Number(data.parameterProportionOfWordsWithRareGraphemes)
-    }
-  }
-  catch (e) {
-    console.error('Failed to load config defaults:', e)
-  }
-  finally {
-    configLoading.value = false
-  }
-}
 
 async function calculate() {
   loading.value = true
@@ -164,7 +142,4 @@ async function calculate() {
   }
 }
 
-onMounted(() => {
-  loadConfig()
-})
 </script>

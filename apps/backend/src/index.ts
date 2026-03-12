@@ -77,18 +77,50 @@ const app = new Elysia()
         auth: true
     })
     .post("/calculate", async ({ body, status }) => {
-        const config = await prisma.config.findFirst({
-            orderBy: {
-                createdAt: 'desc'
-            }
-        });
+        let config;
+
+        if (body.parameterLix !== undefined) {
+            config = await prisma.config.create({
+                data: {
+                    parameterCountWords: 0,
+                    parameterCountPhrases: 0,
+                    parameterCountMultipleWords: 0,
+                    parameterCountWordsWithComplexSyllables: 0,
+                    parameterCountWordsWithConsonantClusters: 0,
+                    parameterCountWordsWithMultiMemberedGraphemes: 0,
+                    parameterCountWordsWithRareGraphemes: 0,
+                    parameterAverageWordLength: 0,
+                    parameterAveragePhraseLength: 0,
+                    parameterAverageSyllablesPerWord: 0,
+                    parameterAverageSyllablesPerPhrase: 0,
+                    parameterProportionOfLongWords: 0,
+                    parameterLix: body.parameterLix,
+                    parameterProportionOfWordsWithComplexSyllables: body.parameterProportionOfWordsWithComplexSyllables!,
+                    parameterProportionOfWordsWithConsonantClusters: body.parameterProportionOfWordsWithConsonantClusters!,
+                    parameterProportionOfWordsWithMultiMemberedGraphemes: body.parameterProportionOfWordsWithMultiMemberedGraphemes!,
+                    parameterProportionOfWordsWithRareGraphemes: body.parameterProportionOfWordsWithRareGraphemes!,
+                },
+            });
+        } else {
+            config = await prisma.config.findFirst({
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            });
+        }
+
         if (!config) return status(500);
         const result = await calculateIndex(body.text, config);
         if (!result) return status(500);
         return result;
     }, {
         body: t.Object({
-            text: t.String()
+            text: t.String(),
+            parameterLix: t.Optional(t.Number()),
+            parameterProportionOfWordsWithComplexSyllables: t.Optional(t.Number()),
+            parameterProportionOfWordsWithConsonantClusters: t.Optional(t.Number()),
+            parameterProportionOfWordsWithMultiMemberedGraphemes: t.Optional(t.Number()),
+            parameterProportionOfWordsWithRareGraphemes: t.Optional(t.Number()),
         })
     })
     .get("/results", async ({ query: { page = 0, limit = 10 } }) => {

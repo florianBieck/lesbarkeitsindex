@@ -1,0 +1,36 @@
+# ---------- Base image with R ----------
+FROM rocker/r-ver:4.4.0 AS base
+WORKDIR /app
+
+# Install system dependencies (Java for OpenNLP, wget for healthcheck)
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends \
+    default-jdk \
+    libxml2-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    wget \
+  && rm -rf /var/lib/apt/lists/*
+
+# Configure R to find Java
+RUN R CMD javareconf
+
+# ---------- Install R packages ----------
+FROM base AS deps
+
+# Install CRAN packages
+RUN R -e "install.packages(c('plumber', 'jsonlite', 'NLP', 'openNLP', 'quanteda', 'quanteda.textstats'), repos='https://cloud.r-project.org/')"
+
+# Install OpenNLP German models
+RUN R -e "install.packages('openNLPmodels.de', repos='http://datacube.wu.ac.at/', type='source')"
+
+# ---------- Runtime ----------
+FROM deps AS runner
+WORKDIR /app
+
+COPY r-sidecar/ .
+
+ENV PORT=8787
+EXPOSE 8787
+
+CMD ["Rscript", "start.R"]

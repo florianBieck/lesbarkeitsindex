@@ -24,7 +24,7 @@ jobs:
       contents: read
     env:
       NODE_VERSION: 24
-      BETTER_AUTH_SECRET: "change-to-secret"
+      BETTER_AUTH_SECRET: "lesbarkeitsindex-produdction-secret"
       BETTER_AUTH_URL: "https://lix.florianbieck.com"
 
     steps:
@@ -83,6 +83,17 @@ jobs:
             type=ref,event=tag
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
+      - name: Extract Docker r-sidecar metadata
+        id: meta-r-sidecar
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/r-sidecar
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
       - name: Build and push backend
         uses: docker/build-push-action@v6
         with:
@@ -104,5 +115,17 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push r-sidecar
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.r-sidecar
+          platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-r-sidecar.outputs.tags }}
+          labels: ${{ steps.meta-r-sidecar.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

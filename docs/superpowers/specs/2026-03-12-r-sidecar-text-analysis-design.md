@@ -68,8 +68,12 @@ Response:
 ```
 
 - `sentences` — Array of sentence strings from OpenNLP sentence detector
-- `words` — Array of word tokens from OpenNLP tokenizer (punctuation filtered)
+- `words` — Array of word tokens from OpenNLP tokenizer. Punctuation tokens are filtered. Compound words with hyphens (e.g., "Schul-Aufgabe") are kept as single tokens — OpenNLP's tokenizer handles this based on its trained model
 - `syllablesPerWord` — Syllable count per word from `quanteda.textstats::nsyllable()`, same order and length as `words`
+
+**Note:** `nsyllable()` returns integer counts only, not syllable strings. The backend's stored `syllables` array field (which previously held syllable text fragments like `["Stra", "ße"]`) can no longer be populated with actual syllable strings. Instead, the `syllables` field will store one entry per syllable as empty markers, and the per-syllable-count word groupings (`wordsWithOneSyllable`, etc.) will be derived by filtering the `words` array using `syllablesPerWord` counts.
+
+**Empty text:** When `text` is empty or contains only whitespace/punctuation, the sidecar returns `{ "sentences": [], "words": [], "syllablesPerWord": [] }`. The backend's existing division-by-zero guards handle this.
 
 #### `GET /health`
 
@@ -101,6 +105,7 @@ Exports an `analyzeText(text: string)` function that:
 2. Validates response shape: all three arrays present, `syllablesPerWord.length === words.length`
 3. Returns typed result: `{ sentences: string[], words: string[], syllablesPerWord: number[] }`
 4. Throws on sidecar unreachable or invalid response
+5. HTTP timeout: 30 seconds per request
 
 The sidecar URL is configured via the `R_SIDECAR_URL` environment variable (default: `http://r-sidecar:8787`).
 
@@ -120,7 +125,7 @@ All metric functions change from `(text: string)` to receiving pre-computed arra
 
 - `calculateCountWords(words)` — returns `words.length`
 - `calculateCountPhrases(sentences)` — returns `sentences.length`
-- `calculateSyllableComplexity(words, syllablesPerWord)` — counts words with 3+ syllables
+- `calculateSyllableComplexity(words, syllablesPerWord)` — counts words with 3+ syllables (uses syllable count from sidecar, resolving the existing mismatch where the function comment said "vowel groups" but implementation used `countSyllables()`)
 - `calculateMultiMemberedGraphemes(words)` — operates on word array (logic unchanged)
 - `calculateRareGraphemes(words)` — operates on word array (logic unchanged)
 - `calculateConsonantClusters(words)` — operates on word array (logic unchanged)
@@ -138,7 +143,10 @@ All metric functions change from `(text: string)` to receiving pre-computed arra
 
 1. Calls `analyzeText(text)` to get `{ sentences, words, syllablesPerWord }`
 2. Passes the arrays to each metric function
-3. Rest of the logic (Prisma create, LLIX calculation) stays the same
+3. Derives per-syllable-count word groupings from `words` + `syllablesPerWord` (e.g., `wordsWithOneSyllable = words.filter((_, i) => syllablesPerWord[i] === 1)`)
+4. Rest of the logic (Prisma create, LLIX calculation) stays the same
+
+**Bug fix:** The existing `countMultipleWords` field is assigned `calculateCountPhrases(text)` — the same value as `countPhrases`. This is a copy-paste bug. It will be preserved as-is to avoid schema changes but noted for future cleanup.
 
 ### Error Handling
 
@@ -167,13 +175,25 @@ r-sidecar:
     dockerfile: Dockerfile.r-sidecar
   restart: unless-stopped
   healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+    test: ["CMD", "wget", "--spider", "-q", "http://localhost:8787/health"]
     interval: 30s
     timeout: 10s
     retries: 3
+    start_period: 60s
+```
+
+The backend service adds a dependency on the sidecar:
+
+```yaml
+backend:
+  depends_on:
+    r-sidecar:
+      condition: service_healthy
 ```
 
 No ports exposed externally. The backend reaches it via Docker internal DNS at `http://r-sidecar:8787`.
+
+**Note:** The healthcheck uses `wget` instead of `curl` because `rocker/r-ver` images may not include `curl`. The `start_period: 60s` allows time for R package and OpenNLP model loading on first startup.
 
 ### docker-compose.yml (dev)
 

@@ -71,7 +71,7 @@ Response:
 - `words` — Array of word tokens from OpenNLP tokenizer. Punctuation tokens are filtered. Compound words with hyphens (e.g., "Schul-Aufgabe") are kept as single tokens — OpenNLP's tokenizer handles this based on its trained model
 - `syllablesPerWord` — Syllable count per word from `quanteda.textstats::nsyllable()`, same order and length as `words`
 
-**Note:** `nsyllable()` returns integer counts only, not syllable strings. The backend's stored `syllables` array field (which previously held syllable text fragments like `["Stra", "ße"]`) can no longer be populated with actual syllable strings. Instead, the `syllables` field will store one entry per syllable as empty markers, and the per-syllable-count word groupings (`wordsWithOneSyllable`, etc.) will be derived by filtering the `words` array using `syllablesPerWord` counts.
+**Note:** `nsyllable()` returns integer counts only, not syllable strings. The backend's stored `syllables` array field (which previously held syllable text fragments like `["Stra", "ße"]`) can no longer be populated with actual syllable strings. Instead, the `syllables` field will store the word text repeated once per syllable (e.g., a 3-syllable word "Ananas" produces `["Ananas", "Ananas", "Ananas"]`), and the per-syllable-count word groupings (`wordsWithOneSyllable`, etc.) will be derived by filtering the `words` array using `syllablesPerWord` counts.
 
 **Empty text:** When `text` is empty or contains only whitespace/punctuation, the sidecar returns `{ "sentences": [], "words": [], "syllablesPerWord": [] }`. The backend's existing division-by-zero guards handle this.
 

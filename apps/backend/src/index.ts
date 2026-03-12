@@ -4,7 +4,7 @@ import { prisma } from './db'
 import { cors } from '@elysiajs/cors'
 import {Config} from "../generated/prismabox/Config";
 import {Result} from "../generated/prismabox/Result";
-import {calculateIndex, debugText} from "./result";
+import {calculateIndex} from "./result";
 import {APIError} from "better-auth";
 
 
@@ -83,9 +83,17 @@ const app = new Elysia()
             }
         });
         if (!config) return status(500);
-        const result = await calculateIndex(body.text, config);
-        if (!result) return status(500);
-        return result;
+        try {
+            const result = await calculateIndex(body.text, config);
+            if (!result) return status(500);
+            return result;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (message.includes("R sidecar")) {
+                return status(503);
+            }
+            throw error;
+        }
     }, {
         body: t.Object({
             text: t.String()

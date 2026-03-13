@@ -66,11 +66,6 @@ const items = computed(() => {
         to: '/'
       },
       {
-        label: 'Gewichtung',
-        icon: 'pi pi-cog',
-        to: '/admin'
-      },
-      {
         label: 'Ergebnisse',
         icon: 'pi pi-list',
         to: '/results'

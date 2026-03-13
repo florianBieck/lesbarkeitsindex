@@ -27,6 +27,7 @@ RUN bun install
 
 # Generate Prisma client (if using Prisma)
 # Switch to backend workspace so bunx can resolve local prisma binary
+ENV DATABASE_URL="IGNORE"
 WORKDIR /app/apps/backend
 RUN bunx prisma generate
 WORKDIR /app

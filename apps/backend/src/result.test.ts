@@ -1,25 +1,33 @@
 import { test, expect, describe } from "bun:test";
 import {
-  calculateCountWords,
-  calculateCountPhrases,
+    calculateCountWords,
+    calculateCountPhrases,
   calculateSyllableComplexity,
   calculateMultiMemberedGraphemes,
   calculateRareGraphemes,
   calculateConsonantClusters,
   calculateAverageWordLength,
   calculateAverageSyllablesPerWord,
-  calculateAveragePhraseLength,
-  calculateAverageSyllablesPerPhrase,
-  calculateProportionOfLongWords,
-  calculateLix,
-  calculateGsmog,
-  calculateFleschKincaid,
-  calculateWstf,
+  calculateCountPhrases,
+    calculateAveragePhraseLength,
+    calculateAverageSyllablesPerPhrase,
+    calculateProportionOfLongWords,
+    calculateLix,
+    calculateGsmog,
+    calculateFleschKincaid,
+    calculateWstf,
 } from "./result";
 
 const WORDS = ["Der", "Hund", "läuft", "über", "die", "Straße"];
 const SENTENCES = ["Der Hund läuft über die Straße."];
 const SYLLABLES = [1, 1, 1, 2, 1, 2];
+
+const SIMPLE_TEXT = "Der Hund läuft schnell.";
+const TWO_SENTENCES = "Die Kinder spielen im Garten. Der Hund schläft unter dem Baum.";
+const COMPLEX_TEXT =
+    "Die Bundesregierung hat gestern eine weitreichende Entscheidung getroffen. " +
+    "Die Umstrukturierung der Bildungslandschaft soll grundlegend verändert werden. " +
+    "Wissenschaftliche Untersuchungen bestätigen die Notwendigkeit dieser Maßnahmen.";
 
 describe("metric functions with pre-computed arrays", () => {
   test("calculateCountWords returns word count", () => {
@@ -34,77 +42,159 @@ describe("metric functions with pre-computed arrays", () => {
     expect(calculateCountPhrases(SENTENCES)).toBe(1);
   });
 
-  test("calculateSyllableComplexity counts words with 3+ syllables", () => {
+test("calculateCountPhrases returns sentence count", () => {
+  expect(calculateCountPhrases(SENTENCES)).toBe(1);
+});
+
+test("calculateSyllableComplexity counts words with 3+ syllables", () => {
+  expect(calculateSyllableComplexity(WORDS, SYLLABLES)).toBe(0);
+  expect(calculateSyllableComplexity(["Ananas"], [3])).toBe(1);
+});
+
+test("calculateCountPhrases returns sentence count", () => {
+    expect(calculateCountPhrases(SENTENCES)).toBe(1);
+});
+
+test("handles text without sentence-ending punctuation", () => {
+    expect(calculateCountPhrases("Hallo Welt")).toBe(1);
+});
+
+test("calculateSyllableComplexity counts words with 3+ syllables", () => {
     expect(calculateSyllableComplexity(WORDS, SYLLABLES)).toBe(0);
     expect(calculateSyllableComplexity(["Ananas"], [3])).toBe(1);
-  });
+});
 
-  test("calculateMultiMemberedGraphemes counts sch, ch, ck, ng", () => {
+describe("calculateSyllableComplexity", () => {
+    test("returns 0 for empty string", () => {
+        expect(calculateSyllableComplexity("")).toBe(0);
+    });
+});
+
+test("calculateMultiMemberedGraphemes counts sch, ch, ck, ng", () => {
     expect(calculateMultiMemberedGraphemes(["Schule", "Dach"])).toBe(2);
-  });
+});
 
-  test("calculateRareGraphemes counts ä, ö, ü, ß, c, q, x, y", () => {
+test("counts words with 3+ syllables", () => {
+    const result = calculateSyllableComplexity(
+        "Die Bundesregierung hat eine weitreichende Entscheidung getroffen."
+    );
+    expect(result).toBeGreaterThan(0);
+});
+
+test("calculateRareGraphemes counts ä, ö, ü, ß, c, q, x, y", () => {
     expect(calculateRareGraphemes(["Straße", "über"])).toBe(2);
-  });
+});
 
-  test("calculateConsonantClusters counts initial clusters", () => {
+test("returns 0 for simple monosyllabic words", () => {
+    expect(calculateSyllableComplexity("Der Hund ist alt.")).toBe(0);
+});
+
+test("calculateConsonantClusters counts initial clusters", () => {
     expect(calculateConsonantClusters(["Straße", "Sprache"])).toBe(2);
-  });
+});
 
-  test("calculateAverageWordLength computes average char length", () => {
+describe("calculateMultiMemberedGraphemes", () => {
+    test("returns 0 for empty string", () => {
+        expect(calculateMultiMemberedGraphemes("")).toBe(0);
+    });
+});
+
+test("calculateAverageWordLength computes average char length", () => {
     const avg = calculateAverageWordLength(WORDS);
     const expected = (3 + 4 + 5 + 4 + 3 + 6) / 6;
     expect(avg).toBeCloseTo(expected, 5);
-  });
+});
 
-  test("calculateAverageWordLength returns 0 for empty array", () => {
+test("counts sch grapheme", () => {
+    expect(calculateMultiMemberedGraphemes("Schule")).toBe(1);
+});
+
+test("calculateAverageWordLength returns 0 for empty array", () => {
     expect(calculateAverageWordLength([])).toBe(0);
-  });
+});
 
-  test("calculateAverageSyllablesPerWord computes average", () => {
+test("counts ch grapheme", () => {
+    expect(calculateMultiMemberedGraphemes("Buch")).toBe(1);
+});
+
+test("calculateAverageSyllablesPerWord computes average", () => {
     const avg = calculateAverageSyllablesPerWord(WORDS, SYLLABLES);
     const expected = (1 + 1 + 1 + 2 + 1 + 2) / 6;
     expect(avg).toBeCloseTo(expected, 5);
-  });
+});
 
-  test("calculateAveragePhraseLength computes words per sentence", () => {
+test("counts ck grapheme", () => {
+    expect(calculateMultiMemberedGraphemes("Brücke")).toBe(1);
+});
+
+test("calculateAveragePhraseLength computes words per sentence", () => {
     const avg = calculateAveragePhraseLength(WORDS, SENTENCES);
     expect(avg).toBe(6);
-  });
+});
 
-  test("calculateAverageSyllablesPerPhrase computes syllables per sentence", () => {
+test("counts ng grapheme", () => {
+    expect(calculateMultiMemberedGraphemes("Zeitung")).toBe(1);
+});
+
+test("calculateAverageSyllablesPerPhrase computes syllables per sentence", () => {
     const avg = calculateAverageSyllablesPerPhrase(SENTENCES, WORDS, SYLLABLES);
     expect(avg).toBeCloseTo(8 / 1, 5);
-  });
+});
 
-  test("calculateProportionOfLongWords counts words with 7+ chars", () => {
+test("counts multiple graphemes in one word", () => {
+    expect(calculateMultiMemberedGraphemes("Entscheidung")).toBe(2);
+});
+
+test("calculateProportionOfLongWords counts words with 7+ chars", () => {
     expect(calculateProportionOfLongWords(WORDS)).toBe(0);
     expect(calculateProportionOfLongWords(["Kindergarten", "und"])).toBe(0.5);
-  });
+});
 
-  test("calculateLix computes LIX score", () => {
+test("counts across multiple words", () => {
+    expect(calculateMultiMemberedGraphemes("Schule Buch")).toBe(2);
+});
+
+test("calculateLix computes LIX score", () => {
     const lix = calculateLix(WORDS, SENTENCES);
     expect(lix).toBeCloseTo(6.0, 1);
-  });
+});
 
-  test("calculateGsmog computes gSmog score", () => {
+describe("calculateRareGraphemes", () => {
+    test("returns 0 for empty string", () => {
+        expect(calculateRareGraphemes("")).toBe(0);
+    });
+});
+
+test("calculateGsmog computes gSmog score", () => {
     const gsmog = calculateGsmog(WORDS, SENTENCES, SYLLABLES);
     expect(gsmog).toBeCloseTo(-2, 1);
-  });
+});
 
-  test("calculateFleschKincaid computes FK score", () => {
+test("counts umlauts", () => {
+    expect(calculateRareGraphemes("für")).toBe(1);
+});
+
+test("calculateFleschKincaid computes FK score", () => {
     const fk = calculateFleschKincaid(WORDS, SENTENCES, SYLLABLES);
     const expected = 0.39 * 6 + 11.8 * (8 / 6) - 15.59;
     expect(fk).toBeCloseTo(expected, 1);
-  });
+});
 
-  test("calculateWstf computes WSTF score", () => {
+test("counts ß", () => {
+    expect(calculateRareGraphemes("Straße")).toBe(1);
+});
+
+test("calculateWstf computes WSTF score", () => {
     const wstf = calculateWstf(WORDS, SENTENCES, SYLLABLES);
     const expected = 0.2656 * 6 + 0.2744 * 0 * 100 - 1.693;
     expect(wstf).toBeCloseTo(expected, 1);
-  });
+});
 
-  test("all functions handle empty arrays without crashing", () => {
+test("counts rare consonants (c, q, x, y)", () => {
+    expect(calculateRareGraphemes("Taxi")).toBe(1); // x
+});
+
+test("all functions handle empty arrays without crashing", () => {
     expect(calculateCountWords([])).toBe(0);
     expect(calculateCountPhrases([])).toBe(0);
     expect(calculateSyllableComplexity([], [])).toBe(0);
@@ -120,5 +210,5 @@ describe("metric functions with pre-computed arrays", () => {
     expect(calculateGsmog([], [], [])).toBe(0);
     expect(calculateFleschKincaid([], [], [])).toBe(0);
     expect(calculateWstf([], [], [])).toBe(0);
-  });
+});
 });

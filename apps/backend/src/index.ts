@@ -1,4 +1,3 @@
-import { Elysia, t } from "elysia";
 import { auth } from "./auth";
 import { prisma } from './db'
 import { cors } from '@elysiajs/cors'
@@ -7,8 +6,6 @@ import {Result} from "../generated/prismabox/Result";
 import {calculateIndex} from "./result";
 import {APIError} from "better-auth";
 
-
-// user middleware (compute user and session and pass to routes)
 const betterAuth = new Elysia({ name: "better-auth" })
     .mount(auth.handler)
     .macro({

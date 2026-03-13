@@ -2,13 +2,21 @@
 FROM rocker/r-ver:4.4.0 AS base
 WORKDIR /app
 
-# Install system dependencies (Java for OpenNLP, wget for healthcheck)
+# Install system dependencies (Java for OpenNLP, zlib/sodium for plumber, wget for healthcheck)
 RUN apt-get update -y \
   && apt-get install -y --no-install-recommends \
     default-jdk \
     libxml2-dev \
     libcurl4-openssl-dev \
     libssl-dev \
+    libsodium-dev \
+    zlib1g-dev \
+    libpcre2-dev \
+    liblzma-dev \
+    libbz2-dev \
+    libdeflate-dev \
+    make \
+    g++ \
     wget \
   && rm -rf /var/lib/apt/lists/*
 
@@ -18,11 +26,16 @@ RUN R CMD javareconf
 # ---------- Install R packages ----------
 FROM base AS deps
 
-# Install CRAN packages
-RUN R -e "install.packages(c('plumber', 'jsonlite', 'NLP', 'openNLP', 'quanteda', 'quanteda.textstats'), repos='https://cloud.r-project.org/')"
+# Install CRAN packages (fail build if any package fails to install)
+RUN R -e "\
+  pkgs <- c('plumber', 'jsonlite', 'NLP', 'openNLP', 'quanteda', 'quanteda.textstats'); \
+  install.packages(pkgs, repos='https://cloud.r-project.org/'); \
+  for (p in pkgs) { if (!requireNamespace(p, quietly=TRUE)) stop(paste('Failed to install:', p)) }"
 
 # Install OpenNLP German models
-RUN R -e "install.packages('openNLPmodels.de', repos='http://datacube.wu.ac.at/', type='source')"
+RUN R -e "\
+  install.packages('openNLPmodels.de', repos='http://datacube.wu.ac.at/', type='source'); \
+  if (!requireNamespace('openNLPmodels.de', quietly=TRUE)) stop('Failed to install openNLPmodels.de')"
 
 # ---------- Runtime ----------
 FROM deps AS runner

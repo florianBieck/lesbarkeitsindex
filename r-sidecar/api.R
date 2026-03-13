@@ -2,6 +2,8 @@ library(NLP)
 library(openNLP)
 library(quanteda)
 library(quanteda.textstats)
+library(nsyllable)
+library(jsonlite)
 
 # Load OpenNLP models once at startup
 sent_annotator <- Maxent_Sent_Token_Annotator(language = "de")
@@ -15,18 +17,18 @@ function() {
 
 #* Analyze text: sentence detection, word tokenization, syllable counting
 #* @post /analyze
-#* @serializer json
+#* @serializer contentType list(type="application/json")
 function(req) {
-  body <- jsonlite::fromJSON(req$postBody)
+  body <- fromJSON(req$postBody)
   text <- body$text
 
   # Handle empty or whitespace-only text
   if (is.null(text) || trimws(text) == "") {
-    return(list(
-      sentences = list(),
-      words = list(),
-      syllablesPerWord = list()
-    ))
+    return(toJSON(list(
+      sentences = character(0),
+      words = character(0),
+      syllablesPerWord = integer(0)
+    ), auto_unbox = FALSE))
   }
 
   # Convert to NLP String
@@ -34,7 +36,7 @@ function(req) {
 
   # Sentence detection
   sent_annotations <- annotate(s, sent_annotator)
-  sentences <- s[sent_annotations]
+  sentences_vec <- as.character(s[sent_annotations])
 
   # Word tokenization
   word_annotations <- annotate(s, word_annotator, sent_annotations)
@@ -44,23 +46,26 @@ function(req) {
 
   # Filter out punctuation tokens
   is_word <- grepl("[[:alnum:]]", words_raw)
-  words <- words_raw[is_word]
+  words_vec <- as.character(words_raw[is_word])
 
-  # Syllable counting via quanteda.textstats
-  if (length(words) == 0) {
-    return(list(
-      sentences = as.list(as.character(sentences)),
-      words = list(),
-      syllablesPerWord = list()
-    ))
+  # Syllable counting via nsyllable
+  if (length(words_vec) == 0) {
+    return(toJSON(list(
+      sentences = sentences_vec,
+      words = character(0),
+      syllablesPerWord = integer(0)
+    ), auto_unbox = FALSE))
   }
 
-  tok <- tokens(paste(words, collapse = " "), what = "fastestword")
+  tok <- tokens(paste(words_vec, collapse = " "), what = "fastestword")
   syllable_counts <- nsyllable(tok)[[1]]
 
-  list(
-    sentences = as.list(as.character(sentences)),
-    words = as.list(as.character(words)),
-    syllablesPerWord = as.list(as.integer(syllable_counts))
-  )
+  # Replace NA values with 1 (default for unknown words)
+  syllable_counts[is.na(syllable_counts)] <- 1L
+
+  toJSON(list(
+    sentences = sentences_vec,
+    words = words_vec,
+    syllablesPerWord = as.integer(syllable_counts)
+  ), auto_unbox = FALSE)
 }

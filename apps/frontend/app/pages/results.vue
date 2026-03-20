@@ -1,38 +1,42 @@
 <template>
   <div class="flex flex-col gap-4">
     <div class="w-full">
-      <p class="text-surface-700 dark:text-surface-200 leading-normal">Die Lesbarkeit eines Textes wird beim klassischen
+      <p class="text-surface-700 leading-normal">Die Lesbarkeit eines Textes wird beim klassischen
         LIX über die Anzahl von Wörtern und Sätzen sowie über die durchschnittliche Satzlänge und über den prozentualen
         Anteil langer Wörter (6 und mehr Buchstaben) berechnet. Für Leselernende spielen weitere Faktoren eine wichtige
         Rolle. Vor allem die Komplexität von Wörtern erleichtert oder erschwert das Lesen.</p>
-      <p class="text-surface-700 dark:text-surface-200 leading-normal">Dieser Prototyp berechnet eine Erweiterung mit verschiedenen
+      <p class="text-surface-700 leading-normal">Dieser Prototyp berechnet eine Erweiterung mit verschiedenen
         Parametern. Unten sehen Sie die Aufteilung der Teilwerte.</p>
     </div>
+    <div v-if="errorMessage" class="text-red-600 text-sm font-medium" role="alert">{{ errorMessage }}</div>
     <div class="w-full">
-      <DataTable :value="results?.data" scrollable :selection="selected" selectionMode="single" @row-select="onRowSelectedEvent" paginator lazy :total-records="totalRecords" :first="first" :rows="rowsPerPage" :rowsPerPageOptions="[10]" @page="onPageEvent">
-        <Column field="id" header="ID">
+      <DataTable :value="results?.data" :loading="loading" scrollable :selection="selected" selectionMode="single" @row-select="onRowSelectedEvent" paginator lazy :total-records="totalRecords" :first="first" :rows="rowsPerPage" :rowsPerPageOptions="[10]" @page="onPageEvent">
+        <template #empty>
+          <div class="text-center text-surface-500 py-8">Keine Ergebnisse vorhanden. Erstellen Sie eine neue Berechnung auf der Startseite.</div>
+        </template>
+        <Column field="id" header="ID" class="hidden md:table-cell">
           <template #body="slotProps">
-            <div class="truncate max-w-[300px] min-w-[150px]">{{ slotProps.data.id }}</div>
+            <div class="truncate max-w-[300px]">{{ slotProps.data.id }}</div>
           </template>
         </Column>
         <Column field="createdAt" header="Erstellt am">
           <template #body="slotProps">
-            <div class="truncate max-w-[300px] min-w-[150px]">{{ dayjs(slotProps.data.createdAt).format('DD.MM.YYYY HH:mm') }}</div>
+            <div class="truncate">{{ dayjs(slotProps.data.createdAt).format('DD.MM.YYYY HH:mm') }}</div>
           </template>
         </Column>
         <Column field="text" header="Text">
           <template #body="slotProps">
-            <div class="truncate max-w-[400px] min-w-[250px]">{{ slotProps.data.text }}</div>
+            <div class="truncate max-w-[200px] md:max-w-[400px]">{{ slotProps.data.text }}</div>
           </template>
         </Column>
         <Column field="score" header="LÜ-LIX">
           <template #body="slotProps">
-            <div class="truncate max-w-[50px] min-w-[75px]">{{ Math.round(Number(slotProps.data.score) * 100) / 100 }}</div>
+            <div>{{ Math.round(Number(slotProps.data.score) * 100) / 100 }}</div>
           </template>
         </Column>
-        <Column field="hashText" header="Hash">
+        <Column field="hashText" header="Hash" class="hidden lg:table-cell">
           <template #body="slotProps">
-            <div class="truncate text-xs max-w-[100px] min-w-[50px]">{{ slotProps.data.hashText }}</div>
+            <div class="truncate text-xs max-w-[100px]">{{ slotProps.data.hashText }}</div>
           </template>
         </Column>
       </DataTable>
@@ -42,8 +46,6 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import Button from 'primevue/button';
-import Editor from 'primevue/editor';
 import {type Treaty, treaty} from "@elysiajs/eden";
 import type {App} from "../../../backend/src";
 import ResultView from "~/components/result-view.vue";
@@ -61,6 +63,7 @@ type ResultData = Treaty.Data<typeof client.calculate.post>
 type ResultsData = Treaty.Data<typeof client.results.get>
 
 const loading = ref(false);
+const errorMessage = ref('');
 const results = ref<ResultsData | null>(null);
 const selected = ref<ResultData | null>(null);
 const page = ref(0);
@@ -70,6 +73,7 @@ const first = ref(0);
 
 async function loadResults(pageToLoad: number, limit: number) {
   loading.value = true
+  errorMessage.value = ''
   try {
     const { data } = await client.results.get({
       query: {
@@ -81,19 +85,18 @@ async function loadResults(pageToLoad: number, limit: number) {
     totalRecords.value = data?.meta.total ?? 0;
   } catch (e) {
     console.error(e);
+    errorMessage.value = 'Ergebnisse konnten nicht geladen werden. Bitte versuchen Sie es erneut.'
   } finally {
     loading.value = false
   }
 }
 
 const onPageEvent = (e: DataTablePageEvent) => {
-  // rowsPerPage.value = e.rows;
   first.value = e.first;
   loadResults(e.page, rowsPerPage.value);
 }
 
 const onRowSelectedEvent = (e: DataTableRowSelectEvent) => {
-  // rowsPerPage.value = e.rows;
   selected.value = e.data as ResultData;
 }
 

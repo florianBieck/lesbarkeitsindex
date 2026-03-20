@@ -10,7 +10,22 @@ import Fieldset from 'primevue/fieldset';
 
 ChartJs.register(annotationPlugin);
 
-const client = treaty<App>('localhost:3000', {
+const CHART_COLORS = {
+  lix: '#2563eb',
+  complexSyllables: '#d97706',
+  consonantClusters: '#059669',
+  multiGraphemes: '#dc2626',
+  rareGraphemes: '#7c3aed',
+  avgWordLength: '#92400e',
+  avgPhraseLength: '#a16207',
+  avgSyllablesPerWord: '#db2777',
+  avgSyllablesPerPhrase: '#059669',
+  proportions: '#0891b2',
+  counts: '#6b7280',
+} as const;
+
+const runtime = useRuntimeConfig();
+const client = treaty<App>(runtime.public.apiBase, {
   fetch: {
     credentials: 'include'
   }
@@ -28,27 +43,27 @@ const meters = computed(() => {
   return [
     {
       label: "Lesbarkeitsindex (LIX)",
-      color: '#1F77B4',
+      color: CHART_COLORS.lix,
       value: Math.round(Number(props.result.config.parameterLix) * 100)
     },
     {
       label: "Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)",
-      color: '#FF7F0E',
+      color: CHART_COLORS.complexSyllables,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithComplexSyllables) * 100)
     },
     {
       label: "Anteil an Wörter mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
-      color: '#2CA02C',
+      color: CHART_COLORS.consonantClusters,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100)
     },
     {
       label: "Anteil an Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
-      color: '#D62728',
+      color: CHART_COLORS.multiGraphemes,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100)
     },
     {
       label: "Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)",
-      color: '#9467BD',
+      color: CHART_COLORS.rareGraphemes,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100)
     },
   ];
@@ -58,143 +73,144 @@ const resultValues = computed(() => {
   return [
     {
       label: "Lübecker Lesbarkeitsindex (LÜ-LIX)",
-      color: '#1F77B4',
+      color: CHART_COLORS.lix,
       value: Math.round(Number(props.result.score) * 100) / 100
     },
     {
       label: "Lesbarkeitsindex (LIX)",
-      color: '#1F77B4',
+      color: CHART_COLORS.lix,
       value: Math.round(Number(props.result.lix) * 100) / 100
     },
     {
       label: "gSMOG",
-      color: '#1F77B4',
+      color: CHART_COLORS.lix,
       value: Math.round(Number(props.result.gsmog) * 100) / 100
     },
     {
       label: "WST4",
-      color: '#1F77B4',
+      color: CHART_COLORS.lix,
       value: Math.round(Number(props.result.wst4) * 100) / 100
     },
     {
       label: "FLESCH.Kincaid",
-      color: '#1F77B4',
+      color: CHART_COLORS.lix,
       value: Math.round(Number(props.result.fleschKincaid) * 100) / 100
     },
     {
       label: "Anzahl Wörter",
-      color: '#1F77B4',
+      color: CHART_COLORS.lix,
       value: Number(props.result.countWords)
     },
     {
       label: "Anzahl Sätze",
-      color: '#7F7F7F',
+      color: CHART_COLORS.counts,
       value: Number(props.result.countPhrases)
     },
     {
       label: "Anzahl Silben",
-      color: '#7F7F7F',
+      color: CHART_COLORS.counts,
       value: Number(props.result.countSyllables)
     },
     {
-      label: "Anzahl an mehrfach vorkommenden Wörtern ",
-      color: '#7F7F7F',
+      label: "Anzahl an mehrfach vorkommenden Wörtern",
+      color: CHART_COLORS.counts,
       value: Number(props.result.countMultipleWords)
     },
     {
       label: "Anzahl Wörter mit komplexen Silben (≥3 Vokalgruppen)",
-      color: '#FF7F0E',
+      color: CHART_COLORS.complexSyllables,
       value: Number(props.result.countWordsWithComplexSyllables)
     },
     {
       label: "Anzahl Wörter mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
-      color: '#9467BD',
+      color: CHART_COLORS.rareGraphemes,
       value: Number(props.result.countWordsWithConsonantClusters)
     },
     {
       label: "Anzahl Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
-      color: '#2CA02C',
+      color: CHART_COLORS.consonantClusters,
       value: Number(props.result.countWordsWithMultiMemberedGraphemes)
     },
     {
       label: "Anzahl Wörter mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)",
-      color: '#D62728',
+      color: CHART_COLORS.multiGraphemes,
       value: Number(props.result.countWordsWithRareGraphemes)
     },
     {
       label: "Anzahl Wörter mit einer Silbe",
-      color: '#D62728',
+      color: CHART_COLORS.multiGraphemes,
       value: Number(props.result.countWordsWithOneSyllable)
     },
     {
       label: "Anzahl Wörter mit zwei Silben",
-      color: '#D62728',
+      color: CHART_COLORS.multiGraphemes,
       value: Number(props.result.countWordsWithTwoSyllable)
     },
     {
       label: "Anzahl Wörter mit drei Silben",
-      color: '#D62728',
+      color: CHART_COLORS.multiGraphemes,
       value: Number(props.result.countWordsWithThreeSyllable)
     },
     {
       label: "Anzahl Wörter mit vier Silben",
-      color: '#D62728',
+      color: CHART_COLORS.multiGraphemes,
       value: Number(props.result.countWordsWithFourSyllable)
     },
     {
       label: "Anzahl Wörter mit fünf Silben",
-      color: '#D62728',
+      color: CHART_COLORS.multiGraphemes,
       value: Number(props.result.countWordsWithFiveSyllable)
     },
     {
       label: "Durchschnittliche Wortlänge",
-      color: '#8C564B',
+      color: CHART_COLORS.avgWordLength,
       value: Math.round(Number(props.result.averageWordLength) * 100) / 100
     },
     {
       label: "Durchschnittliche Satzlänge",
-      color: '#BCBD22',
+      color: CHART_COLORS.avgPhraseLength,
       value: Math.round(Number(props.result.averagePhraseLength) * 100) / 100
     },
     {
       label: "Durchschnittliche Anzahl an Silben pro Wort",
-      color: '#E377C2',
+      color: CHART_COLORS.avgSyllablesPerWord,
       value: Math.round(Number(props.result.averageSyllablesPerWord) * 100) / 100
     },
     {
       label: "Durchschnittliche Anzahl an Silben pro Satz",
-      color: '#34d399',
+      color: CHART_COLORS.avgSyllablesPerPhrase,
       value: Math.round(Number(props.result.averageSyllablesPerPhrase) * 100) / 100
     },
     {
       label: "Anteil an langen Wörtern",
-      color: '#17BECF',
+      color: CHART_COLORS.proportions,
       value: `${Math.round(Number(props.result.proportionOfLongWords) * 10000) / 100}%`
     },
     {
       label: "Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)",
-      color: '#17BECF',
+      color: CHART_COLORS.proportions,
       value: `${Math.round(Number(props.result.proportionOfWordsWithComplexSyllables) * 10000) / 100}%`
     },
     {
       label: "Anteil an Wörtern mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
-      color: '#17BECF',
+      color: CHART_COLORS.proportions,
       value: `${Math.round(Number(props.result.proportionOfWordsWithConsonantClusters) * 10000) / 100}%`
     },
     {
       label: "Anteil an Wörtern mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
-      color: '#17BECF',
+      color: CHART_COLORS.proportions,
       value: `${Math.round(Number(props.result.proportionOfWordsWithMultiMemberedGraphemes) * 10000) / 100}%`
     },
     {
       label: "Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)",
-      color: '#17BECF',
+      color: CHART_COLORS.proportions,
       value: `${Math.round(Number(props.result.proportionOfWordsWithRareGraphemes) * 10000) / 100}%`
     },
   ];
 });
 
 const setChartData = () => {
+  if (typeof document === 'undefined') return { datasets: [] };
   const documentStyle = getComputedStyle(document.body);
 
   const score = Math.round(Number(props.result.score));
@@ -210,8 +226,8 @@ const setChartData = () => {
     datasets: [
       {
         data: [score, 100 - score],
-        backgroundColor: [color, 'white'],
-        hoverBackgroundColor: [color, 'white'],
+        backgroundColor: [color, documentStyle.getPropertyValue('--p-surface-0')],
+        hoverBackgroundColor: [color, documentStyle.getPropertyValue('--p-surface-0')],
         borderColor: color,
         borderWidth: 1,
       }
@@ -220,6 +236,7 @@ const setChartData = () => {
 };
 
 const setChartOptions = () => {
+  if (typeof document === 'undefined') return {};
   const documentStyle = getComputedStyle(document.documentElement);
   const textColor = documentStyle.getPropertyValue('--p-text-color');
 
@@ -239,7 +256,7 @@ const setChartOptions = () => {
             type: 'doughnutLabel',
             content: () => [String(score), 'LÜ-LIX'],
             font: [{size: 60}, {size: 30}],
-            color: ['black']
+            color: [textColor]
           }
         }
       }
@@ -250,7 +267,7 @@ const setChartOptions = () => {
 watch(() => props.result, () => {
   chartData.value = setChartData();
   chartOptions.value = setChartOptions();
-}, { deep: true });
+});
 
 onMounted(() => {
   chartData.value = setChartData();
@@ -260,12 +277,12 @@ onMounted(() => {
 
 <template>
   <div class="card flex flex-col gap-4">
-    <div class="font-semibold text-lg">Ergebnis</div>
+    <h2 class="font-semibold text-lg">Ergebnis</h2>
     <div class="card flex justify-center">
-      <Chart v-if="chartOptions && chartData" type="doughnut" :data="chartData" :options="chartOptions" class="w-full md:w-[30rem]" />
+      <Chart v-if="chartOptions && chartData" type="doughnut" :data="chartData" :options="chartOptions" class="w-full md:w-[30rem]" :aria-label="`Lesbarkeitsindex: ${Math.round(Number(result.score))} von 100`" role="img" />
     </div>
     <div class="flex flex-col gap-2 p-2">
-    <DataTable :value="resultValues" tableStyle="min-width: 50rem">
+    <DataTable :value="resultValues" scrollable>
       <Column field="label" header="Feld"></Column>
       <Column field="value" header="Wert"></Column>
     </DataTable>
@@ -277,7 +294,7 @@ onMounted(() => {
     <div class="flex flex-col gap-2 p-2">
       <Fieldset legend="Original Text">
         <p class="m-0">{{ result.text }}</p>
-        <p class="pt-5 text-xs text-gray-300">Hash: {{ result.hashText }}</p>
+        <p class="pt-5 text-xs text-surface-500">Hash: {{ result.hashText }}</p>
       </Fieldset>
     </div>
     <div class="flex flex-col gap-2 p-2">

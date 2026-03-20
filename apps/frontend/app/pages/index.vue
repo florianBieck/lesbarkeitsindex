@@ -1,16 +1,16 @@
 <template>
   <div class="flex flex-col gap-4">
     <div class="w-full">
-      <p class="text-surface-700 dark:text-surface-200 leading-normal">Die Lesbarkeit eines Textes wird beim klassischen
+      <p class="text-surface-700 leading-normal">Die Lesbarkeit eines Textes wird beim klassischen
         LIX über die Anzahl von Wörtern und Sätzen sowie über die durchschnittliche Satzlänge und über den prozentualen
         Anteil langer Wörter (6 und mehr Buchstaben) berechnet. Für Leselernende spielen weitere Faktoren eine wichtige
         Rolle. Vor allem die Komplexität von Wörtern erleichtert oder erschwert das Lesen.</p>
-      <p class="text-surface-700 dark:text-surface-200 leading-normal">Dieser Prototyp berechnet eine Erweiterung mit verschiedenen
+      <p class="text-surface-700 leading-normal">Dieser Prototyp berechnet eine Erweiterung mit verschiedenen
         Parametern. Unten sehen Sie die Aufteilung der Teilwerte.</p>
     </div>
     <div class="flex gap-6 w-full">
       <div class="flex flex-col items-center gap-2 w-full">
-        <Editor class="w-full" editorStyle="height: 280px; width: 100%;" @text-change="(event) => text = event.textValue"/>
+        <Editor class="w-full" editorStyle="height: 280px; width: 100%;" aria-label="Text zur Lesbarkeitsanalyse eingeben" @text-change="(event) => text = event.textValue"/>
       </div>
     </div>
 
@@ -18,8 +18,8 @@
       <div class="flex flex-col gap-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="flex flex-col gap-2 p-4 border rounded-md">
-            <label class="text-sm font-medium">LIX</label>
-            <InputNumber v-model="parameterLix" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
+            <label for="param-lix" class="text-sm font-medium">LIX</label>
+            <InputNumber id="param-lix" v-model="parameterLix" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
               <template #incrementbuttonicon>
                 <span class="pi pi-plus" />
               </template>
@@ -29,8 +29,8 @@
             </InputNumber>
           </div>
           <div class="flex flex-col gap-2 p-4 border rounded-md">
-            <label class="text-sm font-medium">Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)</label>
-            <InputNumber v-model="parameterProportionOfWordsWithComplexSyllables" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
+            <label for="param-complex-syllables" class="text-sm font-medium">Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)</label>
+            <InputNumber id="param-complex-syllables" v-model="parameterProportionOfWordsWithComplexSyllables" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
               <template #incrementbuttonicon>
                 <span class="pi pi-plus" />
               </template>
@@ -40,8 +40,8 @@
             </InputNumber>
           </div>
           <div class="flex flex-col gap-2 p-4 border rounded-md">
-            <label class="text-sm font-medium">Anteil an Wörtern mit Konsonantencluster (Str-, Spr-, -nkt, -cht)</label>
-            <InputNumber v-model="parameterProportionOfWordsWithConsonantClusters" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
+            <label for="param-consonant-clusters" class="text-sm font-medium">Anteil an Wörtern mit Konsonantencluster (Str-, Spr-, -nkt, -cht)</label>
+            <InputNumber id="param-consonant-clusters" v-model="parameterProportionOfWordsWithConsonantClusters" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
               <template #incrementbuttonicon>
                 <span class="pi pi-plus" />
               </template>
@@ -51,8 +51,8 @@
             </InputNumber>
           </div>
           <div class="flex flex-col gap-2 p-4 border rounded-md">
-            <label class="text-sm font-medium">Anteil an Wörtern mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)</label>
-            <InputNumber v-model="parameterProportionOfWordsWithMultiMemberedGraphemes" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
+            <label for="param-multi-graphemes" class="text-sm font-medium">Anteil an Wörtern mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)</label>
+            <InputNumber id="param-multi-graphemes" v-model="parameterProportionOfWordsWithMultiMemberedGraphemes" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
               <template #incrementbuttonicon>
                 <span class="pi pi-plus" />
               </template>
@@ -62,8 +62,8 @@
             </InputNumber>
           </div>
           <div class="flex flex-col gap-2 p-4 border rounded-md">
-            <label class="text-sm font-medium">Anteil an Wörtern mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)</label>
-            <InputNumber v-model="parameterProportionOfWordsWithRareGraphemes" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
+            <label for="param-rare-graphemes" class="text-sm font-medium">Anteil an Wörtern mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)</label>
+            <InputNumber id="param-rare-graphemes" v-model="parameterProportionOfWordsWithRareGraphemes" fluid showButtons buttonLayout="horizontal" :step="0.05" :min="0" :max="1" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2">
               <template #incrementbuttonicon>
                 <span class="pi pi-plus" />
               </template>
@@ -77,6 +77,7 @@
       </div>
     </Fieldset>
 
+    <div v-if="validationError" class="text-red-600 text-sm font-medium" role="alert">{{ validationError }}</div>
     <div class="flex items-center gap-4">
       <Button :loading="loading" label="Berechnen" icon="pi pi-calculator" class="py-2 rounded-lg" @click="calculate"/>
     </div>
@@ -106,6 +107,7 @@ type ResultData = Treaty.Data<typeof client.calculate.post>
 const text = ref('')
 const loading = ref(false)
 const result = ref<ResultData | null>(null)
+const validationError = ref('')
 
 const parameterLix = ref(0.6)
 const parameterProportionOfWordsWithComplexSyllables = ref(0.2)
@@ -122,6 +124,19 @@ const sumWeights = computed(() => {
 })
 
 async function calculate() {
+  validationError.value = ''
+
+  if (!text.value.trim()) {
+    validationError.value = 'Bitte geben Sie einen Text ein.'
+    return
+  }
+
+  const weightSum = sumWeights.value
+  if (Math.abs(weightSum - 1) > 0.01) {
+    validationError.value = `Die Summe der Gewichte muss 1 ergeben (aktuell: ${weightSum.toFixed(2)}).`
+    return
+  }
+
   loading.value = true
   try {
     const { data } = await client.calculate.post({
@@ -136,6 +151,7 @@ async function calculate() {
   }
   catch (e) {
     console.error(e)
+    validationError.value = 'Die Berechnung ist fehlgeschlagen. Bitte versuchen Sie es erneut.'
   }
   finally {
     loading.value = false

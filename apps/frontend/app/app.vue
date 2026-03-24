@@ -2,7 +2,7 @@
   <div class="max-w-4xl mx-auto pb-20 pt-4 md:pt-10 px-4 md:px-0">
     <Card>
       <template #content>
-        <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-8">
           <div class="flex flex-col">
             <div
                 class="h-[140px] md:h-[210px] bg-no-repeat bg-cover bg-center bg-[url('https://www.beate-lessmann.de/images/header/material.jpg')]"/>
@@ -25,7 +25,7 @@
                   </div>
                 </div>
                 <div class="flex items-start gap-4 pt-4 lg:pt-24">
-                  <Button label="Website" icon="pi pi-link" severity="secondary" outlined/>
+                  <Button label="Zur Website" icon="pi pi-link" severity="secondary" outlined/>
                   <Button icon="pi pi-ellipsis-v" type="button" outlined rounded severity="secondary" @click="toggle"
                           aria-haspopup="true" aria-controls="overlay_menu" aria-label="Menü"/>
                   <Menu ref="menu" id="overlay_menu" :model="items" :popup="true">
@@ -66,7 +66,7 @@ const items = computed(() => {
         to: '/'
       },
       {
-        label: 'Ergebnisse',
+        label: 'Bisherige Analysen',
         icon: 'pi pi-list',
         to: '/results'
       },

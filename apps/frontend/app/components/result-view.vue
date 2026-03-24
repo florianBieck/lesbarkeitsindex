@@ -3,7 +3,7 @@ import MeterGroup from "primevue/metergroup";
 import Chart from "primevue/chart";
 import {type Treaty, treaty} from "@elysiajs/eden";
 import type {App} from "../../../backend/src";
-import {computed, onMounted, ref} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import {Chart as ChartJs} from "chart.js";
 import annotationPlugin from "chartjs-plugin-annotation";
 import Fieldset from 'primevue/fieldset';
@@ -39,6 +39,17 @@ const props = defineProps<{
 const chartData = ref();
 const chartOptions = ref();
 
+const score = computed(() => Math.round(Number(props.result.score)));
+
+const scoreInterpretation = computed(() => {
+  const s = score.value;
+  if (s < 20) return { label: 'Niveaustufe 1', description: 'Sehr leicht lesbar', severity: 'success' };
+  if (s < 33) return { label: 'Niveaustufe 2', description: 'Leicht lesbar', severity: 'success' };
+  if (s < 50) return { label: 'Niveaustufe 3', description: 'Mittelschwer', severity: 'warn' };
+  if (s < 66) return { label: 'Niveaustufe 4', description: 'Eher schwer lesbar', severity: 'warn' };
+  return { label: 'Niveaustufe 5', description: 'Schwer lesbar', severity: 'error' };
+});
+
 const meters = computed(() => {
   return [
     {
@@ -47,185 +58,89 @@ const meters = computed(() => {
       value: Math.round(Number(props.result.config.parameterLix) * 100)
     },
     {
-      label: "Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)",
+      label: "Komplexe Silben",
       color: CHART_COLORS.complexSyllables,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithComplexSyllables) * 100)
     },
     {
-      label: "Anteil an Wörter mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
+      label: "Schwierige Buchstabenfolgen",
       color: CHART_COLORS.consonantClusters,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100)
     },
     {
-      label: "Anteil an Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
+      label: "Mehrteilige Buchstabengruppen",
       color: CHART_COLORS.multiGraphemes,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100)
     },
     {
-      label: "Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)",
+      label: "Seltene Buchstaben",
       color: CHART_COLORS.rareGraphemes,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100)
     },
   ];
 });
 
-const resultValues = computed(() => {
-  return [
-    {
-      label: "Lübecker Lesbarkeitsindex (LÜ-LIX)",
-      color: CHART_COLORS.lix,
-      value: Math.round(Number(props.result.score) * 100) / 100
-    },
-    {
-      label: "Lesbarkeitsindex (LIX)",
-      color: CHART_COLORS.lix,
-      value: Math.round(Number(props.result.lix) * 100) / 100
-    },
-    {
-      label: "gSMOG",
-      color: CHART_COLORS.lix,
-      value: Math.round(Number(props.result.gsmog) * 100) / 100
-    },
-    {
-      label: "WST4",
-      color: CHART_COLORS.lix,
-      value: Math.round(Number(props.result.wst4) * 100) / 100
-    },
-    {
-      label: "FLESCH.Kincaid",
-      color: CHART_COLORS.lix,
-      value: Math.round(Number(props.result.fleschKincaid) * 100) / 100
-    },
-    {
-      label: "Anzahl Wörter",
-      color: CHART_COLORS.lix,
-      value: Number(props.result.countWords)
-    },
-    {
-      label: "Anzahl Sätze",
-      color: CHART_COLORS.counts,
-      value: Number(props.result.countPhrases)
-    },
-    {
-      label: "Anzahl Silben",
-      color: CHART_COLORS.counts,
-      value: Number(props.result.countSyllables)
-    },
-    {
-      label: "Anzahl an mehrfach vorkommenden Wörtern",
-      color: CHART_COLORS.counts,
-      value: Number(props.result.countMultipleWords)
-    },
-    {
-      label: "Anzahl Wörter mit komplexen Silben (≥3 Vokalgruppen)",
-      color: CHART_COLORS.complexSyllables,
-      value: Number(props.result.countWordsWithComplexSyllables)
-    },
-    {
-      label: "Anzahl Wörter mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
-      color: CHART_COLORS.rareGraphemes,
-      value: Number(props.result.countWordsWithConsonantClusters)
-    },
-    {
-      label: "Anzahl Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
-      color: CHART_COLORS.consonantClusters,
-      value: Number(props.result.countWordsWithMultiMemberedGraphemes)
-    },
-    {
-      label: "Anzahl Wörter mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)",
-      color: CHART_COLORS.multiGraphemes,
-      value: Number(props.result.countWordsWithRareGraphemes)
-    },
-    {
-      label: "Anzahl Wörter mit einer Silbe",
-      color: CHART_COLORS.multiGraphemes,
-      value: Number(props.result.countWordsWithOneSyllable)
-    },
-    {
-      label: "Anzahl Wörter mit zwei Silben",
-      color: CHART_COLORS.multiGraphemes,
-      value: Number(props.result.countWordsWithTwoSyllable)
-    },
-    {
-      label: "Anzahl Wörter mit drei Silben",
-      color: CHART_COLORS.multiGraphemes,
-      value: Number(props.result.countWordsWithThreeSyllable)
-    },
-    {
-      label: "Anzahl Wörter mit vier Silben",
-      color: CHART_COLORS.multiGraphemes,
-      value: Number(props.result.countWordsWithFourSyllable)
-    },
-    {
-      label: "Anzahl Wörter mit fünf Silben",
-      color: CHART_COLORS.multiGraphemes,
-      value: Number(props.result.countWordsWithFiveSyllable)
-    },
-    {
-      label: "Durchschnittliche Wortlänge",
-      color: CHART_COLORS.avgWordLength,
-      value: Math.round(Number(props.result.averageWordLength) * 100) / 100
-    },
-    {
-      label: "Durchschnittliche Satzlänge",
-      color: CHART_COLORS.avgPhraseLength,
-      value: Math.round(Number(props.result.averagePhraseLength) * 100) / 100
-    },
-    {
-      label: "Durchschnittliche Anzahl an Silben pro Wort",
-      color: CHART_COLORS.avgSyllablesPerWord,
-      value: Math.round(Number(props.result.averageSyllablesPerWord) * 100) / 100
-    },
-    {
-      label: "Durchschnittliche Anzahl an Silben pro Satz",
-      color: CHART_COLORS.avgSyllablesPerPhrase,
-      value: Math.round(Number(props.result.averageSyllablesPerPhrase) * 100) / 100
-    },
-    {
-      label: "Anteil an langen Wörtern",
-      color: CHART_COLORS.proportions,
-      value: `${Math.round(Number(props.result.proportionOfLongWords) * 10000) / 100}%`
-    },
-    {
-      label: "Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)",
-      color: CHART_COLORS.proportions,
-      value: `${Math.round(Number(props.result.proportionOfWordsWithComplexSyllables) * 10000) / 100}%`
-    },
-    {
-      label: "Anteil an Wörtern mit Konsonantencluster (str|spr|schr|schw|pfl|phr|thr|kn|gn|qu)",
-      color: CHART_COLORS.proportions,
-      value: `${Math.round(Number(props.result.proportionOfWordsWithConsonantClusters) * 10000) / 100}%`
-    },
-    {
-      label: "Anteil an Wörtern mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)",
-      color: CHART_COLORS.proportions,
-      value: `${Math.round(Number(props.result.proportionOfWordsWithMultiMemberedGraphemes) * 10000) / 100}%`
-    },
-    {
-      label: "Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)",
-      color: CHART_COLORS.proportions,
-      value: `${Math.round(Number(props.result.proportionOfWordsWithRareGraphemes) * 10000) / 100}%`
-    },
-  ];
-});
+const readabilityIndices = computed(() => [
+  { label: "LÜ-LIX", value: Math.round(Number(props.result.score) * 100) / 100 },
+  { label: "LIX", value: Math.round(Number(props.result.lix) * 100) / 100 },
+  { label: "gSMOG", value: Math.round(Number(props.result.gsmog) * 100) / 100 },
+  { label: "WST4", value: Math.round(Number(props.result.wst4) * 100) / 100 },
+  { label: "Flesch-Kincaid", value: Math.round(Number(props.result.fleschKincaid) * 100) / 100 },
+  { label: "RIX", value: Math.round(Number(props.result.ratte) * 100) / 100 },
+  { label: "TTR", value: `${Math.round(Number(props.result.ttr) * 100) / 100}%`, tooltip: "Type-Token-Relation: Anteil verschiedener Wörter an der Gesamtzahl" },
+]);
+
+const textStats = computed(() => [
+  { label: "Wortlänge", value: `${Math.round(Number(props.result.averageWordLength) * 100) / 100} Buchstaben` },
+  { label: "Satzlänge", value: `${Math.round(Number(props.result.averagePhraseLength) * 100) / 100} Wörter` },
+  { label: "Buchstaben pro Silbe", value: Math.round(Number(props.result.averageCharsPerSyllable) * 100) / 100 },
+  { label: "Silben pro Wort", value: Math.round(Number(props.result.averageSyllablesPerWord) * 100) / 100 },
+  { label: "Silben pro Satz", value: Math.round(Number(props.result.averageSyllablesPerPhrase) * 100) / 100 },
+]);
+
+const wordComplexity = computed(() => [
+  { label: "Lange Wörter (6+ Buchstaben)", value: `${Math.round(Number(props.result.proportionOfLongWords) * 10000) / 100}%`, count: null },
+  { label: "Komplexe Silben", value: `${Math.round(Number(props.result.proportionOfWordsWithComplexSyllables) * 10000) / 100}%`, count: Number(props.result.countWordsWithComplexSyllables) },
+  { label: "Schwierige Buchstabenfolgen", value: `${Math.round(Number(props.result.proportionOfWordsWithConsonantClusters) * 10000) / 100}%`, count: Number(props.result.countWordsWithConsonantClusters) },
+  { label: "Mehrteilige Buchstabengruppen", value: `${Math.round(Number(props.result.proportionOfWordsWithMultiMemberedGraphemes) * 10000) / 100}%`, count: Number(props.result.countWordsWithMultiMemberedGraphemes) },
+  { label: "Seltene Buchstaben", value: `${Math.round(Number(props.result.proportionOfWordsWithRareGraphemes) * 10000) / 100}%`, count: Number(props.result.countWordsWithRareGraphemes) },
+  { label: "Abkürzungen", value: null, count: Number(props.result.countAbbreviations) },
+  { label: "Zahlen (2+ Ziffern)", value: null, count: Number(props.result.countNumbers) },
+  { label: "Sonderzeichen", value: null, count: Number(props.result.countSpecialCharacters) },
+]);
+
+const sentenceComplexity = computed(() => [
+  { label: "Pronominalisierungsindex", value: Math.round(Number(props.result.proNIndex) * 100) / 100 },
+  { label: "Nebensätze pro Satz", value: Math.round(Number(props.result.subordinateClauseRatio) * 100) / 100 },
+  { label: "Passivkonstruktionen", value: Number(props.result.passiveCount) },
+  { label: "Substantivierungen", value: Number(props.result.nominalizationCount) },
+]);
+
+const syllableGroups = computed(() => [
+  { label: "1 Silbe", count: Number(props.result.countWordsWithOneSyllable), words: props.result.wordsWithOneSyllable },
+  { label: "2 Silben", count: Number(props.result.countWordsWithTwoSyllable), words: props.result.wordsWithTwoSyllables },
+  { label: "3 Silben", count: Number(props.result.countWordsWithThreeSyllable), words: props.result.wordsWithThreeSyllables },
+  { label: "4 Silben", count: Number(props.result.countWordsWithFourSyllable), words: props.result.wordsWithFourSyllables },
+  { label: "5 Silben", count: Number(props.result.countWordsWithFiveSyllable), words: props.result.wordsWithFiveSyllables },
+]);
 
 const setChartData = () => {
   if (typeof document === 'undefined') return { datasets: [] };
   const documentStyle = getComputedStyle(document.body);
 
-  const score = Math.round(Number(props.result.score));
+  const s = score.value;
 
   let color = documentStyle.getPropertyValue('--p-green-500');
-  if (score >= 33 && score < 66) {
+  if (s >= 33 && s < 66) {
     color = documentStyle.getPropertyValue('--p-yellow-500');
-  } else if (score >= 66) {
+  } else if (s >= 66) {
     color = documentStyle.getPropertyValue('--p-red-500');
   }
 
   return {
     datasets: [
       {
-        data: [score, 100 - score],
+        data: [s, 100 - s],
         backgroundColor: [color, documentStyle.getPropertyValue('--p-surface-0')],
         hoverBackgroundColor: [color, documentStyle.getPropertyValue('--p-surface-0')],
         borderColor: color,
@@ -240,7 +155,7 @@ const setChartOptions = () => {
   const documentStyle = getComputedStyle(document.documentElement);
   const textColor = documentStyle.getPropertyValue('--p-text-color');
 
-  const score = props.result === null ? 0 : Math.round(Number(props.result.score) * 100) / 100;
+  const s = Math.round(Number(props.result.score) * 100) / 100;
 
   return {
     hover: {
@@ -250,11 +165,11 @@ const setChartOptions = () => {
       tooltip: {
         enabled: false
       },
-      annotation: props.result === null ? undefined : {
+      annotation: {
         annotations: {
           dLabel: {
             type: 'doughnutLabel',
-            content: () => [String(score), 'LÜ-LIX'],
+            content: () => [String(s), 'LÜ-LIX'],
             font: [{size: 60}, {size: 30}],
             color: [textColor]
           }
@@ -276,66 +191,122 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="card flex flex-col gap-4">
-    <h2 class="font-semibold text-lg">Ergebnis</h2>
-    <div class="card flex justify-center">
-      <Chart v-if="chartOptions && chartData" type="doughnut" :data="chartData" :options="chartOptions" class="w-full md:w-[30rem]" :aria-label="`Lesbarkeitsindex: ${Math.round(Number(result.score))} von 100`" role="img" />
+  <div class="flex flex-col">
+    <!-- Hero: Score — generous breathing room -->
+    <div class="flex flex-col items-center gap-3 pb-6">
+      <h2 class="font-semibold text-lg">Ergebnis</h2>
+      <Chart v-if="chartOptions && chartData" type="doughnut" :data="chartData" :options="chartOptions" class="w-full md:w-[30rem]" :aria-label="`Lesbarkeitsindex: ${score} von 100`" role="img" />
+      <p class="text-lg font-medium text-center" :class="{
+        'text-green-700': scoreInterpretation.severity === 'success',
+        'text-yellow-700': scoreInterpretation.severity === 'warn',
+        'text-red-700': scoreInterpretation.severity === 'error',
+      }">
+        {{ scoreInterpretation.label }} &mdash; {{ scoreInterpretation.description }}
+      </p>
     </div>
-    <div class="flex flex-col gap-2 p-2">
-    <DataTable :value="resultValues" scrollable>
-      <Column field="label" header="Feld"></Column>
-      <Column field="value" header="Wert"></Column>
-    </DataTable>
+
+    <!-- Key stats — tight to score, separated from details -->
+    <div class="grid grid-cols-3 gap-4 text-center py-5 border-t border-b border-surface-100">
+      <div>
+        <div class="text-2xl font-semibold text-surface-900">{{ result.countWords }}</div>
+        <div class="text-sm text-surface-500">Wörter</div>
+      </div>
+      <div>
+        <div class="text-2xl font-semibold text-surface-900">{{ result.countPhrases }}</div>
+        <div class="text-sm text-surface-500">Sätze</div>
+      </div>
+      <div>
+        <div class="text-2xl font-semibold text-surface-900">{{ result.countSyllables }}</div>
+        <div class="text-sm text-surface-500">Silben</div>
+      </div>
     </div>
-    <div class="flex flex-col gap-2 p-2">
-      <h2>Gewichtung</h2>
+
+    <!-- Detailed metrics — tighter spacing between collapsed fieldsets -->
+    <div class="flex flex-col gap-3 mt-8">
+    <Fieldset legend="Lesbarkeitsindizes" :toggleable="true" :collapsed="true">
+      <div class="flex flex-col gap-3">
+        <div v-for="item in readabilityIndices" :key="item.label" class="flex justify-between items-center py-1">
+          <span class="text-surface-700">{{ item.label }}</span>
+          <span class="font-medium text-surface-900">{{ item.value }}</span>
+        </div>
+      </div>
+    </Fieldset>
+
+    <Fieldset legend="Wortkomplexität" :toggleable="true" :collapsed="true">
+      <div class="flex flex-col gap-3">
+        <div v-for="item in wordComplexity" :key="item.label" class="flex justify-between items-center py-1">
+          <span class="text-surface-700">{{ item.label }}</span>
+          <span class="font-medium text-surface-900">
+            {{ item.value }}
+            <span v-if="item.count !== null" class="text-surface-500 text-sm">({{ item.count }})</span>
+          </span>
+        </div>
+      </div>
+    </Fieldset>
+
+    <Fieldset legend="Satzkomplexität" :toggleable="true" :collapsed="true">
+      <div class="flex flex-col gap-3">
+        <div v-for="item in sentenceComplexity" :key="item.label" class="flex justify-between items-center py-1">
+          <span class="text-surface-700">{{ item.label }}</span>
+          <span class="font-medium text-surface-900">{{ item.value }}</span>
+        </div>
+      </div>
+    </Fieldset>
+
+    <Fieldset legend="Kennzahlen im Durchschnitt" :toggleable="true" :collapsed="true">
+      <div class="flex flex-col gap-3">
+        <div v-for="item in textStats" :key="item.label" class="flex justify-between items-center py-1">
+          <span class="text-surface-700">{{ item.label }}</span>
+          <span class="font-medium text-surface-900">{{ item.value }}</span>
+        </div>
+      </div>
+    </Fieldset>
+
+    <Fieldset legend="Verwendete Gewichtung" :toggleable="true" :collapsed="true">
       <MeterGroup :value="meters"/>
+    </Fieldset>
     </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset legend="Original Text">
-        <p class="m-0">{{ result.text }}</p>
-        <p class="pt-5 text-xs text-surface-500">Hash: {{ result.hashText }}</p>
-      </Fieldset>
-    </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset legend="Spaltung in Sätze">
-        <Chip v-for="(phrase, index) in result.phrases" :key="index" class="my-1" :label="phrase" />
-      </Fieldset>
-    </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset legend="Spaltung in Wörter">
-        <Chip v-for="(word, index) in result.words" :key="index" class="m-1" :label="word" />
-      </Fieldset>
-    </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset legend="Spaltung in Silben">
-        <Chip v-for="(syllable, index) in result.syllables" :key="index" class="m-1" :label="syllable" />
-      </Fieldset>
-    </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset :legend="`${result.countWordsWithOneSyllable} Wörter mit einer Silbe`">
-        <Chip v-for="(word, index) in result.wordsWithOneSyllable" :key="index" class="m-1" :label="word" />
-      </Fieldset>
-    </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset :legend="`${result.countWordsWithTwoSyllable} Wörter mit zwei Silben`">
-        <Chip v-for="(word, index) in result.wordsWithTwoSyllables" :key="index" class="m-1" :label="word" />
-      </Fieldset>
-    </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset :legend="`${result.countWordsWithThreeSyllable} Wörter mit drei Silben`">
-        <Chip v-for="(word, index) in result.wordsWithThreeSyllables" :key="index" class="m-1" :label="word" />
-      </Fieldset>
-    </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset :legend="`${result.countWordsWithFourSyllable} Wörter mit vier Silben`">
-        <Chip v-for="(word, index) in result.wordsWithFourSyllables" :key="index" class="m-1" :label="word" />
-      </Fieldset>
-    </div>
-    <div class="flex flex-col gap-2 p-2">
-      <Fieldset :legend="`${result.countWordsWithFiveSyllable} Wörter mit fünf Silben`">
-        <Chip v-for="(word, index) in result.wordsWithFiveSyllables" :key="index" class="m-1" :label="word" />
-      </Fieldset>
+
+    <!-- Text analysis — more separation from metrics above -->
+    <div class="flex flex-col gap-3 mt-6">
+    <Fieldset legend="Textanalyse" :toggleable="true" :collapsed="true">
+      <div class="flex flex-col gap-4">
+        <div>
+          <h3 class="font-medium text-surface-700 mb-2">Originaltext</h3>
+          <p class="text-surface-700 leading-relaxed">{{ result.text }}</p>
+        </div>
+        <div>
+          <h3 class="font-medium text-surface-700 mb-2">Sätze ({{ result.phrases?.length }})</h3>
+          <div class="flex flex-wrap gap-1">
+            <Chip v-for="(phrase, index) in result.phrases" :key="index" :label="phrase" />
+          </div>
+        </div>
+        <div>
+          <h3 class="font-medium text-surface-700 mb-2">Wörter ({{ result.words?.length }})</h3>
+          <div class="flex flex-wrap gap-1">
+            <Chip v-for="(word, index) in result.words" :key="index" :label="word" />
+          </div>
+        </div>
+        <div>
+          <h3 class="font-medium text-surface-700 mb-2">Silben ({{ result.syllables?.length }})</h3>
+          <div class="flex flex-wrap gap-1">
+            <Chip v-for="(syllable, index) in result.syllables" :key="index" :label="syllable" />
+          </div>
+        </div>
+      </div>
+    </Fieldset>
+
+    <!-- Syllable breakdown (collapsed) -->
+    <Fieldset legend="Wörter nach Silbenzahl" :toggleable="true" :collapsed="true">
+      <div class="flex flex-col gap-4">
+        <div v-for="group in syllableGroups" :key="group.label">
+          <h3 class="font-medium text-surface-700 mb-2">{{ group.count }} Wörter mit {{ group.label }}</h3>
+          <div class="flex flex-wrap gap-1">
+            <Chip v-for="(word, index) in group.words" :key="index" :label="word" />
+          </div>
+        </div>
+      </div>
+    </Fieldset>
     </div>
   </div>
 </template>

@@ -56,6 +56,7 @@ model Result {
   countWordsWithFiveSyllable                  Decimal // Anzahl Wörter mit fünf Silben
   averageWordLength                           Decimal // Durchschnittliche Wortlänge
   averagePhraseLength                         Decimal // Durchschnittliche Satzlänge
+  averageCharsPerSyllable                     Decimal // Durchschnittliche Buchstaben pro Silbe
   averageSyllablesPerWord                     Decimal // Durchschnittliche Anzahl an Silben pro Wort
   averageSyllablesPerPhrase                   Decimal // Durchschnittliche Anzahl an Silben pro Satz
   proportionOfLongWords                       Decimal // Anteil an langen Wörtern
@@ -69,6 +70,18 @@ model Result {
   gsmog                                       Decimal // gSMOG
   wst4                                        Decimal // WST4
   fleschKincaid                               Decimal // FLESCH.Kincaid
+  ttr                                         Decimal // Type-Token-Relation (Wortschatzvielfalt)
+  countAbbreviations                          Decimal // Anzahl Abkürzungen im Text
+  countNumbers                                Decimal // Anzahl Zahlen (2+ Ziffern) im Text
+  countNumbersTwoDigit                        Decimal // 2-stellige Zahlen
+  countNumbersThreeDigit                      Decimal // 3-stellige Zahlen
+  countNumbersFourDigit                       Decimal // 4-stellige Zahlen
+  countNumbersFivePlusDigit                   Decimal // 5+ stellige Zahlen
+  countSpecialCharacters                      Decimal // Anzahl Sonderzeichen im Text
+  proNIndex                                   Decimal // Pronominalisierungsindex (Pronomen/Substantive)
+  subordinateClauseRatio                      Decimal // Anteil Nebensätze pro Satz
+  passiveCount                                Decimal // Anzahl Passivkonstruktionen
+  nominalizationCount                         Decimal // Anzahl Substantivierungen
   score                                       Decimal // Ergebnis LÜ-LIX
   scoreLevel                                  Decimal // Ergebnis LÜ-LIX Level
   text                                        String

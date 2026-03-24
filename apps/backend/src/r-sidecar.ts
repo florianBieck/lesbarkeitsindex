@@ -5,6 +5,7 @@ export type TextAnalysis = {
   readonly sentences: readonly string[];
   readonly words: readonly string[];
   readonly syllablesPerWord: readonly number[];
+  readonly posTags: readonly string[];
 };
 
 export async function analyzeText(text: string): Promise<TextAnalysis> {
@@ -38,10 +39,11 @@ export async function analyzeText(text: string): Promise<TextAnalysis> {
   if (
     !Array.isArray(data.sentences) ||
     !Array.isArray(data.words) ||
-    !Array.isArray(data.syllablesPerWord)
+    !Array.isArray(data.syllablesPerWord) ||
+    !Array.isArray(data.posTags)
   ) {
     throw new Error(
-      "R sidecar response missing required fields: sentences, words, syllablesPerWord"
+      "R sidecar response missing required fields: sentences, words, syllablesPerWord, posTags"
     );
   }
 
@@ -51,9 +53,16 @@ export async function analyzeText(text: string): Promise<TextAnalysis> {
     );
   }
 
+  if (data.words.length !== data.posTags.length) {
+    throw new Error(
+      `R sidecar response mismatch: ${data.words.length} words but ${data.posTags.length} POS tags`
+    );
+  }
+
   return {
     sentences: data.sentences,
     words: data.words,
     syllablesPerWord: data.syllablesPerWord,
+    posTags: data.posTags,
   };
 }

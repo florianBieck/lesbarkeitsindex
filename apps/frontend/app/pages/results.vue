@@ -1,25 +1,16 @@
 <template>
   <div class="flex flex-col gap-4">
-    <div class="w-full">
-      <p class="text-surface-700 leading-normal">Die Lesbarkeit eines Textes wird beim klassischen
-        LIX über die Anzahl von Wörtern und Sätzen sowie über die durchschnittliche Satzlänge und über den prozentualen
-        Anteil langer Wörter (6 und mehr Buchstaben) berechnet. Für Leselernende spielen weitere Faktoren eine wichtige
-        Rolle. Vor allem die Komplexität von Wörtern erleichtert oder erschwert das Lesen.</p>
-      <p class="text-surface-700 leading-normal">Dieser Prototyp berechnet eine Erweiterung mit verschiedenen
-        Parametern. Unten sehen Sie die Aufteilung der Teilwerte.</p>
-    </div>
+    <p class="text-surface-700 leading-normal">Ihre bisherigen Analysen. Klicken Sie auf eine Zeile, um die Details zu sehen.</p>
     <div v-if="errorMessage" class="text-red-600 text-sm font-medium" role="alert">{{ errorMessage }}</div>
     <div class="w-full">
       <DataTable :value="results?.data" :loading="loading" scrollable :selection="selected" selectionMode="single" @row-select="onRowSelectedEvent" paginator lazy :total-records="totalRecords" :first="first" :rows="rowsPerPage" :rowsPerPageOptions="[10]" @page="onPageEvent">
         <template #empty>
-          <div class="text-center text-surface-500 py-8">Keine Ergebnisse vorhanden. Erstellen Sie eine neue Berechnung auf der Startseite.</div>
+          <div class="text-center text-surface-500 py-8">
+            <p class="text-lg">Noch keine Analysen vorhanden</p>
+            <p class="text-sm mt-1">Analysieren Sie einen Text auf der <NuxtLink to="/" class="text-primary hover:underline">Startseite</NuxtLink>.</p>
+          </div>
         </template>
-        <Column field="id" header="ID" class="hidden md:table-cell">
-          <template #body="slotProps">
-            <div class="truncate max-w-[300px]">{{ slotProps.data.id }}</div>
-          </template>
-        </Column>
-        <Column field="createdAt" header="Erstellt am">
+        <Column field="createdAt" header="Datum">
           <template #body="slotProps">
             <div class="truncate">{{ dayjs(slotProps.data.createdAt).format('DD.MM.YYYY HH:mm') }}</div>
           </template>
@@ -29,14 +20,9 @@
             <div class="truncate max-w-[200px] md:max-w-[400px]">{{ slotProps.data.text }}</div>
           </template>
         </Column>
-        <Column field="score" header="LÜ-LIX">
+        <Column field="score" header="Ergebnis">
           <template #body="slotProps">
             <div>{{ Math.round(Number(slotProps.data.score) * 100) / 100 }}</div>
-          </template>
-        </Column>
-        <Column field="hashText" header="Hash" class="hidden lg:table-cell">
-          <template #body="slotProps">
-            <div class="truncate text-xs max-w-[100px]">{{ slotProps.data.hashText }}</div>
           </template>
         </Column>
       </DataTable>
@@ -85,7 +71,7 @@ async function loadResults(pageToLoad: number, limit: number) {
     totalRecords.value = data?.meta.total ?? 0;
   } catch (e) {
     console.error(e);
-    errorMessage.value = 'Ergebnisse konnten nicht geladen werden. Bitte versuchen Sie es erneut.'
+    errorMessage.value = 'Die Ergebnisse konnten nicht geladen werden. Bitte laden Sie die Seite neu.'
   } finally {
     loading.value = false
   }

@@ -1,5 +1,7 @@
+import { Elysia, t } from 'elysia'
 import { auth } from "./auth";
 import { prisma } from './db'
+import { Prisma } from '../generated/prisma/client'
 import { cors } from '@elysiajs/cors'
 import {Config} from "../generated/prismabox/Config";
 import {Result} from "../generated/prismabox/Result";
@@ -74,14 +76,22 @@ const app = new Elysia()
         auth: true
     })
     .post("/calculate", async ({ body, status }) => {
-        const config = await prisma.config.findFirst({
+        const dbConfig = await prisma.config.findFirst({
             orderBy: {
                 createdAt: 'desc'
             }
         });
-        if (!config) return status(500);
+        if (!dbConfig) return status(500);
+        const config = {
+            ...dbConfig,
+            ...(body.parameterLix != null && { parameterLix: new Prisma.Decimal(body.parameterLix) }),
+            ...(body.parameterProportionOfWordsWithComplexSyllables != null && { parameterProportionOfWordsWithComplexSyllables: new Prisma.Decimal(body.parameterProportionOfWordsWithComplexSyllables) }),
+            ...(body.parameterProportionOfWordsWithConsonantClusters != null && { parameterProportionOfWordsWithConsonantClusters: new Prisma.Decimal(body.parameterProportionOfWordsWithConsonantClusters) }),
+            ...(body.parameterProportionOfWordsWithMultiMemberedGraphemes != null && { parameterProportionOfWordsWithMultiMemberedGraphemes: new Prisma.Decimal(body.parameterProportionOfWordsWithMultiMemberedGraphemes) }),
+            ...(body.parameterProportionOfWordsWithRareGraphemes != null && { parameterProportionOfWordsWithRareGraphemes: new Prisma.Decimal(body.parameterProportionOfWordsWithRareGraphemes) }),
+        };
         try {
-            const result = await calculateIndex(body.text, config);
+            const result = await calculateIndex(body.text, config, body.saveResult ?? false);
             if (!result) return status(500);
             return result;
         } catch (error) {
@@ -93,7 +103,13 @@ const app = new Elysia()
         }
     }, {
         body: t.Object({
-            text: t.String()
+            text: t.String(),
+            saveResult: t.Optional(t.Boolean()),
+            parameterLix: t.Optional(t.Number()),
+            parameterProportionOfWordsWithComplexSyllables: t.Optional(t.Number()),
+            parameterProportionOfWordsWithConsonantClusters: t.Optional(t.Number()),
+            parameterProportionOfWordsWithMultiMemberedGraphemes: t.Optional(t.Number()),
+            parameterProportionOfWordsWithRareGraphemes: t.Optional(t.Number()),
         })
     })
     .get("/results", async ({ query: { page = 0, limit = 10 } }) => {

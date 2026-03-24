@@ -28,7 +28,7 @@ FROM base AS deps
 
 # Install CRAN packages (fail build if any package fails to install)
 RUN R -e "\
-  pkgs <- c('plumber', 'jsonlite', 'NLP', 'openNLP', 'quanteda', 'quanteda.textstats'); \
+  pkgs <- c('plumber', 'jsonlite', 'NLP', 'openNLP', 'quanteda', 'quanteda.textstats', 'nsyllable'); \
   install.packages(pkgs, repos='https://cloud.r-project.org/'); \
   for (p in pkgs) { if (!requireNamespace(p, quietly=TRUE)) stop(paste('Failed to install:', p)) }"
 

@@ -3,20 +3,17 @@ FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Install dependencies
+# Copy lockfile and all workspace package.json files for proper resolution
 COPY package.json bun.lock ./
-# If you use pnpm-lock.yaml/yarn.lock instead of bun.lock, adjust accordingly
-RUN bun install
+COPY apps/backend/package.json ./apps/backend/package.json
+COPY apps/frontend/package.json ./apps/frontend/package.json
 
-# Copy the rest of the source
-# Remove preinstalled deps to avoid conflicts when copying project files
-RUN rm -rf /app/node_modules
-# Copy the rest of the source
+RUN bun install --frozen-lockfile
+
+# Copy the rest of the source (node_modules already in place)
 COPY . .
-# Reinstall after sources are in place (handles workspaces/changed manifests)
-RUN bun install
 
-# Build the Nuxt app (Nuxt 3/4) from the frontend workspace
+# Build the Nuxt app from the frontend workspace
 RUN bun run --cwd apps/frontend build
 
 # === Runtime stage ===
@@ -26,10 +23,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy the built output from the builder
-# For Nuxt 3/4, .output contains both server and client build
 COPY --from=builder /app/apps/frontend/.output ./.output
-
-# If you have runtime config files (e.g. .env), mount them at runtime or copy here
 
 # Nuxt/Nitro runtime settings
 ENV NITRO_PORT=3000

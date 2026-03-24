@@ -28,14 +28,20 @@ FROM base AS deps
 
 # Install CRAN packages (fail build if any package fails to install)
 RUN R -e "\
+  options(timeout = 300); \
   pkgs <- c('plumber', 'jsonlite', 'NLP', 'openNLP', 'quanteda', 'quanteda.textstats', 'nsyllable'); \
   install.packages(pkgs, repos='https://cloud.r-project.org/'); \
   for (p in pkgs) { if (!requireNamespace(p, quietly=TRUE)) stop(paste('Failed to install:', p)) }"
 
-# Install OpenNLP German models
+# Install OpenNLP German models (datacube.wu.ac.at can be slow; retry with increased timeout)
 RUN R -e "\
-  install.packages('openNLPmodels.de', repos='http://datacube.wu.ac.at/', type='source'); \
-  if (!requireNamespace('openNLPmodels.de', quietly=TRUE)) stop('Failed to install openNLPmodels.de')"
+  options(timeout = 300); \
+  for (i in 1:3) { \
+    tryCatch({ \
+      install.packages('openNLPmodels.de', repos='http://datacube.wu.ac.at/', type='source'); \
+      if (requireNamespace('openNLPmodels.de', quietly=TRUE)) break \
+    }, error = function(e) if (i == 3) stop('Failed to install openNLPmodels.de after 3 attempts')) \
+  }"
 
 # ---------- Runtime ----------
 FROM deps AS runner

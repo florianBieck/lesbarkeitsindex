@@ -1,0 +1,15 @@
+-- AlterTable: add new linguistic analysis metrics to Result
+ALTER TABLE "Result"
+  ADD COLUMN "averageCharsPerSyllable" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "ttr" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "countAbbreviations" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "countNumbers" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "countNumbersTwoDigit" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "countNumbersThreeDigit" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "countNumbersFourDigit" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "countNumbersFivePlusDigit" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "countSpecialCharacters" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "proNIndex" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "subordinateClauseRatio" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "passiveCount" DECIMAL(65,30) NOT NULL DEFAULT 0,
+  ADD COLUMN "nominalizationCount" DECIMAL(65,30) NOT NULL DEFAULT 0;

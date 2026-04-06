@@ -59,6 +59,26 @@ export async function analyzeText(text: string): Promise<TextAnalysis> {
     );
   }
 
+  if (data.sentences.length === 0) {
+    throw new Error("R sidecar returned empty sentences array");
+  }
+
+  if (!data.sentences.every((s: unknown) => typeof s === "string")) {
+    throw new Error("R sidecar response: sentences must all be strings");
+  }
+
+  if (!data.words.every((w: unknown) => typeof w === "string")) {
+    throw new Error("R sidecar response: words must all be strings");
+  }
+
+  if (!data.syllablesPerWord.every((n: unknown) => typeof n === "number" && !Number.isNaN(n))) {
+    throw new Error("R sidecar response: syllablesPerWord must all be numbers");
+  }
+
+  if (!data.posTags.every((t: unknown) => typeof t === "string")) {
+    throw new Error("R sidecar response: posTags must all be strings");
+  }
+
   return {
     sentences: data.sentences,
     words: data.words,

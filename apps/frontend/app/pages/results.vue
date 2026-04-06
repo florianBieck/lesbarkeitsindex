@@ -3,7 +3,7 @@
     <p class="text-surface-700 leading-normal">Ihre bisherigen Analysen. Klicken Sie auf eine Zeile, um die Details zu sehen.</p>
     <div v-if="errorMessage" class="text-red-600 text-sm font-medium" role="alert">{{ errorMessage }}</div>
     <div class="w-full">
-      <DataTable :value="results?.data" :loading="loading" scrollable :selection="selected" selectionMode="single" @row-select="onRowSelectedEvent" paginator lazy :total-records="totalRecords" :first="first" :rows="rowsPerPage" :rowsPerPageOptions="[10]" @page="onPageEvent">
+      <DataTable :value="results?.data" :loading="loading" scrollable :selection="selected" selectionMode="single" @row-select="onRowSelectedEvent" paginator lazy :total-records="totalRecords" :first="first" :rows="rowsPerPage" :rowsPerPageOptions="[10]" @page="onPageEvent" aria-label="Bisherige Textanalysen">
         <template #empty>
           <div class="text-center text-surface-500 py-8">
             <p class="text-lg">Noch keine Analysen vorhanden</p>
@@ -32,21 +32,12 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {type Treaty, treaty} from "@elysiajs/eden";
-import type {App} from "../../../backend/src";
+import {useApiClient, type ResultData, type ResultsData} from '~/composables/useApiClient';
 import ResultView from "~/components/result-view.vue";
 import type {DataTablePageEvent, DataTableRowSelectEvent} from "primevue";
 import dayjs from "dayjs";
 
-const runtime = useRuntimeConfig();
-const apiBase = runtime.public.apiBase;
-const client = treaty<App>(apiBase, {
-  fetch: {
-    credentials: 'include'
-  }
-});
-type ResultData = Treaty.Data<typeof client.calculate.post>
-type ResultsData = Treaty.Data<typeof client.results.get>
+const client = useApiClient();
 
 const loading = ref(false);
 const errorMessage = ref('');

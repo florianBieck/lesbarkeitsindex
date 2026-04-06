@@ -13,7 +13,7 @@
           </svg>
         </div>
         <div class="flex flex-col items-center gap-2 w-full">
-          <div class="text-surface-900 text-2xl font-semibold leading-tight text-center w-full">Warte auf Abmeldung...</div>
+          <h2 class="text-surface-900 text-2xl font-semibold leading-tight text-center w-full">Warte auf Abmeldung...</h2>
         </div>
       </div>
     </div>
@@ -27,7 +27,6 @@ const router = useRouter();
 
 onMounted(async () => {
   const session = await client.getSession();
-  await new Promise(resolve => setTimeout(resolve, 1000));
   if (session.data) {
     await client.signOut({
       fetchOptions: {

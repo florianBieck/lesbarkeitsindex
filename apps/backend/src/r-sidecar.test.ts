@@ -12,6 +12,7 @@ describe("analyzeText", () => {
       sentences: ["Der Hund läuft."],
       words: ["Der", "Hund", "läuft"],
       syllablesPerWord: [1, 1, 1],
+      posTags: ["ART", "NN", "VVFIN"],
     };
 
     globalThis.fetch = mock(() =>
@@ -24,6 +25,7 @@ describe("analyzeText", () => {
     expect(result.sentences).toEqual(["Der Hund läuft."]);
     expect(result.words).toEqual(["Der", "Hund", "läuft"]);
     expect(result.syllablesPerWord).toEqual([1, 1, 1]);
+    expect(result.posTags).toEqual(["ART", "NN", "VVFIN"]);
   });
 
   test("throws on mismatched array lengths", async () => {
@@ -31,6 +33,7 @@ describe("analyzeText", () => {
       sentences: ["Test."],
       words: ["Test"],
       syllablesPerWord: [1, 2],
+      posTags: ["NN"],
     };
 
     globalThis.fetch = mock(() =>

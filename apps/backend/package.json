@@ -6,7 +6,8 @@
     "dev": "bun run --watch src/index.ts",
     "start": "bun ./src/index.ts",
     "generate": "prisma generate",
-    "migrate": "prisma migrate dev"
+    "migrate": "prisma migrate dev",
+    "lint": "eslint src/"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.0",
@@ -22,7 +23,9 @@
   "devDependencies": {
     "@types/pg": "^8.15.6",
     "bun-types": "latest",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "eslint": "^10.2.0",
+    "typescript-eslint": "^8.58.0"
   },
   "module": "src/index.js"
 }

@@ -12,7 +12,7 @@
           </svg>
         </div>
         <div class="flex flex-col items-center gap-2 w-full">
-          <div class="text-surface-900 text-2xl font-semibold leading-tight text-center w-full">Anmelden</div>
+          <h2 class="text-surface-900 text-2xl font-semibold leading-tight text-center w-full">Anmelden</h2>
         </div>
       </div>
       <div class="flex flex-col gap-6 w-full">
@@ -25,16 +25,13 @@
 
           <Password id="password1" v-model="password" fluid placeholder="Passwort" :toggleMask="true" :feedback="false" />
         </div>
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-3 sm:gap-0">
-          <div class="flex items-center gap-2">
-            <Checkbox id="rememberme1" v-model="checked1" :binary="true" />
-            <label for="rememberme1" class="text-surface-900 leading-normal">Angemeldet bleiben</label>
-          </div>
-          <button type="button" class="text-primary font-medium cursor-pointer hover:text-primary-emphasis bg-transparent border-none p-0">Passwort vergessen?</button>
+        <div class="flex items-center gap-2">
+          <Checkbox id="rememberme1" v-model="checked1" :binary="true" />
+          <label for="rememberme1" class="text-surface-900 leading-normal">Angemeldet bleiben</label>
         </div>
       </div>
       <div v-if="errorMessage" class="text-red-600 text-sm font-medium" role="alert">{{ errorMessage }}</div>
-      <Button @click="login" :loading="isLoading" label="Anmelden" icon="pi pi-user" fluid class="w-full py-2 rounded-lg flex justify-center items-center gap-2">
+      <Button @click="login" :loading="isLoading" label="Anmelden" icon="pi pi-user" fluid class="w-full py-3 rounded-lg flex justify-center items-center gap-2">
         <template #icon>
           <i class="pi pi-user text-base! leading-normal!" />
         </template>

@@ -1,109 +1,165 @@
 
-Default to using Bun instead of Node.js.
+# Lesbarkeitsindex (LÜ-LIX)
 
-- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
-- Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
-- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Bun automatically loads .env, so don't use dotenv.
+German text readability analysis tool for teachers and educators. Bun monorepo with Elysia backend, Nuxt 4 frontend, and R NLP sidecar.
 
-## APIs
+## Bun First
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
+Use `bun` everywhere — never `npm`, `yarn`, `node`, or `ts-node`. Bun auto-loads `.env`, so don't use dotenv.
+
+## Tech Stack Rules
+
+- **Backend**: Elysia (`new Elysia()`), not `Bun.serve()` directly
+- **Database**: Prisma 7 with `@prisma/adapter-pg` + `pg`, not `Bun.sql` or `bun:sqlite`
+- **Frontend**: Nuxt 4 (Vue 3 Composition API), not React or Bun HTML imports
+- **UI**: PrimeVue 4 with Aura theme — use PrimeVue components for all UI work
+- **CSS**: Tailwind utility classes + PrimeVue Aura theme tokens
+- **Auth**: Better-Auth with email/password + admin plugin
+- **Schema validation**: Prismabox generates TypeBox types from Prisma schema for Elysia request validation
+- **API client**: `@elysiajs/eden` treaty for type-safe frontend → backend calls
+- **Charts**: Chart.js + `chartjs-plugin-annotation`
+- **Rich text**: Quill
+- **Dates**: Day.js
+
+## Monorepo Structure
+
+```
+apps/
+  backend/          # Elysia API (port 3000)
+    src/
+      index.ts      # Routes, startup seeding — exports App type
+      db.ts         # Prisma client
+      auth.ts       # Better-Auth config
+      result/       # Readability calculation modules
+        index.ts    # Orchestrator + barrel exports
+        basic-metrics.ts
+        indices.ts  # LIX, gSMOG, FK, WSTF, RIX
+        linguistic-features.ts
+        grapheme-analysis.ts
+        text-features.ts
+      r-sidecar.ts  # R service HTTP client
+    prisma/
+      schema.prisma # Config, Result, User, Session models
+    generated/      # Prisma client + Prismabox types (gitignored)
+  frontend/         # Nuxt 4 SPA (dev port 3001)
+    app/
+      pages/        # index, login, logout, results
+      components/   # result-view.vue
+      composables/  # useAuthClient.ts
+    e2e/            # Playwright specs
+r-sidecar/          # R Plumber API for NLP (port 8787, Docker only)
+```
+
+## Development
+
+```sh
+# 1. Start Postgres + R sidecar
+docker compose up -d
+
+# 2. Install deps
+bun install
+
+# 3. Generate Prisma client + Prismabox types
+bun run --cwd apps/backend generate
+
+# 4. Run migrations
+bun run --cwd apps/backend migrate
+
+# 5. Start backend (port 3000)
+bun run --cwd apps/backend dev
+
+# 6. Start frontend (port 3001)
+bun run --cwd apps/frontend dev
+```
+
+### Environment
+
+**`apps/backend/.env`** (required):
+```
+DATABASE_URL=postgresql://admin:admin@localhost:5432/lesbarkeitsindex?schema=public
+R_SIDECAR_URL=http://localhost:8787
+BETTER_AUTH_SECRET=dev-secret
+BETTER_AUTH_URL=http://localhost:3000
+```
+
+Frontend reads `NUXT_PUBLIC_API_BASE` (defaults to `http://localhost:3000`).
 
 ## Testing
 
-Use `bun test` to run tests.
+```sh
+# Backend unit tests (bun:test)
+bun test --cwd apps/backend
 
-```ts#index.test.ts
-import { test, expect } from "bun:test";
+# Frontend unit tests (Vitest + @nuxt/test-utils)
+bun run --cwd apps/frontend test:unit
 
-test("hello world", () => {
-  expect(1).toBe(1);
-});
+# Frontend E2E (Playwright, requires running stack)
+bun run --cwd apps/frontend test:e2e
+
+# Frontend E2E with UI
+bun run --cwd apps/frontend test:e2e:ui
+
+# Run all workspace tests from root
+bun run test
 ```
 
-## Frontend
+Backend uses `bun:test`. Frontend unit tests use Vitest with Nuxt environment. Frontend E2E uses Playwright (Chromium only, single worker).
 
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
+## API Endpoints
 
-Server:
+- `GET /` — health check
+- `GET /config` — current readability config
+- `POST /config` — update config (requires auth)
+- `POST /calculate` — analyze text readability
+- `GET /results?page=0&limit=10` — paginated results
+- `/api/auth/*` — Better-Auth endpoints
 
-```ts#index.ts
-import index from "./index.html"
+## Code Conventions
 
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
-```
+- TypeScript strict mode everywhere
+- Frontend: `<script setup lang="ts">` with Composition API
+- API types: backend exports `App` type; frontend uses Eden treaty
+- DB changes: edit `prisma/schema.prisma` → `bun run generate` → `bun run migrate`
+- Auth in frontend: `useAuthClient()` composable
+- Runtime config: `useRuntimeConfig().public.apiBase` for API base URL
 
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
-
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
-
-With the following `frontend.tsx`:
-
-```tsx#frontend.tsx
-import React from "react";
-
-// import .css files directly and it works
-import './index.css';
-
-import { createRoot } from "react-dom/client";
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
-```
-
-Then, run index.ts
+## Linting
 
 ```sh
-bun --hot ./index.ts
+# Frontend (uses @nuxt/eslint with default Nuxt config)
+bun run --cwd apps/frontend lint
+
+# Backend (uses typescript-eslint)
+bun run --cwd apps/backend lint
+
+# Lint all workspaces from root
+bun run lint
 ```
 
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.md`.
+## CI/CD
+
+- **`.github/workflows/build.yml`**: On push to `main` or tags — `bun install --frozen-lockfile`, builds Docker images for backend/frontend/r-sidecar, pushes to `ghcr.io`
+- **`.github/workflows/deploy.yml`**: Manual trigger — deploys to Hetzner via SSH using `docker-compose-prod.yml`
+
+## Gotchas
+
+- **Prismabox codegen required**: After any Prisma schema change, run `bun run --cwd apps/backend generate` — both Prisma client and TypeBox validation types need regeneration
+- **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)
+- **Same-origin routing in prod**: Caddy reverse proxy routes `/api/auth/*`, `/calculate`, `/config`, `/results` to backend; everything else to frontend. No CORS needed in production
+- **ADMIN_EMAILS**: Comma-separated list in root `.env`. If empty, any logged-in user gets admin access
+- **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth.ts` — update when adding new domains
+
+## Key Domain Concepts
+
+The app computes German readability indices:
+
+- **LIX** (Lesbarkeitsindex)
+- **gSMOG** (simplified measure of gobbledygook, German variant)
+- **Flesch-Kincaid** (adapted for German)
+- **WSTF** (Wiener Sachtextformel variant)
+- **LÜ-LIX** (custom weighted composite score)
+
+Parameters are stored in a `Config` model; analysis results in a `Result` model. The weighting of indices is configurable via the admin page.
 
 ## Design Context
 

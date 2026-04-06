@@ -1,36 +1,24 @@
 <script setup lang="ts">
 import MeterGroup from "primevue/metergroup";
-import Chart from "primevue/chart";
-import {type Treaty, treaty} from "@elysiajs/eden";
-import type {App} from "../../../backend/src";
-import {computed, onMounted, ref, watch} from "vue";
-import {Chart as ChartJs} from "chart.js";
-import annotationPlugin from "chartjs-plugin-annotation";
+import {type ResultData} from '~/composables/useApiClient';
+import {computed, defineAsyncComponent, onMounted, ref, watch} from "vue";
 import Fieldset from 'primevue/fieldset';
 
-ChartJs.register(annotationPlugin);
-
-const CHART_COLORS = {
-  lix: '#2563eb',
-  complexSyllables: '#d97706',
-  consonantClusters: '#059669',
-  multiGraphemes: '#dc2626',
-  rareGraphemes: '#7c3aed',
-  avgWordLength: '#92400e',
-  avgPhraseLength: '#a16207',
-  avgSyllablesPerWord: '#db2777',
-  avgSyllablesPerPhrase: '#059669',
-  proportions: '#0891b2',
-  counts: '#6b7280',
-} as const;
-
-const runtime = useRuntimeConfig();
-const client = treaty<App>(runtime.public.apiBase, {
-  fetch: {
-    credentials: 'include'
-  }
+const Chart = defineAsyncComponent(async () => {
+  const [chartModule, {Chart: ChartJs}, annotationPlugin] = await Promise.all([
+    import("primevue/chart"),
+    import("chart.js"),
+    import("chartjs-plugin-annotation"),
+  ]);
+  ChartJs.register(annotationPlugin.default);
+  return chartModule;
 });
-type ResultData = Treaty.Data<typeof client.calculate.post>
+
+const chartColors = ref({
+  lix: '', complexSyllables: '', consonantClusters: '', multiGraphemes: '',
+  rareGraphemes: '', avgWordLength: '', avgPhraseLength: '',
+  avgSyllablesPerWord: '', avgSyllablesPerPhrase: '', proportions: '', counts: '',
+});
 
 const props = defineProps<{
   result: ResultData
@@ -51,30 +39,31 @@ const scoreInterpretation = computed(() => {
 });
 
 const meters = computed(() => {
+  const colors = chartColors.value;
   return [
     {
       label: "Lesbarkeitsindex (LIX)",
-      color: CHART_COLORS.lix,
+      color: colors.lix,
       value: Math.round(Number(props.result.config.parameterLix) * 100)
     },
     {
       label: "Komplexe Silben",
-      color: CHART_COLORS.complexSyllables,
+      color: colors.complexSyllables,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithComplexSyllables) * 100)
     },
     {
       label: "Schwierige Buchstabenfolgen",
-      color: CHART_COLORS.consonantClusters,
+      color: colors.consonantClusters,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100)
     },
     {
       label: "Mehrteilige Buchstabengruppen",
-      color: CHART_COLORS.multiGraphemes,
+      color: colors.multiGraphemes,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100)
     },
     {
       label: "Seltene Buchstaben",
-      color: CHART_COLORS.rareGraphemes,
+      color: colors.rareGraphemes,
       value: Math.round(Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100)
     },
   ];
@@ -185,6 +174,20 @@ watch(() => props.result, () => {
 });
 
 onMounted(() => {
+  const s = getComputedStyle(document.documentElement);
+  chartColors.value = {
+    lix: s.getPropertyValue('--p-blue-500'),
+    complexSyllables: s.getPropertyValue('--p-amber-500'),
+    consonantClusters: s.getPropertyValue('--p-green-500'),
+    multiGraphemes: s.getPropertyValue('--p-red-500'),
+    rareGraphemes: s.getPropertyValue('--p-violet-500'),
+    avgWordLength: s.getPropertyValue('--p-amber-700'),
+    avgPhraseLength: s.getPropertyValue('--p-amber-600'),
+    avgSyllablesPerWord: s.getPropertyValue('--p-pink-500'),
+    avgSyllablesPerPhrase: s.getPropertyValue('--p-green-600'),
+    proportions: s.getPropertyValue('--p-cyan-500'),
+    counts: s.getPropertyValue('--p-surface-500'),
+  };
   chartData.value = setChartData();
   chartOptions.value = setChartOptions();
 });
@@ -196,11 +199,16 @@ onMounted(() => {
     <div class="flex flex-col items-center gap-3 pb-6">
       <h2 class="font-semibold text-lg">Ergebnis</h2>
       <Chart v-if="chartOptions && chartData" type="doughnut" :data="chartData" :options="chartOptions" class="w-full md:w-[30rem]" :aria-label="`Lesbarkeitsindex: ${score} von 100`" role="img" />
-      <p class="text-lg font-medium text-center" :class="{
-        'text-green-700': scoreInterpretation.severity === 'success',
-        'text-yellow-700': scoreInterpretation.severity === 'warn',
-        'text-red-700': scoreInterpretation.severity === 'error',
+      <p class="text-lg font-medium text-center flex items-center justify-center gap-2" :class="{
+        'text-green-600': scoreInterpretation.severity === 'success',
+        'text-amber-700': scoreInterpretation.severity === 'warn',
+        'text-red-600': scoreInterpretation.severity === 'error',
       }">
+        <i :class="{
+          'pi pi-check-circle': scoreInterpretation.severity === 'success',
+          'pi pi-exclamation-triangle': scoreInterpretation.severity === 'warn',
+          'pi pi-times-circle': scoreInterpretation.severity === 'error',
+        }" aria-hidden="true" />
         {{ scoreInterpretation.label }} &mdash; {{ scoreInterpretation.description }}
       </p>
     </div>

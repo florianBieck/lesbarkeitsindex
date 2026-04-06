@@ -2,13 +2,12 @@ import { test, expect, describe } from "bun:test";
 import {
     calculateCountWords,
     calculateCountPhrases,
-  calculateSyllableComplexity,
-  calculateMultiMemberedGraphemes,
-  calculateRareGraphemes,
-  calculateConsonantClusters,
-  calculateAverageWordLength,
-  calculateAverageSyllablesPerWord,
-  calculateCountPhrases,
+    calculateSyllableComplexity,
+    calculateMultiMemberedGraphemes,
+    calculateRareGraphemes,
+    calculateConsonantClusters,
+    calculateAverageWordLength,
+    calculateAverageSyllablesPerWord,
     calculateAveragePhraseLength,
     calculateAverageSyllablesPerPhrase,
     calculateProportionOfLongWords,
@@ -32,13 +31,6 @@ const WORDS = ["Der", "Hund", "läuft", "über", "die", "Straße"];
 const SENTENCES = ["Der Hund läuft über die Straße."];
 const SYLLABLES = [1, 1, 1, 2, 1, 2];
 
-const SIMPLE_TEXT = "Der Hund läuft schnell.";
-const TWO_SENTENCES = "Die Kinder spielen im Garten. Der Hund schläft unter dem Baum.";
-const COMPLEX_TEXT =
-    "Die Bundesregierung hat gestern eine weitreichende Entscheidung getroffen. " +
-    "Die Umstrukturierung der Bildungslandschaft soll grundlegend verändert werden. " +
-    "Wissenschaftliche Untersuchungen bestätigen die Notwendigkeit dieser Maßnahmen.";
-
 describe("metric functions with pre-computed arrays", () => {
   test("calculateCountWords returns word count", () => {
     expect(calculateCountWords(WORDS)).toBe(6);
@@ -52,33 +44,18 @@ describe("metric functions with pre-computed arrays", () => {
     expect(calculateCountPhrases(SENTENCES)).toBe(1);
   });
 
-test("calculateCountPhrases returns sentence count", () => {
-  expect(calculateCountPhrases(SENTENCES)).toBe(1);
-});
+  test("calculateCountPhrases returns 1 for single sentence without punctuation", () => {
+    expect(calculateCountPhrases(["Hallo Welt"])).toBe(1);
+  });
 
-test("calculateSyllableComplexity counts words with 3+ syllables", () => {
-  expect(calculateSyllableComplexity(WORDS, SYLLABLES)).toBe(0);
-  expect(calculateSyllableComplexity(["Ananas"], [3])).toBe(1);
-});
-
-test("calculateCountPhrases returns sentence count", () => {
-    expect(calculateCountPhrases(SENTENCES)).toBe(1);
-});
-
-test("handles text without sentence-ending punctuation", () => {
-    expect(calculateCountPhrases("Hallo Welt")).toBe(1);
-});
-
-test("calculateSyllableComplexity counts words with 3+ syllables", () => {
+  test("calculateSyllableComplexity counts words with 3+ syllables", () => {
     expect(calculateSyllableComplexity(WORDS, SYLLABLES)).toBe(0);
     expect(calculateSyllableComplexity(["Ananas"], [3])).toBe(1);
-});
+  });
 
-describe("calculateSyllableComplexity", () => {
-    test("returns 0 for empty string", () => {
-        expect(calculateSyllableComplexity("")).toBe(0);
-    });
-});
+  test("calculateSyllableComplexity returns 0 for empty arrays", () => {
+    expect(calculateSyllableComplexity([], [])).toBe(0);
+  });
 
 describe("calculateMultiMemberedGraphemes", () => {
     test("counts original graphemes (sch, ch, ck, ng)", () => {
@@ -127,10 +104,10 @@ describe("calculateMultiMemberedGraphemes", () => {
     });
 });
 
-test("counts words with 3+ syllables", () => {
-    const result = calculateSyllableComplexity(
-        "Die Bundesregierung hat eine weitreichende Entscheidung getroffen."
-    );
+test("calculateSyllableComplexity counts complex words in a sentence", () => {
+    const words = ["Die", "Bundesregierung", "hat", "eine", "weitreichende", "Entscheidung", "getroffen"];
+    const syllables = [1, 5, 1, 2, 4, 3, 3];
+    const result = calculateSyllableComplexity(words, syllables);
     expect(result).toBeGreaterThan(0);
 });
 
@@ -138,8 +115,10 @@ test("calculateRareGraphemes counts ä, ö, ü, ß, c, q, x, y", () => {
     expect(calculateRareGraphemes(["Straße", "über"])).toBe(2);
 });
 
-test("returns 0 for simple monosyllabic words", () => {
-    expect(calculateSyllableComplexity("Der Hund ist alt.")).toBe(0);
+test("calculateSyllableComplexity returns 0 for simple monosyllabic words", () => {
+    const words = ["Der", "Hund", "ist", "alt"];
+    const syllables = [1, 1, 1, 1];
+    expect(calculateSyllableComplexity(words, syllables)).toBe(0);
 });
 
 describe("calculateConsonantClusters", () => {
@@ -239,9 +218,8 @@ test("calculateLix computes LIX score", () => {
 });
 
 test("calculateLix strips hyphens before measuring word length", () => {
-    // "Lessing-Gymnasium" has 17 raw chars but 16 Buchstaben (hyphen stripped)
-    // Both are >6, so it's long either way. But raw "ab-cd" (5 chars) vs "abcd" (4 Buchstaben)
-    const words = ["ab-cde", "Der", "ist"]; // "ab-cde" = 6 raw chars, 5 Buchstaben (not long)
+    // "ab-cde" = 6 raw chars, 5 Buchstaben (not long)
+    const words = ["ab-cde", "Der", "ist"];
     const sentences = ["ab-cde Der ist."];
     const lix = calculateLix(words, sentences);
     // 3 words, 1 sentence, 0 long words: LIX = 3/1 + 0 = 3.0
@@ -257,8 +235,20 @@ test("calculateLix counts hyphenated compound as long when Buchstaben > 6", () =
 });
 
 describe("calculateRareGraphemes", () => {
-    test("returns 0 for empty string", () => {
-        expect(calculateRareGraphemes("")).toBe(0);
+    test("returns 0 for empty array", () => {
+        expect(calculateRareGraphemes([])).toBe(0);
+    });
+
+    test("counts umlauts", () => {
+        expect(calculateRareGraphemes(["für"])).toBe(1);
+    });
+
+    test("counts ß", () => {
+        expect(calculateRareGraphemes(["Straße"])).toBe(1);
+    });
+
+    test("counts rare consonants (c, q, x, y)", () => {
+        expect(calculateRareGraphemes(["Taxi"])).toBe(1); // x
     });
 });
 
@@ -267,28 +257,16 @@ test("calculateGsmog computes gSmog score", () => {
     expect(gsmog).toBeCloseTo(-2, 1);
 });
 
-test("counts umlauts", () => {
-    expect(calculateRareGraphemes("für")).toBe(1);
-});
-
 test("calculateFleschKincaid computes FK score", () => {
     const fk = calculateFleschKincaid(WORDS, SENTENCES, SYLLABLES);
     const expected = 0.39 * 6 + 11.8 * (8 / 6) - 15.59;
     expect(fk).toBeCloseTo(expected, 1);
 });
 
-test("counts ß", () => {
-    expect(calculateRareGraphemes("Straße")).toBe(1);
-});
-
 test("calculateWstf computes WSTF score", () => {
     const wstf = calculateWstf(WORDS, SENTENCES, SYLLABLES);
     const expected = 0.2656 * 6 + 0.2744 * 0 * 100 - 1.693;
     expect(wstf).toBeCloseTo(expected, 1);
-});
-
-test("counts rare consonants (c, q, x, y)", () => {
-    expect(calculateRareGraphemes("Taxi")).toBe(1); // x
 });
 
 test("all functions handle empty arrays without crashing", () => {
@@ -598,10 +576,6 @@ describe("calculateNominalizations", () => {
 
 describe("calculateRix", () => {
     test("computes RIX with all components", () => {
-        // 6 words, 1 sentence, 1 long word (>6 chars)
-        // passiveCount=1, subordinateClauseRatio=0.5, nominalizationCount=1
-        // √(6/1 + 1/6) + √(1/1 + 0.5 + 1/1) - 0.26
-        // √(6.1667) + √(2.5) - 0.26 = 2.48 + 1.58 - 0.26 = 3.80
         const words = ["Der", "Hund", "wird", "gefüttert", "das", "Leichtes"];
         const sentences = ["Der Hund wird gefüttert das Leichtes."];
         const result = calculateRix(words, sentences, 1, 0.5, 1);

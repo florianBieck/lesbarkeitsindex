@@ -64,7 +64,7 @@
             </InputNumber>
           </div>
         </div>
-        <div class="text-sm" :class="Math.abs(sumWeights - 1) > 0.01 ? 'text-red-600 font-medium' : 'text-surface-500'">Summe: <b>{{ sumWeights.toFixed(2) }}</b> <span v-if="Math.abs(sumWeights - 1) > 0.01">&mdash; muss genau 1,00 ergeben</span></div>
+        <div class="text-sm" :class="Math.abs(sumWeights - 1) > 0.01 ? 'text-red-600 font-medium' : 'text-surface-500'"><span v-if="Math.abs(sumWeights - 1) > 0.01" aria-hidden="true">&#9888; </span>Summe: <b>{{ sumWeights.toFixed(2) }}</b> <span v-if="Math.abs(sumWeights - 1) > 0.01">&mdash; muss genau 1,00 ergeben</span></div>
       </div>
     </Fieldset>
     </div>
@@ -77,7 +77,7 @@
       </label>
     </div>
     <div class="flex items-center mt-3">
-      <Button :loading="loading" label="Text analysieren" icon="pi pi-calculator" class="py-2 rounded-lg" @click="calculate"/>
+      <Button :loading="loading" label="Text analysieren" icon="pi pi-calculator" class="py-3 rounded-lg" @click="calculate"/>
     </div>
 
     <!-- Results area — generous separation from input controls -->
@@ -91,24 +91,17 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, defineAsyncComponent } from 'vue'
 import Button from 'primevue/button'
-import Editor from 'primevue/editor'
 import InputNumber from 'primevue/inputnumber'
 import Fieldset from 'primevue/fieldset'
 import Checkbox from 'primevue/checkbox'
-import { type Treaty, treaty } from '@elysiajs/eden'
-import type { App } from '../../../backend/src'
+
+const Editor = defineAsyncComponent(() => import('primevue/editor'))
+import {useApiClient, type ResultData} from '~/composables/useApiClient'
 import ResultView from '~/components/result-view.vue'
 
-const runtime = useRuntimeConfig()
-const apiBase = runtime.public.apiBase
-const client = treaty<App>(apiBase, {
-  fetch: {
-    credentials: 'include',
-  },
-})
-type ResultData = Treaty.Data<typeof client.calculate.post>
+const client = useApiClient()
 
 const text = ref('')
 const loading = ref(false)

@@ -57,7 +57,7 @@ const meters = computed(() => {
       value: Math.round(Number(props.result.config.parameterLix) * 100),
     },
     {
-      label: 'Komplexe Silben',
+      label: 'Komplexe Silben (Wörter mit 3 oder mehr Silben)',
       color: colors.complexSyllables,
       value: Math.round(
         Number(props.result.config.parameterProportionOfWordsWithComplexSyllables) * 100,

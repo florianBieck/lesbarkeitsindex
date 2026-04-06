@@ -46,7 +46,8 @@
             </div>
             <div class="flex flex-col gap-2 p-4 border rounded-md">
               <label for="param-complex-syllables" class="text-sm font-medium"
-                >Komplexe Silben</label
+                >Komplexe Silben
+                <span class="text-surface-400 font-normal">(Wörter mit 3 oder mehr Silben)</span></label
               >
               <InputNumber
                 id="param-complex-syllables"
@@ -237,10 +238,10 @@ async function calculate() {
   }
 
   const weightSum = sumWeights.value;
-  if (Math.abs(weightSum - 1) > 0.01) {
+  /* if (Math.abs(weightSum - 1) > 0.01) {
     validationError.value = `Die Summe der Einstellungen muss 1,00 ergeben (aktuell: ${weightSum.toFixed(2)}). Passen Sie die Werte unter „Erweiterte Einstellungen" an.`;
     return;
-  }
+  } */
 
   loading.value = true;
   try {

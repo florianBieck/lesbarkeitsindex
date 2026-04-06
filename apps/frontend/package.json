@@ -1,5 +1,5 @@
 {
-  "name": "lesbarkeitsindex",
+  "name": "@lesbarkeitsindex/frontend",
   "private": true,
   "type": "module",
   "scripts": {

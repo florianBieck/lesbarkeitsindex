@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Build the Nuxt app from the frontend workspace
-RUN pnpm --filter lesbarkeitsindex run build
+RUN pnpm --filter @lesbarkeitsindex/frontend run build
 
 # === Runtime stage ===
 FROM node:22-alpine AS runner

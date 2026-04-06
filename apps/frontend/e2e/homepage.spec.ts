@@ -42,7 +42,9 @@ test.describe('Homepage', () => {
   test('calculate button shows loading state and returns result', async ({ page }) => {
     const editor = page.locator('.ql-editor');
     await editor.click();
-    await editor.fill('Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach. Ein Vogel fliegt am Himmel.');
+    await editor.fill(
+      'Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach. Ein Vogel fliegt am Himmel.',
+    );
 
     const button = page.getByRole('button', { name: 'Berechnen' });
     await button.click();
@@ -53,7 +55,9 @@ test.describe('Homepage', () => {
   test('result view shows all expected sections after calculation', async ({ page }) => {
     const editor = page.locator('.ql-editor');
     await editor.click();
-    await editor.fill('Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach. Ein Vogel fliegt am Himmel.');
+    await editor.fill(
+      'Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach. Ein Vogel fliegt am Himmel.',
+    );
 
     await page.getByRole('button', { name: 'Berechnen' }).click();
     await expect(page.getByText('Ergebnis')).toBeVisible({ timeout: 10000 });
@@ -73,7 +77,9 @@ test.describe('Homepage', () => {
     await page.getByRole('button', { name: 'Berechnen' }).click();
     await expect(page.getByText('Ergebnis')).toBeVisible({ timeout: 10000 });
 
-    await expect(page.getByRole('cell', { name: 'Lesbarkeitsindex (LIX)', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Lesbarkeitsindex (LIX)', exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole('cell', { name: 'gSMOG', exact: true })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Anzahl Wörter', exact: true })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Anzahl Sätze', exact: true })).toBeVisible();

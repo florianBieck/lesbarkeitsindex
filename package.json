@@ -1,20 +1,39 @@
 {
   "name": "lesbarkeitsindex",
-  "module": "index.ts",
-  "type": "module",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
   "scripts": {
-    "dev": "bun run --filter '*' dev",
-    "test": "bun run --filter '*' test",
-    "lint": "bun run --filter '*' lint"
+    "dev": "vp run -r dev",
+    "dev:backend": "pnpm --filter backend run dev",
+    "dev:frontend": "pnpm --filter frontend run dev",
+    "build": "pnpm --filter backend run build",
+    "test": "vp run -r test",
+    "lint": "vp lint",
+    "fmt": "vp fmt",
+    "check": "vp check",
+    "generate": "pnpm --filter backend run generate",
+    "migrate": "pnpm --filter backend run migrate"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "vite-plus": "^0.1.16"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
-  "workspaces": [
-    "apps/*"
-  ]
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "@parcel/watcher",
+      "unrs-resolver",
+      "@nestjs/core",
+      "@swc/core"
+    ]
+  }
 }

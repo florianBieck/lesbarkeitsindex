@@ -34,14 +34,14 @@ User -> Elysia backend (POST /calculate)
 
 ### R Packages (matching RATTE 2)
 
-| Package | Version in RATTE 2 | Purpose |
-|---|---|---|
-| `openNLP` | 0.2.7 | Sentence detection, word tokenization |
-| `openNLPmodels.de` | — | German-trained models for OpenNLP |
-| `NLP` | — | Infrastructure for openNLP |
-| `quanteda` | 2.1.2 | Text corpus handling |
-| `quanteda.textstats` | 0.92 | Syllable counting via `nsyllable()` |
-| `plumber` | — | HTTP API framework |
+| Package              | Version in RATTE 2 | Purpose                               |
+| -------------------- | ------------------ | ------------------------------------- |
+| `openNLP`            | 0.2.7              | Sentence detection, word tokenization |
+| `openNLPmodels.de`   | —                  | German-trained models for OpenNLP     |
+| `NLP`                | —                  | Infrastructure for openNLP            |
+| `quanteda`           | 2.1.2              | Text corpus handling                  |
+| `quanteda.textstats` | 0.92               | Syllable counting via `nsyllable()`   |
+| `plumber`            | —                  | HTTP API framework                    |
 
 ### API Contract
 
@@ -59,9 +59,7 @@ Response:
 
 ```json
 {
-  "sentences": [
-    "Der Hund läuft über die Straße."
-  ],
+  "sentences": ["Der Hund läuft über die Straße."],
   "words": ["Der", "Hund", "läuft", "über", "die", "Straße"],
   "syllablesPerWord": [1, 1, 1, 2, 1, 2]
 }
@@ -175,7 +173,7 @@ r-sidecar:
     dockerfile: Dockerfile.r-sidecar
   restart: unless-stopped
   healthcheck:
-    test: ["CMD", "wget", "--spider", "-q", "http://localhost:8787/health"]
+    test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8787/health']
     interval: 30s
     timeout: 10s
     retries: 3

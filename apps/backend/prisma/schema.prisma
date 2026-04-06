@@ -1,18 +1,10 @@
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-generator prismabox {
-  provider                    = "prismabox"
-  typeboxImportDependencyName = "elysia"
-  typeboxImportVariableName   = "t"
-  inputModel                  = true
-  output                      = "../generated/prismabox"
 }
 
 model Config {
@@ -41,49 +33,49 @@ model Config {
 model Result {
   id                                          String   @id @default(cuid())
   createdAt                                   DateTime @default(now())
-  countWords                                  Decimal // Anzahl Wörter
-  countPhrases                                Decimal // Anzahl Sätze
-  countSyllables                              Decimal // Anzahl Silben
-  countMultipleWords                          Decimal // Anzahl an mehrfach vorkommenden Wörtern
-  countWordsWithComplexSyllables              Decimal // Anzahl Wörter mit komplexen Silben (≥3 Vokalgruppen)
-  countWordsWithConsonantClusters             Decimal // Anzahl Wörter mit Konsonantencluster (Str-, Spr-, -nkt, -cht)
-  countWordsWithMultiMemberedGraphemes        Decimal // Anzahl Wörter mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)
-  countWordsWithRareGraphemes                 Decimal // Anzahl Wörter mit seltenen Graphemen (ä, ö, ü, ß, c, q, x, y)
-  countWordsWithOneSyllable                   Decimal // Anzahl Wörter mit einer Silbe
-  countWordsWithTwoSyllable                   Decimal // Anzahl Wörter mit zwei Silben
-  countWordsWithThreeSyllable                 Decimal // Anzahl Wörter mit drei Silben
-  countWordsWithFourSyllable                  Decimal // Anzahl Wörter mit vier Silben
-  countWordsWithFiveSyllable                  Decimal // Anzahl Wörter mit fünf Silben
-  averageWordLength                           Decimal // Durchschnittliche Wortlänge
-  averagePhraseLength                         Decimal // Durchschnittliche Satzlänge
-  averageCharsPerSyllable                     Decimal // Durchschnittliche Buchstaben pro Silbe
-  averageSyllablesPerWord                     Decimal // Durchschnittliche Anzahl an Silben pro Wort
-  averageSyllablesPerPhrase                   Decimal // Durchschnittliche Anzahl an Silben pro Satz
-  proportionOfLongWords                       Decimal // Anteil an langen Wörtern
-  proportionOfWordsWithComplexSyllables       Decimal // Anteil an Wörtern mit komplexen Silben (≥3 Vokalgruppen)
-  proportionOfWordsWithConsonantClusters      Decimal // Anteil an Wörtern mit Konsonantencluster (Str-, Spr-, -nkt, -cht)
-  proportionOfWordsWithMultiMemberedGraphemes Decimal // Anteil an Wörtern mit mehrgliedrigen Graphemen (sch, ch, ck, ng, etc.)
-  proportionOfWordsWithRareGraphemes          Decimal // Anteil an Wörtern mit seltene Graphemen (ä, ö, ü, ß, c, q, x, y)
-  lix                                         Decimal // Lesbarkeitsindex
-  ratte                                       Decimal // RATTE Wert
-  ratteLevel                                  Decimal // RATTE Level
-  gsmog                                       Decimal // gSMOG
-  wst4                                        Decimal // WST4
-  fleschKincaid                               Decimal // FLESCH.Kincaid
-  ttr                                         Decimal // Type-Token-Relation (Wortschatzvielfalt)
-  countAbbreviations                          Decimal // Anzahl Abkürzungen im Text
-  countNumbers                                Decimal // Anzahl Zahlen (2+ Ziffern) im Text
-  countNumbersTwoDigit                        Decimal // 2-stellige Zahlen
-  countNumbersThreeDigit                      Decimal // 3-stellige Zahlen
-  countNumbersFourDigit                       Decimal // 4-stellige Zahlen
-  countNumbersFivePlusDigit                   Decimal // 5+ stellige Zahlen
-  countSpecialCharacters                      Decimal // Anzahl Sonderzeichen im Text
-  proNIndex                                   Decimal // Pronominalisierungsindex (Pronomen/Substantive)
-  subordinateClauseRatio                      Decimal // Anteil Nebensätze pro Satz
-  passiveCount                                Decimal // Anzahl Passivkonstruktionen
-  nominalizationCount                         Decimal // Anzahl Substantivierungen
-  score                                       Decimal // Ergebnis LÜ-LIX
-  scoreLevel                                  Decimal // Ergebnis LÜ-LIX Level
+  countWords                                  Decimal
+  countPhrases                                Decimal
+  countSyllables                              Decimal
+  countMultipleWords                          Decimal
+  countWordsWithComplexSyllables              Decimal
+  countWordsWithConsonantClusters             Decimal
+  countWordsWithMultiMemberedGraphemes        Decimal
+  countWordsWithRareGraphemes                 Decimal
+  countWordsWithOneSyllable                   Decimal
+  countWordsWithTwoSyllable                   Decimal
+  countWordsWithThreeSyllable                 Decimal
+  countWordsWithFourSyllable                  Decimal
+  countWordsWithFiveSyllable                  Decimal
+  averageWordLength                           Decimal
+  averagePhraseLength                         Decimal
+  averageCharsPerSyllable                     Decimal
+  averageSyllablesPerWord                     Decimal
+  averageSyllablesPerPhrase                   Decimal
+  proportionOfLongWords                       Decimal
+  proportionOfWordsWithComplexSyllables       Decimal
+  proportionOfWordsWithConsonantClusters      Decimal
+  proportionOfWordsWithMultiMemberedGraphemes Decimal
+  proportionOfWordsWithRareGraphemes          Decimal
+  lix                                         Decimal
+  ratte                                       Decimal
+  ratteLevel                                  Decimal
+  gsmog                                       Decimal
+  wst4                                        Decimal
+  fleschKincaid                               Decimal
+  ttr                                         Decimal
+  countAbbreviations                          Decimal
+  countNumbers                                Decimal
+  countNumbersTwoDigit                        Decimal
+  countNumbersThreeDigit                      Decimal
+  countNumbersFourDigit                       Decimal
+  countNumbersFivePlusDigit                   Decimal
+  countSpecialCharacters                      Decimal
+  proNIndex                                   Decimal
+  subordinateClauseRatio                      Decimal
+  passiveCount                                Decimal
+  nominalizationCount                         Decimal
+  score                                       Decimal
+  scoreLevel                                  Decimal
   text                                        String
   words                                       String[]
   wordsWithOneSyllable                        String[]

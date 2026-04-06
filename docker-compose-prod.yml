@@ -1,13 +1,12 @@
-
 services:
   caddy:
     image: caddy:2-alpine
     container_name: caddy
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -33,7 +32,7 @@ services:
       r-sidecar:
         condition: service_healthy
     expose:
-      - "3000"
+      - '3000'
 
   frontend:
     image: ghcr.io/florianbieck/lesbarkeitsindex/frontend:latest
@@ -47,20 +46,20 @@ services:
     depends_on:
       - backend
     expose:
-      - "3000"
+      - '3000'
 
   r-sidecar:
     image: ghcr.io/florianbieck/lesbarkeitsindex/r-sidecar:latest
     container_name: r-sidecar
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8787/health"]
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8787/health']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     expose:
-      - "8787"
+      - '8787'
 
   postgres:
     ports:

@@ -3,15 +3,15 @@
   "configurations": [
     {
       "name": "frontend",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/Users/florianbieck/.vite-plus/js_runtime/node/22.22.2/bin/node",
+      "runtimeArgs": ["node_modules/.bin/nuxt", "dev"],
       "port": 3001,
       "cwd": "apps/frontend"
     },
     {
       "name": "backend",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "--watch", "src/index.ts"],
+      "runtimeExecutable": "/Users/florianbieck/.vite-plus/js_runtime/node/22.22.2/bin/node",
+      "runtimeArgs": ["node_modules/.bin/nest", "start", "--watch"],
       "port": 3000,
       "cwd": "apps/backend"
     }

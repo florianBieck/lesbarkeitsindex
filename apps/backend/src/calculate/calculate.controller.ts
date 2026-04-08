@@ -8,11 +8,11 @@ import { z } from 'zod';
 const CalculateSchema = z.object({
   text: z.string().min(1).max(100_000),
   saveResult: z.boolean().optional(),
-  parameterLix: z.number().min(0).max(1).optional(),
-  parameterProportionOfWordsWithComplexSyllables: z.number().min(0).max(1).optional(),
-  parameterProportionOfWordsWithConsonantClusters: z.number().min(0).max(1).optional(),
-  parameterProportionOfWordsWithMultiMemberedGraphemes: z.number().min(0).max(1).optional(),
-  parameterProportionOfWordsWithRareGraphemes: z.number().min(0).max(1).optional(),
+  parameterLix: z.number().min(0).optional(),
+  parameterProportionOfWordsWithComplexSyllables: z.number().min(0).optional(),
+  parameterProportionOfWordsWithConsonantClusters: z.number().min(0).optional(),
+  parameterProportionOfWordsWithMultiMemberedGraphemes: z.number().min(0).optional(),
+  parameterProportionOfWordsWithRareGraphemes: z.number().min(0).optional(),
 });
 
 @Controller('calculate')

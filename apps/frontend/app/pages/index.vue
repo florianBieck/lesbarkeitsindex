@@ -31,7 +31,6 @@
                 buttonLayout="horizontal"
                 :step="0.05"
                 :min="0"
-                :max="1"
                 mode="decimal"
                 :minFractionDigits="2"
                 :maxFractionDigits="2"
@@ -57,7 +56,6 @@
                 buttonLayout="horizontal"
                 :step="0.05"
                 :min="0"
-                :max="1"
                 mode="decimal"
                 :minFractionDigits="2"
                 :maxFractionDigits="2"
@@ -83,7 +81,6 @@
                 buttonLayout="horizontal"
                 :step="0.05"
                 :min="0"
-                :max="1"
                 mode="decimal"
                 :minFractionDigits="2"
                 :maxFractionDigits="2"
@@ -109,7 +106,6 @@
                 buttonLayout="horizontal"
                 :step="0.05"
                 :min="0"
-                :max="1"
                 mode="decimal"
                 :minFractionDigits="2"
                 :maxFractionDigits="2"
@@ -135,7 +131,6 @@
                 buttonLayout="horizontal"
                 :step="0.05"
                 :min="0"
-                :max="1"
                 mode="decimal"
                 :minFractionDigits="2"
                 :maxFractionDigits="2"
@@ -157,7 +152,7 @@
           >
             <span v-if="Math.abs(sumWeights - 1) > 0.01" aria-hidden="true">&#9888; </span>Summe:
             <b>{{ sumWeights.toFixed(2) }}</b>
-            <span v-if="Math.abs(sumWeights - 1) > 0.01">&mdash; muss genau 1,00 ergeben</span>
+            <span v-if="Math.abs(sumWeights - 1) > 0.01">&mdash; sollte ggf. genau 1,00 ergeben (zum Test abweichen)</span>
           </div>
         </div>
       </Fieldset>

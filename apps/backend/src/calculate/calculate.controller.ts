@@ -36,31 +36,63 @@ export class CalculateController {
 
     let config;
     if (overrides.parameterLix != null) {
-      config = await this.prisma.config.create({
-        data: {
-          parameterCountWords: 0,
-          parameterCountPhrases: 0,
-          parameterCountMultipleWords: 0,
-          parameterCountWordsWithComplexSyllables: 0,
-          parameterCountWordsWithConsonantClusters: 0,
-          parameterCountWordsWithMultiMemberedGraphemes: 0,
-          parameterCountWordsWithRareGraphemes: 0,
-          parameterAverageWordLength: 0,
-          parameterAveragePhraseLength: 0,
-          parameterAverageSyllablesPerWord: 0,
-          parameterAverageSyllablesPerPhrase: 0,
-          parameterProportionOfLongWords: 0,
-          parameterLix: overrides.parameterLix,
-          parameterProportionOfWordsWithComplexSyllables:
+      const configInput = {
+        parameterCountWords: 0,
+        parameterCountPhrases: 0,
+        parameterCountMultipleWords: 0,
+        parameterCountWordsWithComplexSyllables: 0,
+        parameterCountWordsWithConsonantClusters: 0,
+        parameterCountWordsWithMultiMemberedGraphemes: 0,
+        parameterCountWordsWithRareGraphemes: 0,
+        parameterAverageWordLength: 0,
+        parameterAveragePhraseLength: 0,
+        parameterAverageSyllablesPerWord: 0,
+        parameterAverageSyllablesPerPhrase: 0,
+        parameterProportionOfLongWords: 0,
+        parameterLix: overrides.parameterLix,
+        parameterProportionOfWordsWithComplexSyllables:
+          overrides.parameterProportionOfWordsWithComplexSyllables ?? 0,
+        parameterProportionOfWordsWithConsonantClusters:
+          overrides.parameterProportionOfWordsWithConsonantClusters ?? 0,
+        parameterProportionOfWordsWithMultiMemberedGraphemes:
+          overrides.parameterProportionOfWordsWithMultiMemberedGraphemes ?? 0,
+        parameterProportionOfWordsWithRareGraphemes:
+          overrides.parameterProportionOfWordsWithRareGraphemes ?? 0,
+      };
+
+      if (saveResult) {
+        config = await this.prisma.config.create({ data: configInput });
+      } else {
+        config = {
+          id: '',
+          createdAt: new Date(),
+          parameterCountWords: new Prisma.Decimal(0),
+          parameterCountPhrases: new Prisma.Decimal(0),
+          parameterCountMultipleWords: new Prisma.Decimal(0),
+          parameterCountWordsWithComplexSyllables: new Prisma.Decimal(0),
+          parameterCountWordsWithConsonantClusters: new Prisma.Decimal(0),
+          parameterCountWordsWithMultiMemberedGraphemes: new Prisma.Decimal(0),
+          parameterCountWordsWithRareGraphemes: new Prisma.Decimal(0),
+          parameterAverageWordLength: new Prisma.Decimal(0),
+          parameterAveragePhraseLength: new Prisma.Decimal(0),
+          parameterAverageSyllablesPerWord: new Prisma.Decimal(0),
+          parameterAverageSyllablesPerPhrase: new Prisma.Decimal(0),
+          parameterProportionOfLongWords: new Prisma.Decimal(0),
+          parameterLix: new Prisma.Decimal(overrides.parameterLix),
+          parameterProportionOfWordsWithComplexSyllables: new Prisma.Decimal(
             overrides.parameterProportionOfWordsWithComplexSyllables ?? 0,
-          parameterProportionOfWordsWithConsonantClusters:
+          ),
+          parameterProportionOfWordsWithConsonantClusters: new Prisma.Decimal(
             overrides.parameterProportionOfWordsWithConsonantClusters ?? 0,
-          parameterProportionOfWordsWithMultiMemberedGraphemes:
+          ),
+          parameterProportionOfWordsWithMultiMemberedGraphemes: new Prisma.Decimal(
             overrides.parameterProportionOfWordsWithMultiMemberedGraphemes ?? 0,
-          parameterProportionOfWordsWithRareGraphemes:
+          ),
+          parameterProportionOfWordsWithRareGraphemes: new Prisma.Decimal(
             overrides.parameterProportionOfWordsWithRareGraphemes ?? 0,
-        },
-      });
+          ),
+        };
+      }
     } else {
       const dbConfig = await this.prisma.config.findFirst({
         orderBy: { createdAt: 'desc' },

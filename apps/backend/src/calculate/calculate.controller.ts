@@ -8,12 +8,54 @@ import { z } from 'zod';
 const CalculateSchema = z.object({
   text: z.string().min(1).max(100_000),
   saveResult: z.boolean().optional(),
-  parameterLix: z.number().min(0).optional(),
-  parameterProportionOfWordsWithComplexSyllables: z.number().min(0).optional(),
-  parameterProportionOfWordsWithConsonantClusters: z.number().min(0).optional(),
-  parameterProportionOfWordsWithMultiMemberedGraphemes: z.number().min(0).optional(),
-  parameterProportionOfWordsWithRareGraphemes: z.number().min(0).optional(),
+  parameterLix: z.number().min(0).max(1).optional(),
+  parameterProportionOfWordsWithComplexSyllables: z.number().min(0).max(1).optional(),
+  parameterProportionOfWordsWithConsonantClusters: z.number().min(0).max(1).optional(),
+  parameterProportionOfWordsWithMultiMemberedGraphemes: z.number().min(0).max(1).optional(),
+  parameterProportionOfWordsWithRareGraphemes: z.number().min(0).max(1).optional(),
 });
+
+function toDecimal(n: number): Prisma.Decimal {
+  return new Prisma.Decimal(n);
+}
+
+function buildInMemoryConfig(weights: {
+  parameterLix: number;
+  parameterProportionOfWordsWithComplexSyllables: number;
+  parameterProportionOfWordsWithConsonantClusters: number;
+  parameterProportionOfWordsWithMultiMemberedGraphemes: number;
+  parameterProportionOfWordsWithRareGraphemes: number;
+}) {
+  return {
+    id: '',
+    createdAt: new Date(),
+    parameterCountWords: toDecimal(0),
+    parameterCountPhrases: toDecimal(0),
+    parameterCountMultipleWords: toDecimal(0),
+    parameterCountWordsWithComplexSyllables: toDecimal(0),
+    parameterCountWordsWithConsonantClusters: toDecimal(0),
+    parameterCountWordsWithMultiMemberedGraphemes: toDecimal(0),
+    parameterCountWordsWithRareGraphemes: toDecimal(0),
+    parameterAverageWordLength: toDecimal(0),
+    parameterAveragePhraseLength: toDecimal(0),
+    parameterAverageSyllablesPerWord: toDecimal(0),
+    parameterAverageSyllablesPerPhrase: toDecimal(0),
+    parameterProportionOfLongWords: toDecimal(0),
+    parameterLix: toDecimal(weights.parameterLix),
+    parameterProportionOfWordsWithComplexSyllables: toDecimal(
+      weights.parameterProportionOfWordsWithComplexSyllables,
+    ),
+    parameterProportionOfWordsWithConsonantClusters: toDecimal(
+      weights.parameterProportionOfWordsWithConsonantClusters,
+    ),
+    parameterProportionOfWordsWithMultiMemberedGraphemes: toDecimal(
+      weights.parameterProportionOfWordsWithMultiMemberedGraphemes,
+    ),
+    parameterProportionOfWordsWithRareGraphemes: toDecimal(
+      weights.parameterProportionOfWordsWithRareGraphemes,
+    ),
+  };
+}
 
 @Controller('calculate')
 export class CalculateController {
@@ -36,31 +78,39 @@ export class CalculateController {
 
     let config;
     if (overrides.parameterLix != null) {
-      config = await this.prisma.config.create({
-        data: {
-          parameterCountWords: 0,
-          parameterCountPhrases: 0,
-          parameterCountMultipleWords: 0,
-          parameterCountWordsWithComplexSyllables: 0,
-          parameterCountWordsWithConsonantClusters: 0,
-          parameterCountWordsWithMultiMemberedGraphemes: 0,
-          parameterCountWordsWithRareGraphemes: 0,
-          parameterAverageWordLength: 0,
-          parameterAveragePhraseLength: 0,
-          parameterAverageSyllablesPerWord: 0,
-          parameterAverageSyllablesPerPhrase: 0,
-          parameterProportionOfLongWords: 0,
-          parameterLix: overrides.parameterLix,
-          parameterProportionOfWordsWithComplexSyllables:
-            overrides.parameterProportionOfWordsWithComplexSyllables ?? 0,
-          parameterProportionOfWordsWithConsonantClusters:
-            overrides.parameterProportionOfWordsWithConsonantClusters ?? 0,
-          parameterProportionOfWordsWithMultiMemberedGraphemes:
-            overrides.parameterProportionOfWordsWithMultiMemberedGraphemes ?? 0,
-          parameterProportionOfWordsWithRareGraphemes:
-            overrides.parameterProportionOfWordsWithRareGraphemes ?? 0,
-        },
-      });
+      const weights = {
+        parameterLix: overrides.parameterLix,
+        parameterProportionOfWordsWithComplexSyllables:
+          overrides.parameterProportionOfWordsWithComplexSyllables ?? 0,
+        parameterProportionOfWordsWithConsonantClusters:
+          overrides.parameterProportionOfWordsWithConsonantClusters ?? 0,
+        parameterProportionOfWordsWithMultiMemberedGraphemes:
+          overrides.parameterProportionOfWordsWithMultiMemberedGraphemes ?? 0,
+        parameterProportionOfWordsWithRareGraphemes:
+          overrides.parameterProportionOfWordsWithRareGraphemes ?? 0,
+      };
+
+      if (saveResult) {
+        config = await this.prisma.config.create({
+          data: {
+            parameterCountWords: 0,
+            parameterCountPhrases: 0,
+            parameterCountMultipleWords: 0,
+            parameterCountWordsWithComplexSyllables: 0,
+            parameterCountWordsWithConsonantClusters: 0,
+            parameterCountWordsWithMultiMemberedGraphemes: 0,
+            parameterCountWordsWithRareGraphemes: 0,
+            parameterAverageWordLength: 0,
+            parameterAveragePhraseLength: 0,
+            parameterAverageSyllablesPerWord: 0,
+            parameterAverageSyllablesPerPhrase: 0,
+            parameterProportionOfLongWords: 0,
+            ...weights,
+          },
+        });
+      } else {
+        config = buildInMemoryConfig(weights);
+      }
     } else {
       const dbConfig = await this.prisma.config.findFirst({
         orderBy: { createdAt: 'desc' },

@@ -34,64 +34,39 @@ export class CalculateController {
 
     const { text, saveResult, ...overrides } = parsed.data;
 
-    let config;
-    if (overrides.parameterLix != null) {
-      config = await this.prisma.config.create({
-        data: {
-          parameterCountWords: 0,
-          parameterCountPhrases: 0,
-          parameterCountMultipleWords: 0,
-          parameterCountWordsWithComplexSyllables: 0,
-          parameterCountWordsWithConsonantClusters: 0,
-          parameterCountWordsWithMultiMemberedGraphemes: 0,
-          parameterCountWordsWithRareGraphemes: 0,
-          parameterAverageWordLength: 0,
-          parameterAveragePhraseLength: 0,
-          parameterAverageSyllablesPerWord: 0,
-          parameterAverageSyllablesPerPhrase: 0,
-          parameterProportionOfLongWords: 0,
-          parameterLix: overrides.parameterLix,
-          parameterProportionOfWordsWithComplexSyllables:
-            overrides.parameterProportionOfWordsWithComplexSyllables ?? 0,
-          parameterProportionOfWordsWithConsonantClusters:
-            overrides.parameterProportionOfWordsWithConsonantClusters ?? 0,
-          parameterProportionOfWordsWithMultiMemberedGraphemes:
-            overrides.parameterProportionOfWordsWithMultiMemberedGraphemes ?? 0,
-          parameterProportionOfWordsWithRareGraphemes:
-            overrides.parameterProportionOfWordsWithRareGraphemes ?? 0,
-        },
-      });
-    } else {
-      const dbConfig = await this.prisma.config.findFirst({
-        orderBy: { createdAt: 'desc' },
-      });
-      if (!dbConfig) {
-        return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
-      }
-      config = {
-        ...dbConfig,
-        ...(overrides.parameterProportionOfWordsWithComplexSyllables != null && {
-          parameterProportionOfWordsWithComplexSyllables: new Prisma.Decimal(
-            overrides.parameterProportionOfWordsWithComplexSyllables,
-          ),
-        }),
-        ...(overrides.parameterProportionOfWordsWithConsonantClusters != null && {
-          parameterProportionOfWordsWithConsonantClusters: new Prisma.Decimal(
-            overrides.parameterProportionOfWordsWithConsonantClusters,
-          ),
-        }),
-        ...(overrides.parameterProportionOfWordsWithMultiMemberedGraphemes != null && {
-          parameterProportionOfWordsWithMultiMemberedGraphemes: new Prisma.Decimal(
-            overrides.parameterProportionOfWordsWithMultiMemberedGraphemes,
-          ),
-        }),
-        ...(overrides.parameterProportionOfWordsWithRareGraphemes != null && {
-          parameterProportionOfWordsWithRareGraphemes: new Prisma.Decimal(
-            overrides.parameterProportionOfWordsWithRareGraphemes,
-          ),
-        }),
-      };
+    const dbConfig = await this.prisma.config.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!dbConfig) {
+      return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
     }
+
+    const config = {
+      ...dbConfig,
+      ...(overrides.parameterLix != null && {
+        parameterLix: new Prisma.Decimal(overrides.parameterLix),
+      }),
+      ...(overrides.parameterProportionOfWordsWithComplexSyllables != null && {
+        parameterProportionOfWordsWithComplexSyllables: new Prisma.Decimal(
+          overrides.parameterProportionOfWordsWithComplexSyllables,
+        ),
+      }),
+      ...(overrides.parameterProportionOfWordsWithConsonantClusters != null && {
+        parameterProportionOfWordsWithConsonantClusters: new Prisma.Decimal(
+          overrides.parameterProportionOfWordsWithConsonantClusters,
+        ),
+      }),
+      ...(overrides.parameterProportionOfWordsWithMultiMemberedGraphemes != null && {
+        parameterProportionOfWordsWithMultiMemberedGraphemes: new Prisma.Decimal(
+          overrides.parameterProportionOfWordsWithMultiMemberedGraphemes,
+        ),
+      }),
+      ...(overrides.parameterProportionOfWordsWithRareGraphemes != null && {
+        parameterProportionOfWordsWithRareGraphemes: new Prisma.Decimal(
+          overrides.parameterProportionOfWordsWithRareGraphemes,
+        ),
+      }),
+    };
 
     const result = await this.calculateService.calculate(text, config, saveResult);
     return reply.send(result);

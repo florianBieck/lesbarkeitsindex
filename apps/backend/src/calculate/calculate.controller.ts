@@ -15,7 +15,7 @@ const CalculateSchema = z.object({
   parameterProportionOfWordsWithRareGraphemes: z.number().min(0).optional(),
 });
 
-function buildConfigData(overrides: {
+export function buildConfigData(overrides: {
   parameterLix: number;
   parameterProportionOfWordsWithComplexSyllables?: number;
   parameterProportionOfWordsWithConsonantClusters?: number;
@@ -47,7 +47,7 @@ function buildConfigData(overrides: {
   };
 }
 
-function toInMemoryConfig(
+export function toInMemoryConfig(
   data: ReturnType<typeof buildConfigData>,
 ): Prisma.ConfigGetPayload<object> {
   const d = (v: number) => new Prisma.Decimal(v);

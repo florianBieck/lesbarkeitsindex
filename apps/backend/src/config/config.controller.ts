@@ -19,6 +19,7 @@ export class AppConfigController {
   @Get()
   async getConfig(@Res() reply: FastifyReply) {
     const config = await this.prisma.config.findFirst({
+      where: { results: { none: {} } },
       orderBy: { createdAt: 'desc' },
     });
     if (!config) {

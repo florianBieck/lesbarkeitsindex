@@ -15,6 +15,10 @@ const CalculateSchema = z.object({
   parameterProportionOfWordsWithRareGraphemes: z.number().min(0).optional(),
 });
 
+function toDecimalLike(n: number) {
+  return { toNumber: () => n };
+}
+
 @Controller('calculate')
 export class CalculateController {
   constructor(
@@ -33,41 +37,62 @@ export class CalculateController {
     }
 
     const { text, saveResult, ...overrides } = parsed.data;
+    const hasOverrides = overrides.parameterLix != null;
+
+    const dbConfig = await this.prisma.config.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!dbConfig) {
+      return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
+    }
 
     let config;
-    if (overrides.parameterLix != null) {
-      config = await this.prisma.config.create({
-        data: {
-          parameterCountWords: 0,
-          parameterCountPhrases: 0,
-          parameterCountMultipleWords: 0,
-          parameterCountWordsWithComplexSyllables: 0,
-          parameterCountWordsWithConsonantClusters: 0,
-          parameterCountWordsWithMultiMemberedGraphemes: 0,
-          parameterCountWordsWithRareGraphemes: 0,
-          parameterAverageWordLength: 0,
-          parameterAveragePhraseLength: 0,
-          parameterAverageSyllablesPerWord: 0,
-          parameterAverageSyllablesPerPhrase: 0,
-          parameterProportionOfLongWords: 0,
-          parameterLix: overrides.parameterLix,
-          parameterProportionOfWordsWithComplexSyllables:
+    if (hasOverrides) {
+      if (saveResult) {
+        config = await this.prisma.config.create({
+          data: {
+            parameterCountWords: 0,
+            parameterCountPhrases: 0,
+            parameterCountMultipleWords: 0,
+            parameterCountWordsWithComplexSyllables: 0,
+            parameterCountWordsWithConsonantClusters: 0,
+            parameterCountWordsWithMultiMemberedGraphemes: 0,
+            parameterCountWordsWithRareGraphemes: 0,
+            parameterAverageWordLength: 0,
+            parameterAveragePhraseLength: 0,
+            parameterAverageSyllablesPerWord: 0,
+            parameterAverageSyllablesPerPhrase: 0,
+            parameterProportionOfLongWords: 0,
+            parameterLix: overrides.parameterLix,
+            parameterProportionOfWordsWithComplexSyllables:
+              overrides.parameterProportionOfWordsWithComplexSyllables ?? 0,
+            parameterProportionOfWordsWithConsonantClusters:
+              overrides.parameterProportionOfWordsWithConsonantClusters ?? 0,
+            parameterProportionOfWordsWithMultiMemberedGraphemes:
+              overrides.parameterProportionOfWordsWithMultiMemberedGraphemes ?? 0,
+            parameterProportionOfWordsWithRareGraphemes:
+              overrides.parameterProportionOfWordsWithRareGraphemes ?? 0,
+          },
+        });
+      } else {
+        config = {
+          id: dbConfig.id,
+          parameterLix: toDecimalLike(overrides.parameterLix!),
+          parameterProportionOfWordsWithComplexSyllables: toDecimalLike(
             overrides.parameterProportionOfWordsWithComplexSyllables ?? 0,
-          parameterProportionOfWordsWithConsonantClusters:
+          ),
+          parameterProportionOfWordsWithConsonantClusters: toDecimalLike(
             overrides.parameterProportionOfWordsWithConsonantClusters ?? 0,
-          parameterProportionOfWordsWithMultiMemberedGraphemes:
+          ),
+          parameterProportionOfWordsWithMultiMemberedGraphemes: toDecimalLike(
             overrides.parameterProportionOfWordsWithMultiMemberedGraphemes ?? 0,
-          parameterProportionOfWordsWithRareGraphemes:
+          ),
+          parameterProportionOfWordsWithRareGraphemes: toDecimalLike(
             overrides.parameterProportionOfWordsWithRareGraphemes ?? 0,
-        },
-      });
-    } else {
-      const dbConfig = await this.prisma.config.findFirst({
-        orderBy: { createdAt: 'desc' },
-      });
-      if (!dbConfig) {
-        return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
+          ),
+        };
       }
+    } else {
       config = {
         ...dbConfig,
         ...(overrides.parameterProportionOfWordsWithComplexSyllables != null && {

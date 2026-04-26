@@ -67,21 +67,21 @@ const meters = computed(() => {
       label: 'Schwierige Buchstabenfolgen',
       color: colors.consonantClusters,
       value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100,
+        Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100,
       ),
     },
     {
       label: 'Mehrteilige Buchstabengruppen',
       color: colors.multiGraphemes,
       value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100,
+        Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100,
       ),
     },
     {
       label: 'Seltene Buchstaben',
       color: colors.rareGraphemes,
       value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100,
+        Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100,
       ),
     },
   ];

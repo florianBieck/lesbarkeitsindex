@@ -77,6 +77,7 @@ model Result {
   score                                       Decimal
   scoreLevel                                  Decimal
   text                                        String
+  title                                       String   @default("")
   words                                       String[]
   wordsWithOneSyllable                        String[]
   wordsWithTwoSyllables                       String[]

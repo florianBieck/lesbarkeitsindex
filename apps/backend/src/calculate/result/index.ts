@@ -36,14 +36,14 @@ import {
   calculateNumbers,
   calculateSpecialCharacters,
 } from './text-features.js';
-import { extractHeadingText, filterHeadingSentences } from './heading-extraction.js';
+import { detectTitle } from './title-guard.js';
 
 export * from './basic-metrics.js';
 export * from './grapheme-analysis.js';
 export * from './indices.js';
 export * from './linguistic-features.js';
 export * from './text-features.js';
-export * from './heading-extraction.js';
+export * from './title-guard.js';
 
 export interface ConfigWeights {
   readonly parameterLix: { toNumber(): number };
@@ -54,14 +54,23 @@ export interface ConfigWeights {
   readonly id: string;
 }
 
+/**
+ * Berechnet alle Kennzahlen aus dem vollen Originaltext und der
+ * Sidecar-Analyse des Fließtexts.
+ *
+ * Invariante: `analysis` MUSS aus `detectTitle(text).bodyText` erzeugt worden
+ * sein. `detectTitle` ist deterministisch, daher leitet diese Funktion Titel
+ * und Fließtext selbst aus `text` ab und kann nie von der Analyse abweichen.
+ * Ein erkannter Titel fließt in keine Kennzahl ein; `text` und `hashText`
+ * behalten den vollen Originaltext inklusive Titel.
+ */
 export function computeReadability(text: string, analysis: TextAnalysis, config: ConfigWeights) {
   const { sentences, words, syllablesPerWord, posTags } = analysis;
 
-  const headingText = extractHeadingText(text);
-  const { bodySentences } = filterHeadingSentences(sentences, headingText);
+  const { title, bodyText } = detectTitle(text);
 
   const countWords = calculateCountWords(words);
-  const countPhrases = calculateCountPhrases(bodySentences);
+  const countPhrases = calculateCountPhrases(sentences);
   const countMultipleWords = countPhrases;
   const countWordsWithComplexSyllables = calculateSyllableComplexity(words, syllablesPerWord);
   const countWordsWithConsonantClusters = calculateConsonantClusters(words);
@@ -69,13 +78,13 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
   const countWordsWithRareGraphemes = calculateRareGraphemes(words);
   const abbreviations = calculateAbbreviations(words);
   const numbers = calculateNumbers(words);
-  const specialCharacters = calculateSpecialCharacters(text);
+  const specialCharacters = calculateSpecialCharacters(bodyText);
   const averageWordLength = calculateAverageWordLength(words);
   const averageCharsPerSyllable = calculateAverageCharsPerSyllable(words, syllablesPerWord);
   const averageSyllablesPerWord = calculateAverageSyllablesPerWord(words, syllablesPerWord);
-  const averagePhraseLength = calculateAveragePhraseLength(words, bodySentences);
+  const averagePhraseLength = calculateAveragePhraseLength(words, sentences);
   const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(
-    bodySentences,
+    sentences,
     words,
     syllablesPerWord,
   );
@@ -88,18 +97,18 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
     countWords > 0 ? countWordsWithMultiMemberedGraphemes / countWords : 0;
   const proportionOfWordsWithRareGraphemes =
     countWords > 0 ? countWordsWithRareGraphemes / countWords : 0;
-  const lix = calculateLix(words, bodySentences);
-  const gsmog = calculateGsmog(words, bodySentences, syllablesPerWord);
-  const fleschKincaid = calculateFleschKincaid(words, bodySentences, syllablesPerWord);
-  const wst4 = calculateWstf(words, bodySentences, syllablesPerWord);
+  const lix = calculateLix(words, sentences);
+  const gsmog = calculateGsmog(words, sentences, syllablesPerWord);
+  const fleschKincaid = calculateFleschKincaid(words, sentences, syllablesPerWord);
+  const wst4 = calculateWstf(words, sentences, syllablesPerWord);
   const ttr = calculateTTR(words);
   const proNIndex = calculateProNIndex(posTags);
-  const subordinateClauseRatio = calculateSubordinateClauseRatio(posTags, bodySentences);
+  const subordinateClauseRatio = calculateSubordinateClauseRatio(posTags, sentences);
   const passiveCount = calculatePassiveCount(words, posTags);
   const nominalizationCount = calculateNominalizations(words, posTags);
   const rix = calculateRix(
     words,
-    bodySentences,
+    sentences,
     passiveCount,
     subordinateClauseRatio,
     nominalizationCount,
@@ -168,13 +177,14 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
     score: llix,
     scoreLevel: 0,
     text,
+    title,
     words: [...words],
     wordsWithOneSyllable,
     wordsWithTwoSyllables,
     wordsWithThreeSyllables,
     wordsWithFourSyllables,
     wordsWithFiveSyllables,
-    phrases: [...bodySentences],
+    phrases: [...sentences],
     syllables: words.flatMap((word, i) => {
       const count = syllablesPerWord[i];
       return Array.from({ length: count }, () => word);

@@ -58,6 +58,7 @@ export interface ResultData {
   score: string;
   scoreLevel: string;
   text: string;
+  title: string;
   words: string[];
   wordsWithOneSyllable: string[];
   wordsWithTwoSyllables: string[];

@@ -6,7 +6,7 @@ import {
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RSidecarService } from '../r-sidecar/r-sidecar.service.js';
-import { computeReadability } from './result/index.js';
+import { computeReadability, detectTitle } from './result/index.js';
 
 type Config = Prisma.ConfigGetPayload<object>;
 
@@ -18,9 +18,13 @@ export class CalculateService {
   ) {}
 
   async calculate(text: string, config: Config, saveResult: boolean = false) {
+    // Titel-Guard: der R-Sidecar analysiert nur den Fließtext, damit ein
+    // erkannter Titel konstruktionsbedingt in keine Kennzahl einfließt.
+    const { bodyText } = detectTitle(text);
+
     let analysis;
     try {
-      analysis = await this.rSidecar.analyzeText(text);
+      analysis = await this.rSidecar.analyzeText(bodyText);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.includes('R sidecar')) {

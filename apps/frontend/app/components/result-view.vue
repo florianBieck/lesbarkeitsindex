@@ -313,6 +313,13 @@ onMounted(() => {
       </p>
     </div>
 
+    <div v-if="result.title" class="text-center pb-5">
+      <div class="text-lg font-medium text-surface-900">&bdquo;{{ result.title }}&ldquo;</div>
+      <div class="text-sm text-surface-500 mt-1">
+        Titel &mdash; flie&szlig;t in keine Kennzahl ein
+      </div>
+    </div>
+
     <!-- Key stats — tight to score, separated from details -->
     <div class="grid grid-cols-3 gap-4 text-center py-5 border-t border-b border-surface-100">
       <div>

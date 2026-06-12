@@ -69,6 +69,20 @@ test.describe('Homepage', () => {
     await expect(page.locator('.card').getByText('Gewichtung')).toBeVisible();
   });
 
+  test('shows the detected title after analyzing a text with a title line', async ({ page }) => {
+    const editor = page.locator('.ql-editor');
+    await editor.click();
+    await page.keyboard.type('Der Igel');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Igel sind nachtaktive Tiere. Sie schlafen am Tag.');
+
+    await page.getByRole('button', { name: 'Text analysieren' }).click();
+    await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible({ timeout: 10000 });
+
+    await expect(page.getByText('„Der Igel“')).toBeVisible();
+    await expect(page.getByText('Titel — fließt in keine Kennzahl ein')).toBeVisible();
+  });
+
   test('result data table shows readability metrics', async ({ page }) => {
     const editor = page.locator('.ql-editor');
     await editor.click();

@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { test, expect, describe } from 'vitest';
 import {
   computeReadability,
@@ -640,5 +641,159 @@ describe('computeReadability syllable buckets', () => {
 
     expect(result.wordsWithFiveSyllables).toContain('Universität');
     expect(result.countWordsWithFiveSyllable).toBe(1);
+  });
+});
+
+describe('computeReadability Titel-Guard', () => {
+  const config = {
+    parameterLix: { toNumber: () => 0.5 },
+    parameterProportionOfWordsWithComplexSyllables: { toNumber: () => 0.2 },
+    parameterProportionOfWordsWithMultiMemberedGraphemes: { toNumber: () => 0.1 },
+    parameterProportionOfWordsWithRareGraphemes: { toNumber: () => 0.1 },
+    parameterProportionOfWordsWithConsonantClusters: { toNumber: () => 0.1 },
+    id: 'test-config',
+  } satisfies ConfigWeights;
+
+  describe('Einzeiler: kein Titel, voller Text zählt (AC1)', () => {
+    const text = 'Der Hund läuft über die Straße.';
+    const analysis = {
+      sentences: ['Der Hund läuft über die Straße.'],
+      words: WORDS,
+      syllablesPerWord: SYLLABLES,
+      posTags: ['ART', 'NN', 'VVFIN', 'APPR', 'ART', 'NN'],
+    };
+
+    test('erkennt keinen Titel', () => {
+      expect(computeReadability(text, analysis, config).title).toBe('');
+    });
+
+    test('zählt den einzigen Satz (Satzzahl >= 1)', () => {
+      const result = computeReadability(text, analysis, config);
+      expect(result.countPhrases).toBe(1);
+      expect(result.phrases).toEqual(['Der Hund läuft über die Straße.']);
+    });
+
+    test('alle Wörter zählen', () => {
+      expect(computeReadability(text, analysis, config).countWords).toBe(6);
+    });
+
+    test('satzbasierte Indizes fallen nicht mehr auf 0', () => {
+      const result = computeReadability(text, analysis, config);
+      expect(result.gsmog).toBeCloseTo(-2, 5);
+      expect(result.fleschKincaid).not.toBe(0);
+    });
+  });
+
+  describe('erste Zeile ist ganzer Satz: kein Titel (AC2)', () => {
+    const text = 'Das ist ein Satz.\nWeiter geht es hier.';
+    const analysis = {
+      sentences: ['Das ist ein Satz.', 'Weiter geht es hier.'],
+      words: ['Das', 'ist', 'ein', 'Satz', 'Weiter', 'geht', 'es', 'hier'],
+      syllablesPerWord: [1, 1, 1, 1, 2, 1, 1, 1],
+      posTags: ['PDS', 'VAFIN', 'ART', 'NN', 'ADV', 'VVFIN', 'PPER', 'ADV'],
+    };
+
+    test('erkennt keinen Titel', () => {
+      expect(computeReadability(text, analysis, config).title).toBe('');
+    });
+
+    test('der erste Satz zählt vollständig', () => {
+      const result = computeReadability(text, analysis, config);
+      expect(result.countPhrases).toBe(2);
+      expect(result.countWords).toBe(8);
+      expect(result.phrases).toEqual(['Das ist ein Satz.', 'Weiter geht es hier.']);
+    });
+  });
+
+  describe('lange erste Zeile (> 50 Zeichen): kein Titel (AC2)', () => {
+    const firstLine = 'Dieser allererste Satz ist wirklich außerordentlich lang';
+    const text = `${firstLine}\nZweiter Satz.`;
+    const analysis = {
+      sentences: [firstLine, 'Zweiter Satz.'],
+      words: [
+        'Dieser',
+        'allererste',
+        'Satz',
+        'ist',
+        'wirklich',
+        'außerordentlich',
+        'lang',
+        'Zweiter',
+        'Satz',
+      ],
+      syllablesPerWord: [2, 4, 1, 1, 2, 5, 1, 2, 1],
+      posTags: ['PDAT', 'ADJA', 'NN', 'VAFIN', 'ADJD', 'ADJD', 'ADJD', 'ADJA', 'NN'],
+    };
+
+    test('die erste Zeile ist länger als 50 Zeichen', () => {
+      expect(firstLine.length).toBeGreaterThan(50);
+    });
+
+    test('erkennt keinen Titel und zählt beide Sätze', () => {
+      const result = computeReadability(text, analysis, config);
+      expect(result.title).toBe('');
+      expect(result.countPhrases).toBe(2);
+      expect(result.countWords).toBe(9);
+    });
+  });
+
+  describe('echte Überschrift: Titel in keiner Kennzahl (AC3)', () => {
+    const fullText = 'Igel & Co\nIgel schlafen am Tag.';
+    const bodyOnlyAnalysis = {
+      sentences: ['Igel schlafen am Tag.'],
+      words: ['Igel', 'schlafen', 'am', 'Tag'],
+      syllablesPerWord: [2, 2, 1, 1],
+      posTags: ['NN', 'VVFIN', 'APPR', 'NN'],
+    };
+
+    test('weist den Titel aus', () => {
+      expect(computeReadability(fullText, bodyOnlyAnalysis, config).title).toBe('Igel & Co');
+    });
+
+    test('Wort-, Satz- und Silbenzahlen stammen nur aus dem Fließtext', () => {
+      const result = computeReadability(fullText, bodyOnlyAnalysis, config);
+      expect(result.countWords).toBe(4);
+      expect(result.countPhrases).toBe(1);
+      expect(result.countSyllables).toBe(6);
+      expect(result.words).toEqual(['Igel', 'schlafen', 'am', 'Tag']);
+      expect(result.phrases).toEqual(['Igel schlafen am Tag.']);
+    });
+
+    test('Silben-Buckets decken genau die Fließtext-Wörter ab', () => {
+      const result = computeReadability(fullText, bodyOnlyAnalysis, config);
+      expect(result.countWordsWithOneSyllable).toBe(2);
+      expect(result.countWordsWithTwoSyllable).toBe(2);
+      const bucketTotal =
+        result.countWordsWithOneSyllable +
+        result.countWordsWithTwoSyllable +
+        result.countWordsWithThreeSyllable +
+        result.countWordsWithFourSyllable +
+        result.countWordsWithFiveSyllable;
+      expect(bucketTotal).toBe(result.countWords);
+    });
+
+    test('Sonderzeichen im Titel zählen nicht zum Umfang', () => {
+      const result = computeReadability(fullText, bodyOnlyAnalysis, config);
+      expect(result.countSpecialCharacters).toBe(0);
+    });
+
+    test('Sonderzeichen im Fließtext zählen weiterhin', () => {
+      const text = 'Der Igel\nIgel & Co schlafen.';
+      const analysis = {
+        sentences: ['Igel & Co schlafen.'],
+        words: ['Igel', 'Co', 'schlafen'],
+        syllablesPerWord: [2, 1, 2],
+        posTags: ['NN', 'NN', 'VVFIN'],
+      };
+      const result = computeReadability(text, analysis, config);
+      expect(result.title).toBe('Der Igel');
+      expect(result.countSpecialCharacters).toBe(1);
+    });
+
+    test('text und hashText behalten den vollen Originaltext', () => {
+      const result = computeReadability(fullText, bodyOnlyAnalysis, config);
+      expect(result.text).toBe(fullText);
+      expect(result.hashText).toBe(createHash('sha256').update(fullText, 'utf8').digest('hex'));
+    });
   });
 });

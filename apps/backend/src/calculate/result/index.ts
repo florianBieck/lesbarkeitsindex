@@ -121,7 +121,7 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
   const wordsWithTwoSyllables = words.filter((_, i) => syllablesPerWord[i] === 2);
   const wordsWithThreeSyllables = words.filter((_, i) => syllablesPerWord[i] === 3);
   const wordsWithFourSyllables = words.filter((_, i) => syllablesPerWord[i] === 4);
-  const wordsWithFiveSyllables = words.filter((_, i) => syllablesPerWord[i] === 5);
+  const wordsWithFiveSyllables = words.filter((_, i) => syllablesPerWord[i] >= 5);
 
   return {
     countWords,

@@ -190,7 +190,7 @@ const syllableGroups = computed(() => [
     words: props.result.wordsWithFourSyllables,
   },
   {
-    label: '5 Silben',
+    label: '5+ Silben',
     count: Number(props.result.countWordsWithFiveSyllable),
     words: props.result.wordsWithFiveSyllables,
   },

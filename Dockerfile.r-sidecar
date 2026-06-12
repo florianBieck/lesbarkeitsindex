@@ -29,7 +29,7 @@ FROM base AS deps
 # Install CRAN packages (fail build if any package fails to install)
 RUN R -e "\
   options(timeout = 300); \
-  pkgs <- c('plumber', 'jsonlite', 'NLP', 'openNLP', 'quanteda', 'quanteda.textstats', 'nsyllable'); \
+  pkgs <- c('plumber', 'jsonlite', 'NLP', 'openNLP'); \
   install.packages(pkgs, repos='https://cloud.r-project.org/'); \
   for (p in pkgs) { if (!requireNamespace(p, quietly=TRUE)) stop(paste('Failed to install:', p)) }"
 
@@ -42,6 +42,14 @@ RUN R -e "\
       if (requireNamespace('openNLPmodels.de', quietly=TRUE)) break \
     }, error = function(e) if (i == 3) stop('Failed to install openNLPmodels.de after 3 attempts')) \
   }"
+
+# Install German hyphenation packages for syllable counting
+# (sylly from CRAN; sylly.de is NOT on CRAN — served from the author's l10n repository)
+RUN R -e "\
+  options(timeout = 300); \
+  pkgs <- c('sylly', 'sylly.de'); \
+  install.packages(pkgs, repos=c('https://cloud.r-project.org/', 'https://undocumeantit.github.io/repos/l10n/')); \
+  for (p in pkgs) { if (!requireNamespace(p, quietly=TRUE)) stop(paste('Failed to install:', p)) }"
 
 # ---------- Runtime ----------
 FROM deps AS runner

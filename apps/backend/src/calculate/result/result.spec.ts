@@ -1,5 +1,7 @@
 import { test, expect, describe } from 'vitest';
 import {
+  computeReadability,
+  type ConfigWeights,
   calculateCountWords,
   calculateCountPhrases,
   calculateSyllableComplexity,
@@ -577,5 +579,66 @@ describe('metric functions with pre-computed arrays', () => {
     test('returns 0 for empty arrays', () => {
       expect(calculateRix([], [], 0, 0, 0)).toBe(0);
     });
+  });
+});
+
+describe('computeReadability syllable buckets', () => {
+  const config = {
+    parameterLix: { toNumber: () => 0.5 },
+    parameterProportionOfWordsWithComplexSyllables: { toNumber: () => 0.2 },
+    parameterProportionOfWordsWithMultiMemberedGraphemes: { toNumber: () => 0.1 },
+    parameterProportionOfWordsWithRareGraphemes: { toNumber: () => 0.1 },
+    parameterProportionOfWordsWithConsonantClusters: { toNumber: () => 0.1 },
+    id: 'test-config',
+  } satisfies ConfigWeights;
+
+  test('counts a 7-syllable word in the 5+ bucket', () => {
+    const text = 'Die Radioaktivität sinkt.';
+    const analysis = {
+      sentences: ['Die Radioaktivität sinkt.'],
+      words: ['Die', 'Radioaktivität', 'sinkt'],
+      syllablesPerWord: [1, 7, 1],
+      posTags: ['ART', 'NN', 'VVFIN'],
+    };
+
+    const result = computeReadability(text, analysis, config);
+
+    expect(result.wordsWithFiveSyllables).toContain('Radioaktivität');
+    expect(result.countWordsWithFiveSyllable).toBe(1);
+  });
+
+  test('assigns every word to exactly one bucket', () => {
+    const text = 'Der Esel mag Bananen, Marmelade, Universität und Radioaktivität.';
+    const analysis = {
+      sentences: ['Der Esel mag Bananen, Marmelade, Universität und Radioaktivität.'],
+      words: ['Der', 'Esel', 'Bananen', 'Marmelade', 'Universität', 'Radioaktivität'],
+      syllablesPerWord: [1, 2, 3, 4, 5, 7],
+      posTags: ['ART', 'NN', 'NN', 'NN', 'NN', 'NN'],
+    };
+
+    const result = computeReadability(text, analysis, config);
+
+    const bucketTotal =
+      result.countWordsWithOneSyllable +
+      result.countWordsWithTwoSyllable +
+      result.countWordsWithThreeSyllable +
+      result.countWordsWithFourSyllable +
+      result.countWordsWithFiveSyllable;
+    expect(bucketTotal).toBe(result.countWords);
+  });
+
+  test('keeps a word with exactly 5 syllables in the 5+ bucket', () => {
+    const text = 'Die Universität öffnet.';
+    const analysis = {
+      sentences: ['Die Universität öffnet.'],
+      words: ['Die', 'Universität', 'öffnet'],
+      syllablesPerWord: [1, 5, 2],
+      posTags: ['ART', 'NN', 'VVFIN'],
+    };
+
+    const result = computeReadability(text, analysis, config);
+
+    expect(result.wordsWithFiveSyllables).toContain('Universität');
+    expect(result.countWordsWithFiveSyllable).toBe(1);
   });
 });

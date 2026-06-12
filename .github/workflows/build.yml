@@ -75,6 +75,73 @@ jobs:
       - name: Run tests
         run: pnpm --filter backend run test
 
+  e2e-r-sidecar:
+    needs: [changes]
+    if: needs.changes.outputs.r-sidecar == 'true' || needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build r-sidecar image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.r-sidecar
+          load: true
+          tags: r-sidecar:e2e
+          cache-from: type=gha,scope=r-sidecar
+
+      # Started before pnpm setup so the ~60s R startup overlaps with the install
+      - name: Start r-sidecar
+        run: docker run -d --name r-sidecar -p 8787:8787 r-sidecar:e2e
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Wait for r-sidecar health
+        run: |
+          for i in $(seq 1 60); do
+            if [ "$(docker inspect -f '{{.State.Running}}' r-sidecar)" != "true" ]; then
+              echo "r-sidecar container exited unexpectedly" >&2
+              docker logs r-sidecar >&2
+              exit 1
+            fi
+            if curl -fsS http://localhost:8787/health > /dev/null 2>&1; then
+              echo "r-sidecar healthy after ~$((i * 3))s"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "r-sidecar did not become healthy within 180s" >&2
+          docker logs r-sidecar >&2
+          exit 1
+
+      - name: Run e2e tests
+        env:
+          R_SIDECAR_URL: http://localhost:8787
+        run: pnpm --filter backend run test:e2e
+
+      - name: Show r-sidecar logs on failure
+        if: failure()
+        run: docker logs r-sidecar
+
   build-backend:
     needs: [test, changes]
     if: needs.changes.outputs.backend == 'true'

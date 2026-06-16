@@ -57,31 +57,31 @@ const meters = computed(() => {
       value: Math.round(Number(props.result.config.parameterLix) * 100),
     },
     {
-      label: 'Komplexe Silben (Wörter mit 3 oder mehr Silben)',
+      label: 'Drei- und Mehrsilber',
       color: colors.complexSyllables,
       value: Math.round(
         Number(props.result.config.parameterProportionOfWordsWithComplexSyllables) * 100,
       ),
     },
     {
-      label: 'Schwierige Buchstabenfolgen',
+      label: 'Konsonantenlauthäufung',
       color: colors.consonantClusters,
+      value: Math.round(
+        Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100,
+      ),
+    },
+    {
+      label: 'Mehrgliedrige Grapheme',
+      color: colors.multiGraphemes,
       value: Math.round(
         Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100,
       ),
     },
     {
-      label: 'Mehrteilige Buchstabengruppen',
-      color: colors.multiGraphemes,
-      value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100,
-      ),
-    },
-    {
-      label: 'Seltene Buchstaben',
+      label: 'Seltene Grapheme',
       color: colors.rareGraphemes,
       value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100,
+        Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100,
       ),
     },
   ];
@@ -131,22 +131,22 @@ const wordComplexity = computed(() => [
     count: null,
   },
   {
-    label: 'Komplexe Silben',
+    label: 'Drei- und Mehrsilber',
     value: `${Math.round(Number(props.result.proportionOfWordsWithComplexSyllables) * 10000) / 100}%`,
     count: Number(props.result.countWordsWithComplexSyllables),
   },
   {
-    label: 'Schwierige Buchstabenfolgen',
+    label: 'Konsonantenlauthäufung',
     value: `${Math.round(Number(props.result.proportionOfWordsWithConsonantClusters) * 10000) / 100}%`,
     count: Number(props.result.countWordsWithConsonantClusters),
   },
   {
-    label: 'Mehrteilige Buchstabengruppen',
+    label: 'Mehrgliedrige Grapheme',
     value: `${Math.round(Number(props.result.proportionOfWordsWithMultiMemberedGraphemes) * 10000) / 100}%`,
     count: Number(props.result.countWordsWithMultiMemberedGraphemes),
   },
   {
-    label: 'Seltene Buchstaben',
+    label: 'Seltene Grapheme',
     value: `${Math.round(Number(props.result.proportionOfWordsWithRareGraphemes) * 10000) / 100}%`,
     count: Number(props.result.countWordsWithRareGraphemes),
   },

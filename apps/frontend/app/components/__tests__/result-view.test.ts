@@ -113,4 +113,48 @@ describe('result-view', () => {
 
     expect(wrapper.html()).not.toContain('Titel');
   });
+
+  it('ordnet in der Gewichtungsanzeige jeder WK-Komponente ihren eigenen Gewichtswert zu', async () => {
+    // Bewusst unterschiedliche Gewichte, damit eine vertauschte Label-Wert-
+    // Zuordnung auffällt. PrimeVue MeterGroup rendert je Eintrag "<Label> (<%>)".
+    const wrapper = await mountSuspended(ResultView, {
+      props: {
+        result: makeResult({
+          config: {
+            id: 'config-1',
+            createdAt: '2026-06-12T08:00:00.000Z',
+            parameterLix: '0.6',
+            parameterProportionOfWordsWithComplexSyllables: '0.2',
+            parameterProportionOfWordsWithConsonantClusters: '0.05',
+            parameterProportionOfWordsWithMultiMemberedGraphemes: '0.1',
+            parameterProportionOfWordsWithRareGraphemes: '0.15',
+          },
+        }),
+      },
+    });
+
+    const text = wrapper.text();
+    expect(text).toContain('Lesbarkeitsindex (LIX) (60%)');
+    expect(text).toContain('Drei- und Mehrsilber (20%)');
+    expect(text).toContain('Konsonantenlauthäufung (5%)');
+    expect(text).toContain('Mehrgliedrige Grapheme (10%)');
+    expect(text).toContain('Seltene Grapheme (15%)');
+  });
+
+  it('verwendet die verbindlichen Glossar-Begriffe statt der alten Begriffe', async () => {
+    const wrapper = await mountSuspended(ResultView, {
+      props: { result: makeResult() },
+    });
+
+    const text = wrapper.text();
+    expect(text).toContain('Drei- und Mehrsilber');
+    expect(text).toContain('Konsonantenlauthäufung');
+    expect(text).toContain('Mehrgliedrige Grapheme');
+    expect(text).toContain('Seltene Grapheme');
+
+    expect(text).not.toContain('Komplexe Silben');
+    expect(text).not.toContain('Schwierige Buchstabenfolgen');
+    expect(text).not.toContain('Mehrteilige Buchstabengruppen');
+    expect(text).not.toContain('Seltene Buchstaben');
+  });
 });

@@ -25,6 +25,17 @@ vi.mock('chartjs-plugin-annotation', () => ({
   default: {},
 }));
 
+const makeConfig = (overrides: Record<string, string> = {}) => ({
+  id: 'config-1',
+  createdAt: '2026-06-12T08:00:00.000Z',
+  alpha: '0.3',
+  weightComplexSyllables: '50',
+  weightMultiMemberedGraphemes: '25',
+  weightRareGraphemes: '12.5',
+  weightConsonantClusters: '12.5',
+  ...overrides,
+});
+
 const makeResult = (overrides: Partial<ResultData> = {}): ResultData => ({
   id: 'result-1',
   createdAt: '2026-06-12T08:00:00.000Z',
@@ -69,8 +80,9 @@ const makeResult = (overrides: Partial<ResultData> = {}): ResultData => ({
   subordinateClauseRatio: '0',
   passiveCount: '0',
   nominalizationCount: '0',
-  score: '28.5',
-  scoreLevel: '2',
+  wordComplexity: '25',
+  lueLix: '37',
+  level: '2',
   text: 'Igel sind nachtaktive Tiere. Sie schlafen am Tag.',
   title: '',
   words: ['Igel', 'sind', 'nachtaktive', 'Tiere', 'Sie', 'schlafen', 'am', 'Tag'],
@@ -82,15 +94,7 @@ const makeResult = (overrides: Partial<ResultData> = {}): ResultData => ({
   phrases: ['Igel sind nachtaktive Tiere.', 'Sie schlafen am Tag.'],
   syllables: ['I', 'gel', 'sind', 'nacht', 'ak', 'ti', 've'],
   hashText: 'abc123',
-  config: {
-    id: 'config-1',
-    createdAt: '2026-06-12T08:00:00.000Z',
-    parameterLix: '0.6',
-    parameterProportionOfWordsWithComplexSyllables: '0.2',
-    parameterProportionOfWordsWithConsonantClusters: '0.05',
-    parameterProportionOfWordsWithMultiMemberedGraphemes: '0.1',
-    parameterProportionOfWordsWithRareGraphemes: '0.05',
-  },
+  config: makeConfig(),
   configId: 'config-1',
   ...overrides,
 });
@@ -114,31 +118,62 @@ describe('result-view', () => {
     expect(wrapper.html()).not.toContain('Titel');
   });
 
+  it('zeigt Niveaustufe, LÜ-LIX, LIX, WK und Umfang an (AC5)', async () => {
+    const wrapper = await mountSuspended(ResultView, {
+      props: { result: makeResult() },
+    });
+
+    const text = wrapper.text();
+    expect(text).toContain('Niveaustufe 2');
+    expect(text).toContain('LÜ-LIX');
+    expect(text).toContain('37'); // LÜ-LIX-Wert
+    expect(text).toContain('LIX');
+    expect(text).toContain('29.5'); // LIX-Wert
+    expect(text).toContain('WK');
+    expect(text).toContain('25'); // Wortkomplexität
+    expect(text).toContain('Umfang');
+    expect(text).toContain('Wörter');
+    expect(text).toContain('8'); // Umfang = Wortzahl
+  });
+
+  it('leitet die Niveaustufe ausschließlich aus dem Backend-Wert ab (keine eigene Stufen-Logik)', async () => {
+    // Hoher LÜ-LIX, aber das Backend meldet Stufe 1 — die Oberfläche folgt dem Backend.
+    const wrapper = await mountSuspended(ResultView, {
+      props: { result: makeResult({ lueLix: '90', level: '1' }) },
+    });
+    expect(wrapper.text()).toContain('Niveaustufe 1');
+    expect(wrapper.text()).toContain('Sehr leicht lesbar');
+
+    const harder = await mountSuspended(ResultView, {
+      props: { result: makeResult({ level: '4' }) },
+    });
+    expect(harder.text()).toContain('Niveaustufe 4');
+    expect(harder.text()).toContain('Eher schwer lesbar');
+  });
+
   it('ordnet in der Gewichtungsanzeige jeder WK-Komponente ihren eigenen Gewichtswert zu', async () => {
     // Bewusst unterschiedliche Gewichte, damit eine vertauschte Label-Wert-
     // Zuordnung auffällt. PrimeVue MeterGroup rendert je Eintrag "<Label> (<%>)".
     const wrapper = await mountSuspended(ResultView, {
       props: {
         result: makeResult({
-          config: {
-            id: 'config-1',
-            createdAt: '2026-06-12T08:00:00.000Z',
-            parameterLix: '0.6',
-            parameterProportionOfWordsWithComplexSyllables: '0.2',
-            parameterProportionOfWordsWithConsonantClusters: '0.05',
-            parameterProportionOfWordsWithMultiMemberedGraphemes: '0.1',
-            parameterProportionOfWordsWithRareGraphemes: '0.15',
-          },
+          config: makeConfig({
+            weightComplexSyllables: '50',
+            weightMultiMemberedGraphemes: '20',
+            weightRareGraphemes: '15',
+            weightConsonantClusters: '10',
+          }),
         }),
       },
     });
 
     const text = wrapper.text();
-    expect(text).toContain('Lesbarkeitsindex (LIX) (60%)');
-    expect(text).toContain('Drei- und Mehrsilber (20%)');
-    expect(text).toContain('Konsonantenlauthäufung (5%)');
-    expect(text).toContain('Mehrgliedrige Grapheme (10%)');
+    expect(text).toContain('Drei- und Mehrsilber (50%)');
+    expect(text).toContain('Mehrgliedrige Grapheme (20%)');
     expect(text).toContain('Seltene Grapheme (15%)');
+    expect(text).toContain('Konsonantenlauthäufung (10%)');
+    // Der LIX trägt kein eigenes Gewicht mehr (LÜ-LIX = LIX + α·WK).
+    expect(text).not.toContain('Lesbarkeitsindex (LIX) (');
   });
 
   it('verwendet die verbindlichen Glossar-Begriffe statt der alten Begriffe', async () => {

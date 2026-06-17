@@ -35,68 +35,71 @@ const props = defineProps<{
 const chartData = ref();
 const chartOptions = ref();
 
-const score = computed(() => Math.round(Number(props.result.score)));
+const round2 = (value: unknown) => Math.round(Number(value) * 100) / 100;
 
-const scoreInterpretation = computed(() => {
-  const s = score.value;
-  if (s < 20)
-    return { label: 'Niveaustufe 1', description: 'Sehr leicht lesbar', severity: 'success' };
-  if (s < 33) return { label: 'Niveaustufe 2', description: 'Leicht lesbar', severity: 'success' };
-  if (s < 50) return { label: 'Niveaustufe 3', description: 'Mittelschwer', severity: 'warn' };
-  if (s < 66)
-    return { label: 'Niveaustufe 4', description: 'Eher schwer lesbar', severity: 'warn' };
-  return { label: 'Niveaustufe 5', description: 'Schwer lesbar', severity: 'error' };
+// Schwierigkeit: LÜ-LIX als Kopfzahl, WK und Niveaustufe kommen aus dem Backend.
+const lueLix = computed(() => round2(props.result.lueLix));
+const lix = computed(() => round2(props.result.lix));
+const wordComplexity = computed(() => round2(props.result.wordComplexity));
+const level = computed(() => Math.round(Number(props.result.level)));
+const alpha = computed(() => round2(props.result.config.alpha));
+// Doughnut-Gauge auf 0–100 begrenzt; die Mitte zeigt den echten LÜ-LIX-Wert.
+const gauge = computed(() => Math.min(100, Math.max(0, lueLix.value)));
+
+// Niveaustufe-Interpretation ausschließlich aus dem Backend-Wert — keine eigene
+// Stufen-Logik mehr in der Oberfläche (Issue #28).
+const levelInfo = computed(() => {
+  switch (level.value) {
+    case 1:
+      return { description: 'Sehr leicht lesbar', severity: 'success' };
+    case 2:
+      return { description: 'Leicht lesbar', severity: 'success' };
+    case 3:
+      return { description: 'Mittelschwer', severity: 'warn' };
+    case 4:
+      return { description: 'Eher schwer lesbar', severity: 'error' };
+    default:
+      return { description: 'Schwer lesbar', severity: 'error' };
+  }
 });
 
 const meters = computed(() => {
   const colors = chartColors.value;
   return [
     {
-      label: 'Lesbarkeitsindex (LIX)',
-      color: colors.lix,
-      value: Math.round(Number(props.result.config.parameterLix) * 100),
-    },
-    {
       label: 'Drei- und Mehrsilber',
       color: colors.complexSyllables,
-      value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithComplexSyllables) * 100,
-      ),
-    },
-    {
-      label: 'Konsonantenlauthäufung',
-      color: colors.consonantClusters,
-      value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithConsonantClusters) * 100,
-      ),
+      value: Number(props.result.config.weightComplexSyllables),
     },
     {
       label: 'Mehrgliedrige Grapheme',
       color: colors.multiGraphemes,
-      value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithMultiMemberedGraphemes) * 100,
-      ),
+      value: Number(props.result.config.weightMultiMemberedGraphemes),
     },
     {
       label: 'Seltene Grapheme',
       color: colors.rareGraphemes,
-      value: Math.round(
-        Number(props.result.config.parameterProportionOfWordsWithRareGraphemes) * 100,
-      ),
+      value: Number(props.result.config.weightRareGraphemes),
+    },
+    {
+      label: 'Konsonantenlauthäufung',
+      color: colors.consonantClusters,
+      value: Number(props.result.config.weightConsonantClusters),
     },
   ];
 });
 
 const readabilityIndices = computed(() => [
-  { label: 'LÜ-LIX', value: Math.round(Number(props.result.score) * 100) / 100 },
-  { label: 'LIX', value: Math.round(Number(props.result.lix) * 100) / 100 },
-  { label: 'gSMOG', value: Math.round(Number(props.result.gsmog) * 100) / 100 },
-  { label: 'WST4', value: Math.round(Number(props.result.wst4) * 100) / 100 },
-  { label: 'Flesch-Kincaid', value: Math.round(Number(props.result.fleschKincaid) * 100) / 100 },
-  { label: 'RIX', value: Math.round(Number(props.result.ratte) * 100) / 100 },
+  { label: 'LÜ-LIX', value: lueLix.value },
+  { label: 'Wortkomplexität (WK)', value: wordComplexity.value },
+  { label: 'LIX', value: lix.value },
+  { label: 'gSMOG', value: round2(props.result.gsmog) },
+  { label: 'WST4', value: round2(props.result.wst4) },
+  { label: 'Flesch-Kincaid', value: round2(props.result.fleschKincaid) },
+  { label: 'RIX', value: round2(props.result.ratte) },
   {
     label: 'TTR',
-    value: `${Math.round(Number(props.result.ttr) * 100) / 100}%`,
+    value: `${round2(props.result.ttr)}%`,
     tooltip: 'Type-Token-Relation: Anteil verschiedener Wörter an der Gesamtzahl',
   },
 ]);
@@ -104,27 +107,29 @@ const readabilityIndices = computed(() => [
 const textStats = computed(() => [
   {
     label: 'Wortlänge',
-    value: `${Math.round(Number(props.result.averageWordLength) * 100) / 100} Buchstaben`,
+    value: `${round2(props.result.averageWordLength)} Buchstaben`,
   },
   {
     label: 'Satzlänge',
-    value: `${Math.round(Number(props.result.averagePhraseLength) * 100) / 100} Wörter`,
+    value: `${round2(props.result.averagePhraseLength)} Wörter`,
   },
   {
     label: 'Buchstaben pro Silbe',
-    value: Math.round(Number(props.result.averageCharsPerSyllable) * 100) / 100,
+    value: round2(props.result.averageCharsPerSyllable),
   },
   {
     label: 'Silben pro Wort',
-    value: Math.round(Number(props.result.averageSyllablesPerWord) * 100) / 100,
+    value: round2(props.result.averageSyllablesPerWord),
   },
   {
     label: 'Silben pro Satz',
-    value: Math.round(Number(props.result.averageSyllablesPerPhrase) * 100) / 100,
+    value: round2(props.result.averageSyllablesPerPhrase),
   },
 ]);
 
-const wordComplexity = computed(() => [
+// Die vier WK-Komponenten messen als Coverage den Anteil der Wörter mit dem
+// Merkmal (je Wort höchstens einmal), daher stets ≤ 100 %.
+const complexityFactors = computed(() => [
   {
     label: 'Lange Wörter (6+ Buchstaben)',
     value: `${Math.round(Number(props.result.proportionOfLongWords) * 10000) / 100}%`,
@@ -158,11 +163,11 @@ const wordComplexity = computed(() => [
 const sentenceComplexity = computed(() => [
   {
     label: 'Pronominalisierungsindex',
-    value: Math.round(Number(props.result.proNIndex) * 100) / 100,
+    value: round2(props.result.proNIndex),
   },
   {
     label: 'Nebensätze pro Satz',
-    value: Math.round(Number(props.result.subordinateClauseRatio) * 100) / 100,
+    value: round2(props.result.subordinateClauseRatio),
   },
   { label: 'Passivkonstruktionen', value: Number(props.result.passiveCount) },
   { label: 'Substantivierungen', value: Number(props.result.nominalizationCount) },
@@ -196,23 +201,24 @@ const syllableGroups = computed(() => [
   },
 ]);
 
+const levelColor = (documentStyle: CSSStyleDeclaration): string => {
+  if (levelInfo.value.severity === 'success')
+    return documentStyle.getPropertyValue('--p-green-500');
+  if (levelInfo.value.severity === 'warn') return documentStyle.getPropertyValue('--p-yellow-500');
+  return documentStyle.getPropertyValue('--p-red-500');
+};
+
 const setChartData = () => {
   if (typeof document === 'undefined') return { datasets: [] };
   const documentStyle = getComputedStyle(document.body);
 
-  const s = score.value;
-
-  let color = documentStyle.getPropertyValue('--p-green-500');
-  if (s >= 33 && s < 66) {
-    color = documentStyle.getPropertyValue('--p-yellow-500');
-  } else if (s >= 66) {
-    color = documentStyle.getPropertyValue('--p-red-500');
-  }
+  const g = gauge.value;
+  const color = levelColor(documentStyle);
 
   return {
     datasets: [
       {
-        data: [s, 100 - s],
+        data: [g, 100 - g],
         backgroundColor: [color, documentStyle.getPropertyValue('--p-surface-0')],
         hoverBackgroundColor: [color, documentStyle.getPropertyValue('--p-surface-0')],
         borderColor: color,
@@ -227,8 +233,6 @@ const setChartOptions = () => {
   const documentStyle = getComputedStyle(document.documentElement);
   const textColor = documentStyle.getPropertyValue('--p-text-color');
 
-  const s = Math.round(Number(props.result.score) * 100) / 100;
-
   return {
     hover: {
       mode: null,
@@ -241,7 +245,7 @@ const setChartOptions = () => {
         annotations: {
           dLabel: {
             type: 'doughnutLabel',
-            content: () => [String(s), 'LÜ-LIX'],
+            content: () => [String(lueLix.value), 'LÜ-LIX'],
             font: [{ size: 60 }, { size: 30 }],
             color: [textColor, textColor],
           },
@@ -281,7 +285,7 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col">
-    <!-- Hero: Score — generous breathing room -->
+    <!-- Hero: Schwierigkeit (LÜ-LIX + Niveaustufe) -->
     <div class="flex flex-col items-center gap-3 pb-6">
       <h2 class="font-semibold text-lg">Ergebnis</h2>
       <Chart
@@ -290,26 +294,26 @@ onMounted(() => {
         :data="chartData"
         :options="chartOptions"
         class="w-full md:w-[30rem]"
-        :aria-label="`Lesbarkeitsindex: ${score} von 100`"
+        :aria-label="`LÜ-LIX: ${lueLix} — Niveaustufe ${level}`"
         role="img"
       />
       <p
         class="text-lg font-medium text-center flex items-center justify-center gap-2"
         :class="{
-          'text-green-600': scoreInterpretation.severity === 'success',
-          'text-amber-700': scoreInterpretation.severity === 'warn',
-          'text-red-600': scoreInterpretation.severity === 'error',
+          'text-green-600': levelInfo.severity === 'success',
+          'text-amber-700': levelInfo.severity === 'warn',
+          'text-red-600': levelInfo.severity === 'error',
         }"
       >
         <i
           :class="{
-            'pi pi-check-circle': scoreInterpretation.severity === 'success',
-            'pi pi-exclamation-triangle': scoreInterpretation.severity === 'warn',
-            'pi pi-times-circle': scoreInterpretation.severity === 'error',
+            'pi pi-check-circle': levelInfo.severity === 'success',
+            'pi pi-exclamation-triangle': levelInfo.severity === 'warn',
+            'pi pi-times-circle': levelInfo.severity === 'error',
           }"
           aria-hidden="true"
         />
-        {{ scoreInterpretation.label }} &mdash; {{ scoreInterpretation.description }}
+        Niveaustufe {{ level }} &mdash; {{ levelInfo.description }}
       </p>
     </div>
 
@@ -320,19 +324,23 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Key stats — tight to score, separated from details -->
-    <div class="grid grid-cols-3 gap-4 text-center py-5 border-t border-b border-surface-100">
-      <div>
-        <div class="text-2xl font-semibold text-surface-900">{{ result.countWords }}</div>
+    <!-- Zwei eigenständige Dimensionen: Schwierigkeit und Umfang -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 border-t border-b border-surface-100">
+      <div class="text-center">
+        <div class="text-xs uppercase tracking-wide text-surface-500 mb-1">Schwierigkeit</div>
+        <div class="text-3xl font-semibold text-surface-900">{{ lueLix }}</div>
+        <div class="text-sm text-surface-500">LÜ-LIX &middot; Niveaustufe {{ level }}</div>
+        <div class="text-sm text-surface-600 mt-1">
+          LIX {{ lix }} &middot; WK {{ wordComplexity }}
+        </div>
+      </div>
+      <div class="text-center">
+        <div class="text-xs uppercase tracking-wide text-surface-500 mb-1">Umfang</div>
+        <div class="text-3xl font-semibold text-surface-900">{{ result.countWords }}</div>
         <div class="text-sm text-surface-500">Wörter</div>
-      </div>
-      <div>
-        <div class="text-2xl font-semibold text-surface-900">{{ result.countPhrases }}</div>
-        <div class="text-sm text-surface-500">Sätze</div>
-      </div>
-      <div>
-        <div class="text-2xl font-semibold text-surface-900">{{ result.countSyllables }}</div>
-        <div class="text-sm text-surface-500">Silben</div>
+        <div class="text-sm text-surface-600 mt-1">
+          {{ result.countPhrases }} Sätze &middot; {{ result.countSyllables }} Silben
+        </div>
       </div>
     </div>
 
@@ -353,8 +361,12 @@ onMounted(() => {
 
       <Fieldset legend="Wortkomplexität" :toggleable="true" :collapsed="true">
         <div class="flex flex-col gap-3">
+          <div class="flex justify-between items-center py-1 border-b border-surface-100 pb-2">
+            <span class="text-surface-700 font-medium">Wortkomplexität (WK)</span>
+            <span class="font-semibold text-surface-900">{{ wordComplexity }}</span>
+          </div>
           <div
-            v-for="item in wordComplexity"
+            v-for="item in complexityFactors"
             :key="item.label"
             class="flex justify-between items-center py-1"
           >
@@ -396,6 +408,10 @@ onMounted(() => {
       </Fieldset>
 
       <Fieldset legend="Verwendete Gewichtung" :toggleable="true" :collapsed="true">
+        <div class="flex justify-between items-center py-1 mb-3">
+          <span class="text-surface-700">Aufschlag &alpha; (LÜ-LIX = LIX + &alpha;&middot;WK)</span>
+          <span class="font-medium text-surface-900">{{ alpha }}</span>
+        </div>
         <MeterGroup :value="meters" />
       </Fieldset>
     </div>

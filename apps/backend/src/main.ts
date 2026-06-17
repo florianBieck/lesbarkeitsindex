@@ -66,23 +66,11 @@ async function seedData(app: NestFastifyApplication) {
   if (!existingConfig) {
     await prisma.config.create({
       data: {
-        parameterCountWords: 0,
-        parameterCountPhrases: 0,
-        parameterCountMultipleWords: 0,
-        parameterCountWordsWithComplexSyllables: 0,
-        parameterCountWordsWithConsonantClusters: 0,
-        parameterCountWordsWithMultiMemberedGraphemes: 0,
-        parameterCountWordsWithRareGraphemes: 0,
-        parameterAverageWordLength: 0,
-        parameterAveragePhraseLength: 0,
-        parameterAverageSyllablesPerWord: 0,
-        parameterAverageSyllablesPerPhrase: 0,
-        parameterProportionOfLongWords: 0,
-        parameterLix: 0.6,
-        parameterProportionOfWordsWithComplexSyllables: 0.2,
-        parameterProportionOfWordsWithConsonantClusters: 0.05,
-        parameterProportionOfWordsWithMultiMemberedGraphemes: 0.1,
-        parameterProportionOfWordsWithRareGraphemes: 0.05,
+        alpha: 0.3,
+        weightComplexSyllables: 50,
+        weightMultiMemberedGraphemes: 25,
+        weightRareGraphemes: 12.5,
+        weightConsonantClusters: 12.5,
       },
     });
   }

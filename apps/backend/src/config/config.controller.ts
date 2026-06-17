@@ -5,11 +5,11 @@ import { AuthGuard } from '../auth/auth.guard.js';
 import { z } from 'zod';
 
 const UpdateConfigSchema = z.object({
-  parameterLix: z.number().min(0).max(1),
-  parameterProportionOfWordsWithComplexSyllables: z.number().min(0).max(1),
-  parameterProportionOfWordsWithMultiMemberedGraphemes: z.number().min(0).max(1),
-  parameterProportionOfWordsWithRareGraphemes: z.number().min(0).max(1),
-  parameterProportionOfWordsWithConsonantClusters: z.number().min(0).max(1),
+  alpha: z.number().min(0).max(10),
+  weightComplexSyllables: z.number().min(0),
+  weightMultiMemberedGraphemes: z.number().min(0),
+  weightRareGraphemes: z.number().min(0),
+  weightConsonantClusters: z.number().min(0),
 });
 
 @Controller('config')
@@ -40,27 +40,11 @@ export class AppConfigController {
 
     const config = await this.prisma.config.create({
       data: {
-        parameterCountWords: 0,
-        parameterCountPhrases: 0,
-        parameterCountMultipleWords: 0,
-        parameterCountWordsWithComplexSyllables: 0,
-        parameterCountWordsWithConsonantClusters: 0,
-        parameterCountWordsWithMultiMemberedGraphemes: 0,
-        parameterCountWordsWithRareGraphemes: 0,
-        parameterAverageWordLength: 0,
-        parameterAveragePhraseLength: 0,
-        parameterAverageSyllablesPerWord: 0,
-        parameterAverageSyllablesPerPhrase: 0,
-        parameterProportionOfLongWords: 0,
-        parameterLix: parsed.data.parameterLix,
-        parameterProportionOfWordsWithComplexSyllables:
-          parsed.data.parameterProportionOfWordsWithComplexSyllables,
-        parameterProportionOfWordsWithConsonantClusters:
-          parsed.data.parameterProportionOfWordsWithConsonantClusters,
-        parameterProportionOfWordsWithMultiMemberedGraphemes:
-          parsed.data.parameterProportionOfWordsWithMultiMemberedGraphemes,
-        parameterProportionOfWordsWithRareGraphemes:
-          parsed.data.parameterProportionOfWordsWithRareGraphemes,
+        alpha: parsed.data.alpha,
+        weightComplexSyllables: parsed.data.weightComplexSyllables,
+        weightMultiMemberedGraphemes: parsed.data.weightMultiMemberedGraphemes,
+        weightRareGraphemes: parsed.data.weightRareGraphemes,
+        weightConsonantClusters: parsed.data.weightConsonantClusters,
       },
     });
 

@@ -16,11 +16,11 @@ const BODY_ANALYSIS = {
 function makeConfig(): ConfigParam {
   return {
     id: 'config-1',
-    parameterLix: { toNumber: () => 0.5 },
-    parameterProportionOfWordsWithComplexSyllables: { toNumber: () => 0.2 },
-    parameterProportionOfWordsWithMultiMemberedGraphemes: { toNumber: () => 0.1 },
-    parameterProportionOfWordsWithRareGraphemes: { toNumber: () => 0.1 },
-    parameterProportionOfWordsWithConsonantClusters: { toNumber: () => 0.1 },
+    alpha: { toNumber: () => 0.3 },
+    weightComplexSyllables: { toNumber: () => 50 },
+    weightMultiMemberedGraphemes: { toNumber: () => 25 },
+    weightRareGraphemes: { toNumber: () => 12.5 },
+    weightConsonantClusters: { toNumber: () => 12.5 },
   } as unknown as ConfigParam;
 }
 

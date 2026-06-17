@@ -8,11 +8,11 @@ import { z } from 'zod';
 const CalculateSchema = z.object({
   text: z.string().min(1).max(100_000),
   saveResult: z.boolean().optional(),
-  parameterLix: z.number().min(0).optional(),
-  parameterProportionOfWordsWithComplexSyllables: z.number().min(0).optional(),
-  parameterProportionOfWordsWithConsonantClusters: z.number().min(0).optional(),
-  parameterProportionOfWordsWithMultiMemberedGraphemes: z.number().min(0).optional(),
-  parameterProportionOfWordsWithRareGraphemes: z.number().min(0).optional(),
+  alpha: z.number().min(0).max(10).optional(),
+  weightComplexSyllables: z.number().min(0).optional(),
+  weightMultiMemberedGraphemes: z.number().min(0).optional(),
+  weightRareGraphemes: z.number().min(0).optional(),
+  weightConsonantClusters: z.number().min(0).optional(),
 });
 
 @Controller('calculate')
@@ -34,62 +34,42 @@ export class CalculateController {
 
     const { text, saveResult, ...overrides } = parsed.data;
 
+    const dbConfig = await this.prisma.config.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!dbConfig) {
+      return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
+    }
+
+    const hasOverrides = Object.values(overrides).some((value) => value != null);
+
+    // Effektive Parameter: gespeicherte Standardkonfiguration, von der Anfrage überschrieben.
+    const merged = {
+      alpha: overrides.alpha ?? dbConfig.alpha.toNumber(),
+      weightComplexSyllables:
+        overrides.weightComplexSyllables ?? dbConfig.weightComplexSyllables.toNumber(),
+      weightMultiMemberedGraphemes:
+        overrides.weightMultiMemberedGraphemes ?? dbConfig.weightMultiMemberedGraphemes.toNumber(),
+      weightRareGraphemes: overrides.weightRareGraphemes ?? dbConfig.weightRareGraphemes.toNumber(),
+      weightConsonantClusters:
+        overrides.weightConsonantClusters ?? dbConfig.weightConsonantClusters.toNumber(),
+    };
+
     let config;
-    if (overrides.parameterLix != null) {
-      config = await this.prisma.config.create({
-        data: {
-          parameterCountWords: 0,
-          parameterCountPhrases: 0,
-          parameterCountMultipleWords: 0,
-          parameterCountWordsWithComplexSyllables: 0,
-          parameterCountWordsWithConsonantClusters: 0,
-          parameterCountWordsWithMultiMemberedGraphemes: 0,
-          parameterCountWordsWithRareGraphemes: 0,
-          parameterAverageWordLength: 0,
-          parameterAveragePhraseLength: 0,
-          parameterAverageSyllablesPerWord: 0,
-          parameterAverageSyllablesPerPhrase: 0,
-          parameterProportionOfLongWords: 0,
-          parameterLix: overrides.parameterLix,
-          parameterProportionOfWordsWithComplexSyllables:
-            overrides.parameterProportionOfWordsWithComplexSyllables ?? 0,
-          parameterProportionOfWordsWithConsonantClusters:
-            overrides.parameterProportionOfWordsWithConsonantClusters ?? 0,
-          parameterProportionOfWordsWithMultiMemberedGraphemes:
-            overrides.parameterProportionOfWordsWithMultiMemberedGraphemes ?? 0,
-          parameterProportionOfWordsWithRareGraphemes:
-            overrides.parameterProportionOfWordsWithRareGraphemes ?? 0,
-        },
-      });
+    if (!hasOverrides) {
+      config = dbConfig;
+    } else if (saveResult) {
+      // Beim Speichern die exakt verwendete Konfiguration festschreiben (FK des Ergebnisses).
+      config = await this.prisma.config.create({ data: merged });
     } else {
-      const dbConfig = await this.prisma.config.findFirst({
-        orderBy: { createdAt: 'desc' },
-      });
-      if (!dbConfig) {
-        return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
-      }
+      // Live-Vorschau: Konfiguration nur im Speicher, nicht persistieren.
       config = {
         ...dbConfig,
-        ...(overrides.parameterProportionOfWordsWithComplexSyllables != null && {
-          parameterProportionOfWordsWithComplexSyllables: new Prisma.Decimal(
-            overrides.parameterProportionOfWordsWithComplexSyllables,
-          ),
-        }),
-        ...(overrides.parameterProportionOfWordsWithConsonantClusters != null && {
-          parameterProportionOfWordsWithConsonantClusters: new Prisma.Decimal(
-            overrides.parameterProportionOfWordsWithConsonantClusters,
-          ),
-        }),
-        ...(overrides.parameterProportionOfWordsWithMultiMemberedGraphemes != null && {
-          parameterProportionOfWordsWithMultiMemberedGraphemes: new Prisma.Decimal(
-            overrides.parameterProportionOfWordsWithMultiMemberedGraphemes,
-          ),
-        }),
-        ...(overrides.parameterProportionOfWordsWithRareGraphemes != null && {
-          parameterProportionOfWordsWithRareGraphemes: new Prisma.Decimal(
-            overrides.parameterProportionOfWordsWithRareGraphemes,
-          ),
-        }),
+        alpha: new Prisma.Decimal(merged.alpha),
+        weightComplexSyllables: new Prisma.Decimal(merged.weightComplexSyllables),
+        weightMultiMemberedGraphemes: new Prisma.Decimal(merged.weightMultiMemberedGraphemes),
+        weightRareGraphemes: new Prisma.Decimal(merged.weightRareGraphemes),
+        weightConsonantClusters: new Prisma.Decimal(merged.weightConsonantClusters),
       };
     }
 

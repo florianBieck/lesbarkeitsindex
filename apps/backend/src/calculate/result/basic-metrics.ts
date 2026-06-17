@@ -6,9 +6,9 @@ export function calculateCountWords(words: readonly string[]): number {
 }
 
 /*
-    Silbenkomplexität (≥3 Silben)
+    Coverage: Anzahl der Wörter mit komplexen Silben (≥3 Silben), je Wort max. einmal.
  */
-export function calculateSyllableComplexity(
+export function countWordsWithComplexSyllables(
   words: readonly string[],
   syllablesPerWord: readonly number[],
 ): number {

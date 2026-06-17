@@ -3,11 +3,11 @@ import { ofetch, type $Fetch } from 'ofetch';
 export interface Config {
   id: string;
   createdAt: string;
-  parameterLix: string;
-  parameterProportionOfWordsWithComplexSyllables: string;
-  parameterProportionOfWordsWithConsonantClusters: string;
-  parameterProportionOfWordsWithMultiMemberedGraphemes: string;
-  parameterProportionOfWordsWithRareGraphemes: string;
+  alpha: string;
+  weightComplexSyllables: string;
+  weightMultiMemberedGraphemes: string;
+  weightRareGraphemes: string;
+  weightConsonantClusters: string;
   [key: string]: unknown;
 }
 
@@ -55,8 +55,9 @@ export interface ResultData {
   subordinateClauseRatio: string;
   passiveCount: string;
   nominalizationCount: string;
-  score: string;
-  scoreLevel: string;
+  wordComplexity: string;
+  lueLix: string;
+  level: string;
   text: string;
   title: string;
   words: string[];
@@ -85,19 +86,19 @@ export interface ResultsResponse {
 export interface CalculateRequest {
   text: string;
   saveResult?: boolean;
-  parameterLix?: number;
-  parameterProportionOfWordsWithComplexSyllables?: number;
-  parameterProportionOfWordsWithConsonantClusters?: number;
-  parameterProportionOfWordsWithMultiMemberedGraphemes?: number;
-  parameterProportionOfWordsWithRareGraphemes?: number;
+  alpha?: number;
+  weightComplexSyllables?: number;
+  weightMultiMemberedGraphemes?: number;
+  weightRareGraphemes?: number;
+  weightConsonantClusters?: number;
 }
 
 export interface UpdateConfigRequest {
-  parameterLix: number;
-  parameterProportionOfWordsWithComplexSyllables: number;
-  parameterProportionOfWordsWithMultiMemberedGraphemes: number;
-  parameterProportionOfWordsWithRareGraphemes: number;
-  parameterProportionOfWordsWithConsonantClusters: number;
+  alpha: number;
+  weightComplexSyllables: number;
+  weightMultiMemberedGraphemes: number;
+  weightRareGraphemes: number;
+  weightConsonantClusters: number;
 }
 
 export interface ApiClient {

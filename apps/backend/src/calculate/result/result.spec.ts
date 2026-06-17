@@ -5,10 +5,10 @@ import {
   type ConfigWeights,
   calculateCountWords,
   calculateCountPhrases,
-  calculateSyllableComplexity,
-  calculateMultiMemberedGraphemes,
-  calculateRareGraphemes,
-  calculateConsonantClusters,
+  countWordsWithComplexSyllables,
+  countWordsWithMultiMemberedGraphemes,
+  countWordsWithRareGraphemes,
+  countWordsWithConsonantClusters,
   calculateAverageWordLength,
   calculateAverageSyllablesPerWord,
   calculateAveragePhraseLength,
@@ -51,63 +51,67 @@ describe('metric functions with pre-computed arrays', () => {
     expect(calculateCountPhrases(['Hallo Welt'])).toBe(1);
   });
 
-  test('calculateSyllableComplexity counts words with 3+ syllables', () => {
-    expect(calculateSyllableComplexity(WORDS, SYLLABLES)).toBe(0);
-    expect(calculateSyllableComplexity(['Ananas'], [3])).toBe(1);
+  test('countWordsWithComplexSyllables counts words with 3+ syllables', () => {
+    expect(countWordsWithComplexSyllables(WORDS, SYLLABLES)).toBe(0);
+    expect(countWordsWithComplexSyllables(['Ananas'], [3])).toBe(1);
   });
 
-  test('calculateSyllableComplexity returns 0 for empty arrays', () => {
-    expect(calculateSyllableComplexity([], [])).toBe(0);
+  test('countWordsWithComplexSyllables returns 0 for empty arrays', () => {
+    expect(countWordsWithComplexSyllables([], [])).toBe(0);
   });
 
-  describe('calculateMultiMemberedGraphemes', () => {
-    test('counts original graphemes (sch, ch, ck, ng)', () => {
-      expect(calculateMultiMemberedGraphemes(['Schule', 'Dach'])).toBe(2);
-      expect(calculateMultiMemberedGraphemes(['Brücke'])).toBe(1);
-      expect(calculateMultiMemberedGraphemes(['Zeitung'])).toBe(2);
+  describe('countWordsWithMultiMemberedGraphemes', () => {
+    test('zählt Wörter mit Graphemen (sch, ch, ck, ng) — je Wort einmal', () => {
+      expect(countWordsWithMultiMemberedGraphemes(['Schule', 'Dach'])).toBe(2);
+      expect(countWordsWithMultiMemberedGraphemes(['Brücke'])).toBe(1);
+      // "Zeitung" enthält ei + ng, zählt als ein Wort (Coverage)
+      expect(countWordsWithMultiMemberedGraphemes(['Zeitung'])).toBe(1);
     });
 
     test('counts diphthongs (ie, ei, eu, äu, au)', () => {
-      expect(calculateMultiMemberedGraphemes(['Tier'])).toBe(1);
-      expect(calculateMultiMemberedGraphemes(['Bein'])).toBe(1);
-      expect(calculateMultiMemberedGraphemes(['Freund'])).toBe(1);
-      expect(calculateMultiMemberedGraphemes(['Häuser'])).toBe(1);
-      expect(calculateMultiMemberedGraphemes(['Baum'])).toBe(1);
+      expect(countWordsWithMultiMemberedGraphemes(['Tier'])).toBe(1);
+      expect(countWordsWithMultiMemberedGraphemes(['Bein'])).toBe(1);
+      expect(countWordsWithMultiMemberedGraphemes(['Freund'])).toBe(1);
+      expect(countWordsWithMultiMemberedGraphemes(['Häuser'])).toBe(1);
+      expect(countWordsWithMultiMemberedGraphemes(['Baum'])).toBe(1);
     });
 
-    test('counts sp at word/syllable beginning', () => {
-      expect(calculateMultiMemberedGraphemes(['Sport'])).toBe(1);
-      expect(calculateMultiMemberedGraphemes(['Spiegel'])).toBe(2);
+    test('zählt sp am Wort-/Silbenanfang — je Wort einmal', () => {
+      expect(countWordsWithMultiMemberedGraphemes(['Sport'])).toBe(1);
+      // "Spiegel": sp + ie -> ein Wort (Coverage)
+      expect(countWordsWithMultiMemberedGraphemes(['Spiegel'])).toBe(1);
     });
 
-    test('counts st at word/syllable beginning', () => {
-      expect(calculateMultiMemberedGraphemes(['Stein'])).toBe(2);
-      expect(calculateMultiMemberedGraphemes(['Stunde'])).toBe(1);
+    test('zählt st am Wort-/Silbenanfang — je Wort einmal', () => {
+      // "Stein": st + ei -> ein Wort (Coverage)
+      expect(countWordsWithMultiMemberedGraphemes(['Stein'])).toBe(1);
+      expect(countWordsWithMultiMemberedGraphemes(['Stunde'])).toBe(1);
     });
 
     test('does NOT count sp/st mid-word (not at syllable onset)', () => {
-      expect(calculateMultiMemberedGraphemes(['Wespe'])).toBe(0);
-      expect(calculateMultiMemberedGraphemes(['Fenster'])).toBe(0);
+      expect(countWordsWithMultiMemberedGraphemes(['Wespe'])).toBe(0);
+      expect(countWordsWithMultiMemberedGraphemes(['Fenster'])).toBe(0);
     });
 
-    test('counts multiple graphemes in one word', () => {
-      expect(calculateMultiMemberedGraphemes(['Entscheidung'])).toBe(3);
+    test('zählt ein Wort mit mehreren Graphemen nur einmal (Coverage)', () => {
+      // "Entscheidung": sch + ei + ng -> ein Wort
+      expect(countWordsWithMultiMemberedGraphemes(['Entscheidung'])).toBe(1);
     });
 
     test('counts across multiple words', () => {
-      expect(calculateMultiMemberedGraphemes(['Schule', 'Buch'])).toBe(2);
+      expect(countWordsWithMultiMemberedGraphemes(['Schule', 'Buch'])).toBe(2);
     });
 
     test('returns 0 for empty array', () => {
-      expect(calculateMultiMemberedGraphemes([])).toBe(0);
+      expect(countWordsWithMultiMemberedGraphemes([])).toBe(0);
     });
 
     test('returns 0 for words without graphemes', () => {
-      expect(calculateMultiMemberedGraphemes(['Hund', 'Katze'])).toBe(0);
+      expect(countWordsWithMultiMemberedGraphemes(['Hund', 'Katze'])).toBe(0);
     });
   });
 
-  test('calculateSyllableComplexity counts complex words in a sentence', () => {
+  test('countWordsWithComplexSyllables counts complex words in a sentence', () => {
     const words = [
       'Die',
       'Bundesregierung',
@@ -118,77 +122,78 @@ describe('metric functions with pre-computed arrays', () => {
       'getroffen',
     ];
     const syllables = [1, 5, 1, 2, 4, 3, 3];
-    const result = calculateSyllableComplexity(words, syllables);
+    const result = countWordsWithComplexSyllables(words, syllables);
     expect(result).toBeGreaterThan(0);
   });
 
-  test('calculateRareGraphemes counts ä, ö, ü, ß, c, q, x, y', () => {
-    expect(calculateRareGraphemes(['Straße', 'über'])).toBe(2);
+  test('countWordsWithRareGraphemes counts ä, ö, ü, ß, c, q, x, y', () => {
+    expect(countWordsWithRareGraphemes(['Straße', 'über'])).toBe(2);
   });
 
-  test('calculateSyllableComplexity returns 0 for simple monosyllabic words', () => {
+  test('countWordsWithComplexSyllables returns 0 for simple monosyllabic words', () => {
     const words = ['Der', 'Hund', 'ist', 'alt'];
     const syllables = [1, 1, 1, 1];
-    expect(calculateSyllableComplexity(words, syllables)).toBe(0);
+    expect(countWordsWithComplexSyllables(words, syllables)).toBe(0);
   });
 
-  describe('calculateConsonantClusters', () => {
+  describe('countWordsWithConsonantClusters', () => {
     test('counts existing onset clusters (str, spr)', () => {
-      expect(calculateConsonantClusters(['Straße', 'Sprache'])).toBe(2);
+      expect(countWordsWithConsonantClusters(['Straße', 'Sprache'])).toBe(2);
     });
 
     test('counts 2-letter onset clusters', () => {
-      expect(calculateConsonantClusters(['Blume'])).toBe(1);
-      expect(calculateConsonantClusters(['Brücke'])).toBe(1);
-      expect(calculateConsonantClusters(['Klasse'])).toBe(1);
-      expect(calculateConsonantClusters(['Freund'])).toBe(1);
-      expect(calculateConsonantClusters(['Glocke'])).toBe(1);
-      expect(calculateConsonantClusters(['Traum'])).toBe(1);
-      expect(calculateConsonantClusters(['Pflanze'])).toBe(1);
-      expect(calculateConsonantClusters(['Platz'])).toBe(1);
-      expect(calculateConsonantClusters(['Preis'])).toBe(1);
-      expect(calculateConsonantClusters(['Drache'])).toBe(1);
-      expect(calculateConsonantClusters(['Grün'])).toBe(1);
-      expect(calculateConsonantClusters(['Knie'])).toBe(1);
-      expect(calculateConsonantClusters(['Kraft'])).toBe(1);
-      expect(calculateConsonantClusters(['Flasche'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Blume'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Brücke'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Klasse'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Freund'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Glocke'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Traum'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Pflanze'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Platz'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Preis'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Drache'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Grün'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Knie'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Kraft'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Flasche'])).toBe(1);
     });
 
     test('counts multi-letter onset clusters (schl, schm, schn, schr)', () => {
-      expect(calculateConsonantClusters(['Schlange'])).toBe(1);
-      expect(calculateConsonantClusters(['Schmerz'])).toBe(1);
-      expect(calculateConsonantClusters(['Schnee'])).toBe(1);
-      expect(calculateConsonantClusters(['Schrank'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Schlange'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Schmerz'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Schnee'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Schrank'])).toBe(1);
     });
 
     test('counts coda clusters (3+ sounds at word end)', () => {
-      expect(calculateConsonantClusters(['Herbst'])).toBe(1);
-      expect(calculateConsonantClusters(['nichts'])).toBe(1);
-      expect(calculateConsonantClusters(['Markt'])).toBe(1);
-      expect(calculateConsonantClusters(['sitzt'])).toBe(1);
-      expect(calculateConsonantClusters(['sanft'])).toBe(1);
-      expect(calculateConsonantClusters(['Kampf'])).toBe(1);
-      expect(calculateConsonantClusters(['Angst'])).toBe(1);
-      expect(calculateConsonantClusters(['Punkt'])).toBe(1);
-      expect(calculateConsonantClusters(['Kunst'])).toBe(1);
-      expect(calculateConsonantClusters(['wirft'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Herbst'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['nichts'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Markt'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['sitzt'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['sanft'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Kampf'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Angst'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Punkt'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['Kunst'])).toBe(1);
+      expect(countWordsWithConsonantClusters(['wirft'])).toBe(1);
     });
 
-    test('counts both onset AND coda clusters in one word', () => {
-      expect(calculateConsonantClusters(['Trumpf'])).toBe(2);
+    test('zählt ein Wort mit Onset- UND Coda-Cluster nur einmal (Coverage)', () => {
+      // "Trumpf": tr (Onset) + mpf (Coda) -> ein Wort
+      expect(countWordsWithConsonantClusters(['Trumpf'])).toBe(1);
     });
 
     test('returns 0 for words without clusters', () => {
-      expect(calculateConsonantClusters(['Hund', 'Katze', 'Haus'])).toBe(0);
+      expect(countWordsWithConsonantClusters(['Hund', 'Katze', 'Haus'])).toBe(0);
     });
 
     test('returns 0 for empty array', () => {
-      expect(calculateConsonantClusters([])).toBe(0);
+      expect(countWordsWithConsonantClusters([])).toBe(0);
     });
 
     test('does NOT count st/sp as consonant clusters', () => {
-      expect(calculateConsonantClusters(['Stein'])).toBe(0);
-      expect(calculateConsonantClusters(['Sport'])).toBe(0);
+      expect(countWordsWithConsonantClusters(['Stein'])).toBe(0);
+      expect(countWordsWithConsonantClusters(['Sport'])).toBe(0);
     });
   });
 
@@ -242,21 +247,21 @@ describe('metric functions with pre-computed arrays', () => {
     expect(lix).toBe(52);
   });
 
-  describe('calculateRareGraphemes', () => {
+  describe('countWordsWithRareGraphemes', () => {
     test('returns 0 for empty array', () => {
-      expect(calculateRareGraphemes([])).toBe(0);
+      expect(countWordsWithRareGraphemes([])).toBe(0);
     });
 
     test('counts umlauts', () => {
-      expect(calculateRareGraphemes(['für'])).toBe(1);
+      expect(countWordsWithRareGraphemes(['für'])).toBe(1);
     });
 
     test('counts ß', () => {
-      expect(calculateRareGraphemes(['Straße'])).toBe(1);
+      expect(countWordsWithRareGraphemes(['Straße'])).toBe(1);
     });
 
     test('counts rare consonants (c, q, x, y)', () => {
-      expect(calculateRareGraphemes(['Taxi'])).toBe(1);
+      expect(countWordsWithRareGraphemes(['Taxi'])).toBe(1);
     });
   });
 
@@ -280,10 +285,10 @@ describe('metric functions with pre-computed arrays', () => {
   test('all functions handle empty arrays without crashing', () => {
     expect(calculateCountWords([])).toBe(0);
     expect(calculateCountPhrases([])).toBe(0);
-    expect(calculateSyllableComplexity([], [])).toBe(0);
-    expect(calculateMultiMemberedGraphemes([])).toBe(0);
-    expect(calculateRareGraphemes([])).toBe(0);
-    expect(calculateConsonantClusters([])).toBe(0);
+    expect(countWordsWithComplexSyllables([], [])).toBe(0);
+    expect(countWordsWithMultiMemberedGraphemes([])).toBe(0);
+    expect(countWordsWithRareGraphemes([])).toBe(0);
+    expect(countWordsWithConsonantClusters([])).toBe(0);
     expect(calculateAverageWordLength([])).toBe(0);
     expect(calculateAverageSyllablesPerWord([], [])).toBe(0);
     expect(calculateAveragePhraseLength([], [])).toBe(0);
@@ -583,13 +588,37 @@ describe('metric functions with pre-computed arrays', () => {
   });
 });
 
+describe('Coverage-Semantik (Issue #28 AC2): ein Wort zählt je Komponente höchstens einmal', () => {
+  test('mehrgliedrige Grapheme: Wort mit mehreren Vorkommen zählt nur einmal', () => {
+    // "Zeitung" enthält ei + ng (zwei Vorkommen) -> ein Wort
+    expect(countWordsWithMultiMemberedGraphemes(['Zeitung'])).toBe(1);
+    // "Entscheidung": sch + ei + ng (drei Vorkommen) -> ein Wort
+    expect(countWordsWithMultiMemberedGraphemes(['Entscheidung'])).toBe(1);
+    // "schickst": sch + ck (mehrere Vorkommen) -> ein Wort
+    expect(countWordsWithMultiMemberedGraphemes(['schickst'])).toBe(1);
+  });
+
+  test('Konsonantenlauthäufung: Wort mit Onset- und Coda-Cluster zählt nur einmal', () => {
+    // "Trumpf": tr (Onset) + mpf (Coda) -> ein Wort
+    expect(countWordsWithConsonantClusters(['Trumpf'])).toBe(1);
+  });
+
+  test('Coverage ist nie größer als die Wortzahl', () => {
+    const words = ['Zeitung', 'Entscheidung', 'Trumpf', 'schickst'];
+    expect(countWordsWithMultiMemberedGraphemes(words)).toBeLessThanOrEqual(words.length);
+    expect(countWordsWithConsonantClusters(words)).toBeLessThanOrEqual(words.length);
+    expect(countWordsWithRareGraphemes(words)).toBeLessThanOrEqual(words.length);
+    expect(countWordsWithComplexSyllables(words, [2, 3, 1, 1])).toBeLessThanOrEqual(words.length);
+  });
+});
+
 describe('computeReadability syllable buckets', () => {
   const config = {
-    parameterLix: { toNumber: () => 0.5 },
-    parameterProportionOfWordsWithComplexSyllables: { toNumber: () => 0.2 },
-    parameterProportionOfWordsWithMultiMemberedGraphemes: { toNumber: () => 0.1 },
-    parameterProportionOfWordsWithRareGraphemes: { toNumber: () => 0.1 },
-    parameterProportionOfWordsWithConsonantClusters: { toNumber: () => 0.1 },
+    alpha: { toNumber: () => 0.3 },
+    weightComplexSyllables: { toNumber: () => 50 },
+    weightMultiMemberedGraphemes: { toNumber: () => 25 },
+    weightRareGraphemes: { toNumber: () => 12.5 },
+    weightConsonantClusters: { toNumber: () => 12.5 },
     id: 'test-config',
   } satisfies ConfigWeights;
 
@@ -644,13 +673,109 @@ describe('computeReadability syllable buckets', () => {
   });
 });
 
+describe('computeReadability Aufschlagsmodell (Issue #28: WK, LÜ-LIX, Niveaustufe, Coverage)', () => {
+  const config = {
+    alpha: { toNumber: () => 0.3 },
+    weightComplexSyllables: { toNumber: () => 50 },
+    weightMultiMemberedGraphemes: { toNumber: () => 25 },
+    weightRareGraphemes: { toNumber: () => 12.5 },
+    weightConsonantClusters: { toNumber: () => 12.5 },
+    id: 'test-config',
+  } satisfies ConfigWeights;
+
+  test('AC2: Komponenten-Anteile bleiben ≤ 1, auch bei Mehrfachvorkommen im Wort', () => {
+    // "schickst": sch + ck (mehrgliedrige Grapheme) und ckst (Cluster) im selben Wort
+    const text = 'schickst Tag.';
+    const analysis = {
+      sentences: ['schickst Tag.'],
+      words: ['schickst', 'Tag'],
+      syllablesPerWord: [1, 1],
+      posTags: ['VVFIN', 'NN'],
+    };
+
+    const result = computeReadability(text, analysis, config);
+
+    expect(result.proportionOfWordsWithMultiMemberedGraphemes).toBeLessThanOrEqual(1);
+    expect(result.proportionOfWordsWithConsonantClusters).toBeLessThanOrEqual(1);
+    expect(result.proportionOfWordsWithRareGraphemes).toBeLessThanOrEqual(1);
+    expect(result.proportionOfWordsWithComplexSyllables).toBeLessThanOrEqual(1);
+    // genau ein von zwei Wörtern trägt das Merkmal -> 0,5
+    expect(result.proportionOfWordsWithMultiMemberedGraphemes).toBe(0.5);
+    expect(result.countWordsWithMultiMemberedGraphemes).toBe(1);
+  });
+
+  test('AC3: WK ist der gewichtete Mittelwert der vier Coverage-Komponenten', () => {
+    const text = 'schickst Tag.';
+    const analysis = {
+      sentences: ['schickst Tag.'],
+      words: ['schickst', 'Tag'],
+      syllablesPerWord: [1, 1],
+      posTags: ['VVFIN', 'NN'],
+    };
+
+    const result = computeReadability(text, analysis, config);
+
+    // 0·50 + 0,5·25 + 0,5·12,5 + 0,5·12,5 = 25 -> /100 ·100 = 25
+    expect(result.wordComplexity).toBe(25);
+  });
+
+  test('AC1: LÜ-LIX = LIX + α·WK und ≥ LIX', () => {
+    const text = 'schickst Tag.';
+    const analysis = {
+      sentences: ['schickst Tag.'],
+      words: ['schickst', 'Tag'],
+      syllablesPerWord: [1, 1],
+      posTags: ['VVFIN', 'NN'],
+    };
+
+    const result = computeReadability(text, analysis, config);
+
+    // LIX = 2/1 + (1·100)/2 = 52; LÜ-LIX = 52 + 0,3·25 = 59,5
+    expect(result.lix).toBe(52);
+    expect(result.lueLix).toBe(59.5);
+    expect(result.lueLix).toBeGreaterThanOrEqual(result.lix);
+  });
+
+  test('Niveaustufe stammt aus dem Backend (Band 50–<60 -> Stufe 4)', () => {
+    const text = 'schickst Tag.';
+    const analysis = {
+      sentences: ['schickst Tag.'],
+      words: ['schickst', 'Tag'],
+      syllablesPerWord: [1, 1],
+      posTags: ['VVFIN', 'NN'],
+    };
+
+    const result = computeReadability(text, analysis, config);
+
+    expect(result.level).toBe(4);
+  });
+
+  test('AC1: bei α = 0 gilt LÜ-LIX = LIX', () => {
+    const zeroAlpha = {
+      ...config,
+      alpha: { toNumber: () => 0 },
+    } satisfies ConfigWeights;
+    const text = 'schickst Tag.';
+    const analysis = {
+      sentences: ['schickst Tag.'],
+      words: ['schickst', 'Tag'],
+      syllablesPerWord: [1, 1],
+      posTags: ['VVFIN', 'NN'],
+    };
+
+    const result = computeReadability(text, analysis, zeroAlpha);
+
+    expect(result.lueLix).toBe(result.lix);
+  });
+});
+
 describe('computeReadability Titel-Guard', () => {
   const config = {
-    parameterLix: { toNumber: () => 0.5 },
-    parameterProportionOfWordsWithComplexSyllables: { toNumber: () => 0.2 },
-    parameterProportionOfWordsWithMultiMemberedGraphemes: { toNumber: () => 0.1 },
-    parameterProportionOfWordsWithRareGraphemes: { toNumber: () => 0.1 },
-    parameterProportionOfWordsWithConsonantClusters: { toNumber: () => 0.1 },
+    alpha: { toNumber: () => 0.3 },
+    weightComplexSyllables: { toNumber: () => 50 },
+    weightMultiMemberedGraphemes: { toNumber: () => 25 },
+    weightRareGraphemes: { toNumber: () => 12.5 },
+    weightConsonantClusters: { toNumber: () => 12.5 },
     id: 'test-config',
   } satisfies ConfigWeights;
 

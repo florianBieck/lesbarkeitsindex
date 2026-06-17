@@ -4,7 +4,7 @@ import type { TextAnalysis } from '../../r-sidecar/r-sidecar.service.js';
 import {
   calculateCountWords,
   calculateCountPhrases,
-  calculateSyllableComplexity,
+  countWordsWithComplexSyllables as computeWordsWithComplexSyllables,
   calculateAverageWordLength,
   calculateAverageCharsPerSyllable,
   calculateAverageSyllablesPerWord,
@@ -13,9 +13,9 @@ import {
   calculateProportionOfLongWords,
 } from './basic-metrics.js';
 import {
-  calculateMultiMemberedGraphemes,
-  calculateRareGraphemes,
-  calculateConsonantClusters,
+  countWordsWithMultiMemberedGraphemes as computeWordsWithMultiMemberedGraphemes,
+  countWordsWithRareGraphemes as computeWordsWithRareGraphemes,
+  countWordsWithConsonantClusters as computeWordsWithConsonantClusters,
 } from './grapheme-analysis.js';
 import {
   calculateLix,
@@ -37,6 +37,7 @@ import {
   calculateSpecialCharacters,
 } from './text-features.js';
 import { detectTitle } from './title-guard.js';
+import { calculateWordComplexity, calculateLueLix, calculateLevel } from './score-model.js';
 
 export * from './basic-metrics.js';
 export * from './grapheme-analysis.js';
@@ -44,13 +45,19 @@ export * from './indices.js';
 export * from './linguistic-features.js';
 export * from './text-features.js';
 export * from './title-guard.js';
+export * from './score-model.js';
 
+/**
+ * Konfiguration des Aufschlagsmodells: Aufschlagskoeffizient α plus die vier
+ * Gewichte der Wortkomplexitäts-Komponenten. `toNumber()`-Schnittstelle, damit
+ * sowohl Prisma-`Decimal` als auch einfache Test-Doubles passen.
+ */
 export interface ConfigWeights {
-  readonly parameterLix: { toNumber(): number };
-  readonly parameterProportionOfWordsWithComplexSyllables: { toNumber(): number };
-  readonly parameterProportionOfWordsWithMultiMemberedGraphemes: { toNumber(): number };
-  readonly parameterProportionOfWordsWithRareGraphemes: { toNumber(): number };
-  readonly parameterProportionOfWordsWithConsonantClusters: { toNumber(): number };
+  readonly alpha: { toNumber(): number };
+  readonly weightComplexSyllables: { toNumber(): number };
+  readonly weightMultiMemberedGraphemes: { toNumber(): number };
+  readonly weightRareGraphemes: { toNumber(): number };
+  readonly weightConsonantClusters: { toNumber(): number };
   readonly id: string;
 }
 
@@ -72,10 +79,10 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
   const countWords = calculateCountWords(words);
   const countPhrases = calculateCountPhrases(sentences);
   const countMultipleWords = countPhrases;
-  const countWordsWithComplexSyllables = calculateSyllableComplexity(words, syllablesPerWord);
-  const countWordsWithConsonantClusters = calculateConsonantClusters(words);
-  const countWordsWithMultiMemberedGraphemes = calculateMultiMemberedGraphemes(words);
-  const countWordsWithRareGraphemes = calculateRareGraphemes(words);
+  const countWordsWithComplexSyllables = computeWordsWithComplexSyllables(words, syllablesPerWord);
+  const countWordsWithConsonantClusters = computeWordsWithConsonantClusters(words);
+  const countWordsWithMultiMemberedGraphemes = computeWordsWithMultiMemberedGraphemes(words);
+  const countWordsWithRareGraphemes = computeWordsWithRareGraphemes(words);
   const abbreviations = calculateAbbreviations(words);
   const numbers = calculateNumbers(words);
   const specialCharacters = calculateSpecialCharacters(bodyText);
@@ -114,16 +121,22 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
     nominalizationCount,
   );
 
-  const llix =
-    lix * config.parameterLix.toNumber() +
-    proportionOfWordsWithComplexSyllables *
-      config.parameterProportionOfWordsWithComplexSyllables.toNumber() +
-    proportionOfWordsWithMultiMemberedGraphemes *
-      config.parameterProportionOfWordsWithMultiMemberedGraphemes.toNumber() +
-    proportionOfWordsWithRareGraphemes *
-      config.parameterProportionOfWordsWithRareGraphemes.toNumber() +
-    proportionOfWordsWithConsonantClusters *
-      config.parameterProportionOfWordsWithConsonantClusters.toNumber();
+  const wordComplexity = calculateWordComplexity(
+    {
+      complexSyllables: proportionOfWordsWithComplexSyllables,
+      multiMemberedGraphemes: proportionOfWordsWithMultiMemberedGraphemes,
+      rareGraphemes: proportionOfWordsWithRareGraphemes,
+      consonantClusters: proportionOfWordsWithConsonantClusters,
+    },
+    {
+      complexSyllables: config.weightComplexSyllables.toNumber(),
+      multiMemberedGraphemes: config.weightMultiMemberedGraphemes.toNumber(),
+      rareGraphemes: config.weightRareGraphemes.toNumber(),
+      consonantClusters: config.weightConsonantClusters.toNumber(),
+    },
+  );
+  const lueLix = calculateLueLix(lix, wordComplexity, config.alpha.toNumber());
+  const level = calculateLevel(lueLix);
 
   const totalSyllables = syllablesPerWord.reduce((sum, c) => sum + c, 0);
   const wordsWithOneSyllable = words.filter((_, i) => syllablesPerWord[i] === 1);
@@ -174,8 +187,9 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
     gsmog,
     wst4,
     fleschKincaid,
-    score: llix,
-    scoreLevel: 0,
+    wordComplexity,
+    lueLix,
+    level,
     text,
     title,
     words: [...words],

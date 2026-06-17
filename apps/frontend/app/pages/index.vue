@@ -45,7 +45,7 @@
             </div>
             <div class="flex flex-col gap-2 p-4 border rounded-md">
               <label for="param-complex-syllables" class="text-sm font-medium"
-                >Komplexe Silben
+                >Drei- und Mehrsilber
                 <span class="text-surface-400 font-normal">(Wörter mit 3 oder mehr Silben)</span></label
               >
               <InputNumber
@@ -70,7 +70,7 @@
             </div>
             <div class="flex flex-col gap-2 p-4 border rounded-md">
               <label for="param-consonant-clusters" class="text-sm font-medium"
-                >Schwierige Buchstabenfolgen
+                >Konsonantenlauthäufung
                 <span class="text-surface-400 font-normal">(z.B. Str-, Spr-, -nkt)</span></label
               >
               <InputNumber
@@ -95,7 +95,7 @@
             </div>
             <div class="flex flex-col gap-2 p-4 border rounded-md">
               <label for="param-multi-graphemes" class="text-sm font-medium"
-                >Mehrteilige Buchstabengruppen
+                >Mehrgliedrige Grapheme
                 <span class="text-surface-400 font-normal">(z.B. sch, ch, ck, ng)</span></label
               >
               <InputNumber
@@ -120,7 +120,7 @@
             </div>
             <div class="flex flex-col gap-2 p-4 border rounded-md">
               <label for="param-rare-graphemes" class="text-sm font-medium"
-                >Seltene Buchstaben
+                >Seltene Grapheme
                 <span class="text-surface-400 font-normal">(ä, ö, ü, ß, c, q, x, y)</span></label
               >
               <InputNumber

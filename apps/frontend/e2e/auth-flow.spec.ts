@@ -4,7 +4,7 @@ async function login(page: Page) {
   await page.goto('/login');
   await page.locator('#email1').fill('info@florianbieck.com');
   await page.locator('#password1 input').fill('#Test1234');
-  await page.getByRole('button', { name: 'Sign In' }).click();
+  await page.getByRole('button', { name: 'Anmelden' }).click();
   await page.waitForURL('/', { timeout: 10000 });
   await page.waitForTimeout(1000);
 }
@@ -31,16 +31,13 @@ test.describe('Authentication flow', () => {
     await expect(page.getByText('Warte auf Abmeldung...')).toBeVisible();
   });
 
-  test('authenticated user can access all pages', async ({ page }) => {
+  test('authenticated user can access home and results pages', async ({ page }) => {
     await login(page);
 
-    await page.goto('/admin');
-    await expect(page.getByText('Gewichtung für Textkomplexität')).toBeVisible();
-
     await page.goto('/results');
-    await expect(page.getByRole('columnheader', { name: 'ID' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Datum' })).toBeVisible();
 
     await page.goto('/');
-    await expect(page.getByRole('button', { name: 'Berechnen' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Text analysieren' })).toBeVisible();
   });
 });

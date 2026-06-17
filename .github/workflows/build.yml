@@ -142,6 +142,164 @@ jobs:
         if: failure()
         run: docker logs r-sidecar
 
+  e2e-frontend:
+    needs: [changes]
+    if: >-
+      needs.changes.outputs.frontend == 'true' ||
+      needs.changes.outputs.backend == 'true' ||
+      needs.changes.outputs.r-sidecar == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: lesbarkeitsindex
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U admin"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://admin:admin@localhost:5432/lesbarkeitsindex?schema=public
+      R_SIDECAR_URL: http://localhost:8787
+      BETTER_AUTH_SECRET: lesbarkeitsindex-e2e-secret
+      BETTER_AUTH_URL: http://localhost:3000
+      ADMIN_EMAILS: ''
+      NUXT_PUBLIC_API_BASE: http://localhost:3000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build r-sidecar image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.r-sidecar
+          load: true
+          tags: r-sidecar:e2e
+          cache-from: type=gha,scope=r-sidecar
+
+      # Started before the pnpm setup so the ~60s R startup overlaps with install + build
+      - name: Start r-sidecar
+        run: docker run -d --name r-sidecar -p 8787:8787 r-sidecar:e2e
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter backend exec prisma generate
+
+      - name: Run migrations
+        run: pnpm --filter backend exec prisma migrate deploy
+
+      - name: Build backend
+        run: pnpm --filter backend run build
+
+      - name: Build frontend
+        run: pnpm --filter frontend run build
+
+      - name: Install Playwright browser
+        run: pnpm --filter frontend exec playwright install --with-deps chromium
+
+      - name: Wait for r-sidecar health
+        run: |
+          for i in $(seq 1 60); do
+            if [ "$(docker inspect -f '{{.State.Running}}' r-sidecar)" != "true" ]; then
+              echo "r-sidecar container exited unexpectedly" >&2
+              docker logs r-sidecar >&2
+              exit 1
+            fi
+            if curl -fsS http://localhost:8787/health > /dev/null 2>&1; then
+              echo "r-sidecar healthy after ~$((i * 3))s"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "r-sidecar did not become healthy within 180s" >&2
+              docker logs r-sidecar >&2
+              exit 1
+            fi
+            sleep 3
+          done
+
+      # Backend self-seeds the default config (and test users) on boot.
+      # Run from apps/backend to match the production Docker start command.
+      - name: Start backend
+        run: |
+          cd apps/backend
+          node dist/main.js > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/ > /dev/null 2>&1; then
+              echo "backend up after ~$((i * 2))s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "backend did not start within 60s" >&2
+              cat "$GITHUB_WORKSPACE/backend.log" >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Start frontend
+        env:
+          NITRO_PORT: 3001
+          NITRO_HOST: 127.0.0.1
+        run: |
+          cd apps/frontend
+          node .output/server/index.mjs > "$GITHUB_WORKSPACE/frontend.log" 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3001/ > /dev/null 2>&1; then
+              echo "frontend up after ~$((i * 2))s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "frontend did not start within 60s" >&2
+              cat "$GITHUB_WORKSPACE/frontend.log" >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+      # No-auth smoke only: homepage (incl. the #27 weighting assertion) + results.
+      # Auth-dependent specs (login, navigation, auth-flow) stay local-only.
+      - name: Run frontend e2e (no-auth smoke)
+        run: pnpm --filter frontend exec playwright test e2e/homepage.spec.ts e2e/results.spec.ts
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/frontend/playwright-report
+          retention-days: 7
+
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "::group::r-sidecar"; docker logs r-sidecar 2>&1 | tail -80 || true; echo "::endgroup::"
+          echo "::group::backend"; tail -80 backend.log 2>/dev/null || true; echo "::endgroup::"
+          echo "::group::frontend"; tail -80 frontend.log 2>/dev/null || true; echo "::endgroup::"
+
   build-backend:
     needs: [test, changes]
     if: needs.changes.outputs.backend == 'true'

@@ -1,4 +1,20 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+const SAMPLE_TEXT =
+  'Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach. Ein Vogel fliegt am Himmel.';
+
+/** Expand a collapsed PrimeVue Fieldset by clicking its legend toggle button. */
+async function expandFieldset(page: Page, legend: string) {
+  await page.getByRole('button', { name: legend }).click();
+}
+
+async function analyze(page: Page, text: string) {
+  const editor = page.locator('.ql-editor');
+  await editor.click();
+  await editor.fill(text);
+  await page.getByRole('button', { name: 'Text analysieren' }).click();
+  await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible({ timeout: 15000 });
+}
 
 test.describe('Homepage', () => {
   test.beforeEach(async ({ page }) => {
@@ -10,26 +26,26 @@ test.describe('Homepage', () => {
     await expect(page.getByText('Entwickelt von Beate Leßmann')).toBeVisible();
   });
 
-  test('renders introductory text about LIX', async ({ page }) => {
-    await expect(page.getByText('Die Lesbarkeit eines Textes wird beim klassischen')).toBeVisible();
-    await expect(page.getByText('Dieser Prototyp berechnet eine Erweiterung')).toBeVisible();
+  test('renders the introductory text', async ({ page }) => {
+    await expect(
+      page.getByText('Fügen Sie einen Text ein, um seine Lesbarkeit zu analysieren.'),
+    ).toBeVisible();
   });
 
   test('renders the text editor', async ({ page }) => {
     await expect(page.locator('.ql-editor')).toBeVisible();
   });
 
-  test('renders the calculate button', async ({ page }) => {
-    const button = page.getByRole('button', { name: 'Berechnen' });
-    await expect(button).toBeVisible();
+  test('renders the analyze button', async ({ page }) => {
+    await expect(page.getByRole('button', { name: 'Text analysieren' })).toBeVisible();
   });
 
   test('shows placeholder text when no result exists', async ({ page }) => {
-    await expect(page.getByText('Geben Sie Text ein und klicken Sie auf Berechnen.')).toBeVisible();
+    await expect(page.getByText('Noch kein Text analysiert')).toBeVisible();
   });
 
-  test('renders website button in header', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Website' })).toBeVisible();
+  test('renders the website button in the header', async ({ page }) => {
+    await expect(page.getByRole('button', { name: 'Zur Website' })).toBeVisible();
   });
 
   test('can type text into the editor', async ({ page }) => {
@@ -39,34 +55,65 @@ test.describe('Homepage', () => {
     await expect(editor).toContainText('Dies ist ein Testtext');
   });
 
-  test('calculate button shows loading state and returns result', async ({ page }) => {
-    const editor = page.locator('.ql-editor');
-    await editor.click();
-    await editor.fill(
-      'Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach. Ein Vogel fliegt am Himmel.',
-    );
+  test('advanced settings expose the glossary weight labels', async ({ page }) => {
+    await expandFieldset(page, 'Erweiterte Einstellungen');
 
-    const button = page.getByRole('button', { name: 'Berechnen' });
-    await button.click();
+    await expect(page.getByText('Klassischer Lesbarkeitsindex (LIX)')).toBeVisible();
+    await expect(page.getByText('Drei- und Mehrsilber')).toBeVisible();
+    await expect(page.getByText('Konsonantenlauthäufung')).toBeVisible();
+    await expect(page.getByText('Mehrgliedrige Grapheme')).toBeVisible();
+    await expect(page.getByText('Seltene Grapheme')).toBeVisible();
 
-    await expect(page.getByText('Ergebnis')).toBeVisible({ timeout: 10000 });
+    // Pre-glossary terms must no longer appear (issue #27).
+    await expect(page.getByText('Komplexe Silben')).toHaveCount(0);
+    await expect(page.getByText('Schwierige Buchstabenfolgen')).toHaveCount(0);
+    await expect(page.getByText('Mehrteilige Buchstabengruppen')).toHaveCount(0);
+    await expect(page.getByText('Seltene Buchstaben')).toHaveCount(0);
   });
 
-  test('result view shows all expected sections after calculation', async ({ page }) => {
-    const editor = page.locator('.ql-editor');
-    await editor.click();
-    await editor.fill(
-      'Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach. Ein Vogel fliegt am Himmel.',
-    );
+  test('analyze button returns a result', async ({ page }) => {
+    await analyze(page, SAMPLE_TEXT);
+  });
 
-    await page.getByRole('button', { name: 'Berechnen' }).click();
-    await expect(page.getByText('Ergebnis')).toBeVisible({ timeout: 10000 });
+  test('result view shows its metric sections after analysis', async ({ page }) => {
+    await analyze(page, SAMPLE_TEXT);
 
-    await expect(page.getByText('Original Text')).toBeVisible();
-    await expect(page.getByText('Spaltung in Sätze')).toBeVisible();
-    await expect(page.getByText('Spaltung in Wörter')).toBeVisible();
-    await expect(page.getByText('Spaltung in Silben')).toBeVisible();
-    await expect(page.locator('.card').getByText('Gewichtung')).toBeVisible();
+    // Collapsed Fieldset legends are rendered even while collapsed.
+    await expect(page.getByText('Lesbarkeitsindizes')).toBeVisible();
+    await expect(page.getByText('Wortkomplexität')).toBeVisible();
+    await expect(page.getByText('Verwendete Gewichtung')).toBeVisible();
+    await expect(page.getByText('Textanalyse')).toBeVisible();
+  });
+
+  test('readability indices are listed in the result', async ({ page }) => {
+    await analyze(page, SAMPLE_TEXT);
+
+    await expandFieldset(page, 'Lesbarkeitsindizes');
+    // "LÜ-LIX"/"LIX" also appear in the header and intro text, so assert on the
+    // unambiguous index labels instead.
+    await expect(page.getByText('gSMOG')).toBeVisible();
+    await expect(page.getByText('WST4')).toBeVisible();
+    await expect(page.getByText('Flesch-Kincaid')).toBeVisible();
+  });
+
+  test('weighting section maps each glossary label to its own value (#27)', async ({ page }) => {
+    await analyze(page, SAMPLE_TEXT);
+
+    await expandFieldset(page, 'Verwendete Gewichtung');
+
+    // PrimeVue MeterGroup renders each entry as "<label> (<percent>%)", so the
+    // weight value sits in the same node as its own label. With the default
+    // weights (LIX 0.6, Drei- und Mehrsilber 0.2, Mehrgliedrige Grapheme 0.1)
+    // a swapped display — the bug behind #27 — would attach the wrong value.
+    await expect(page.getByText('Mehrgliedrige Grapheme (10%)')).toBeVisible();
+    await expect(page.getByText('Lesbarkeitsindex (LIX) (60%)')).toBeVisible();
+    await expect(page.getByText('Drei- und Mehrsilber (20%)')).toBeVisible();
+
+    // The old terms must not appear anywhere in the result UI.
+    await expect(page.getByText('Komplexe Silben')).toHaveCount(0);
+    await expect(page.getByText('Schwierige Buchstabenfolgen')).toHaveCount(0);
+    await expect(page.getByText('Mehrteilige Buchstabengruppen')).toHaveCount(0);
+    await expect(page.getByText('Seltene Buchstaben')).toHaveCount(0);
   });
 
   test('shows the detected title after analyzing a text with a title line', async ({ page }) => {
@@ -77,25 +124,9 @@ test.describe('Homepage', () => {
     await page.keyboard.type('Igel sind nachtaktive Tiere. Sie schlafen am Tag.');
 
     await page.getByRole('button', { name: 'Text analysieren' }).click();
-    await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible({ timeout: 15000 });
 
     await expect(page.getByText('„Der Igel“')).toBeVisible();
     await expect(page.getByText('Titel — fließt in keine Kennzahl ein')).toBeVisible();
-  });
-
-  test('result data table shows readability metrics', async ({ page }) => {
-    const editor = page.locator('.ql-editor');
-    await editor.click();
-    await editor.fill('Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach.');
-
-    await page.getByRole('button', { name: 'Berechnen' }).click();
-    await expect(page.getByText('Ergebnis')).toBeVisible({ timeout: 10000 });
-
-    await expect(
-      page.getByRole('cell', { name: 'Lesbarkeitsindex (LIX)', exact: true }),
-    ).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'gSMOG', exact: true })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Anzahl Wörter', exact: true })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Anzahl Sätze', exact: true })).toBeVisible();
   });
 });

@@ -13,6 +13,7 @@ const CalculateSchema = z.object({
   weightMultiMemberedGraphemes: z.number().min(0).optional(),
   weightRareGraphemes: z.number().min(0).optional(),
   weightConsonantClusters: z.number().min(0).optional(),
+  textType: z.enum(['prose', 'list']).optional(),
 });
 
 @Controller('calculate')
@@ -32,7 +33,7 @@ export class CalculateController {
       });
     }
 
-    const { text, saveResult, ...overrides } = parsed.data;
+    const { text, saveResult, textType, ...overrides } = parsed.data;
 
     const dbConfig = await this.prisma.config.findFirst({
       orderBy: { createdAt: 'desc' },
@@ -73,7 +74,9 @@ export class CalculateController {
       };
     }
 
-    const result = await this.calculateService.calculate(text, config, saveResult);
+    const result = await this.calculateService.calculate(text, config, saveResult, {
+      textTypeOverride: textType,
+    });
     return reply.send(result);
   }
 }

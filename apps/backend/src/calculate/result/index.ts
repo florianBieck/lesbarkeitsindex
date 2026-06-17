@@ -38,6 +38,12 @@ import {
 } from './text-features.js';
 import { detectTitle } from './title-guard.js';
 import { calculateWordComplexity, calculateLueLix, calculateLevel } from './score-model.js';
+import {
+  detectTextType,
+  countNonEmptyLines,
+  readingUnitForTextType,
+  type TextType,
+} from './text-type.js';
 
 export * from './basic-metrics.js';
 export * from './grapheme-analysis.js';
@@ -46,6 +52,7 @@ export * from './linguistic-features.js';
 export * from './text-features.js';
 export * from './title-guard.js';
 export * from './score-model.js';
+export * from './text-type.js';
 
 /**
  * Konfiguration des Aufschlagsmodells: Aufschlagskoeffizient α plus die vier
@@ -61,6 +68,17 @@ export interface ConfigWeights {
   readonly id: string;
 }
 
+/** Optionale Zusatzparameter, etwa ein vom Nutzer gesetzter Texttyp-Override. */
+export interface ComputeReadabilityOptions {
+  /**
+   * Übersteuert die heuristische Texttyp-Erkennung (ADR 0002). Wenn gesetzt,
+   * wird `textType` exakt darauf festgelegt; `detectedTextType` bleibt das
+   * heuristisch erkannte Ergebnis, damit die Oberfläche „automatisch erkannt
+   * als X, manuell auf Y gesetzt" anzeigen kann.
+   */
+  readonly textTypeOverride?: TextType;
+}
+
 /**
  * Berechnet alle Kennzahlen aus dem vollen Originaltext und der
  * Sidecar-Analyse des Fließtexts.
@@ -70,11 +88,39 @@ export interface ConfigWeights {
  * und Fließtext selbst aus `text` ab und kann nie von der Analyse abweichen.
  * Ein erkannter Titel fließt in keine Kennzahl ein; `text` und `hashText`
  * behalten den vollen Originaltext inklusive Titel.
+ *
+ * Texttyp & Leseeinheit (ADR 0002): Bei Texttyp Liste ersetzt die nicht-leere
+ * Zeilenzahl die Satzzahl als Nenner aller satzbezogenen Maße. Übergibt der
+ * Aufrufer keinen Override, kommt die Heuristik aus {@link detectTextType} zum
+ * Einsatz.
  */
-export function computeReadability(text: string, analysis: TextAnalysis, config: ConfigWeights) {
+export function computeReadability(
+  text: string,
+  analysis: TextAnalysis,
+  config: ConfigWeights,
+  options: ComputeReadabilityOptions = {},
+) {
   const { sentences, words, syllablesPerWord, posTags } = analysis;
 
-  const { title, bodyText } = detectTitle(text);
+  // Texttyp zuerst bestimmen — der Titel-Guard ist ein Fließtext-Konzept und
+  // würde sonst das erste Listenelement als Titel ausweisen.
+  const detectedTextType = detectTextType(text);
+  const textType: TextType = options.textTypeOverride ?? detectedTextType;
+  const readingUnit = readingUnitForTextType(textType);
+
+  const titleSplit = textType === 'list' ? { title: '', bodyText: text } : detectTitle(text);
+  const { title, bodyText } = titleSplit;
+
+  const countReadingUnits =
+    textType === 'list' ? countNonEmptyLines(text) : sentences.length;
+
+  // Bei Listen ersetzt eine virtuelle „Lese­einheiten"-Liste die R-Sidecar-Sätze
+  // als Nenner satzbezogener Maße. Die Inhalte sind irrelevant — die
+  // sätzbezogenen Funktionen nutzen nur `.length`.
+  const readingUnits: readonly string[] =
+    textType === 'list'
+      ? Array.from({ length: countReadingUnits }, (_, i) => `line-${i}`)
+      : sentences;
 
   const countWords = calculateCountWords(words);
   const countPhrases = calculateCountPhrases(sentences);
@@ -89,9 +135,9 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
   const averageWordLength = calculateAverageWordLength(words);
   const averageCharsPerSyllable = calculateAverageCharsPerSyllable(words, syllablesPerWord);
   const averageSyllablesPerWord = calculateAverageSyllablesPerWord(words, syllablesPerWord);
-  const averagePhraseLength = calculateAveragePhraseLength(words, sentences);
+  const averagePhraseLength = calculateAveragePhraseLength(words, readingUnits);
   const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(
-    sentences,
+    readingUnits,
     words,
     syllablesPerWord,
   );
@@ -104,18 +150,18 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
     countWords > 0 ? countWordsWithMultiMemberedGraphemes / countWords : 0;
   const proportionOfWordsWithRareGraphemes =
     countWords > 0 ? countWordsWithRareGraphemes / countWords : 0;
-  const lix = calculateLix(words, sentences);
-  const gsmog = calculateGsmog(words, sentences, syllablesPerWord);
-  const fleschKincaid = calculateFleschKincaid(words, sentences, syllablesPerWord);
-  const wst4 = calculateWstf(words, sentences, syllablesPerWord);
+  const lix = calculateLix(words, readingUnits);
+  const gsmog = calculateGsmog(words, readingUnits, syllablesPerWord);
+  const fleschKincaid = calculateFleschKincaid(words, readingUnits, syllablesPerWord);
+  const wst4 = calculateWstf(words, readingUnits, syllablesPerWord);
   const ttr = calculateTTR(words);
   const proNIndex = calculateProNIndex(posTags);
-  const subordinateClauseRatio = calculateSubordinateClauseRatio(posTags, sentences);
+  const subordinateClauseRatio = calculateSubordinateClauseRatio(posTags, readingUnits);
   const passiveCount = calculatePassiveCount(words, posTags);
   const nominalizationCount = calculateNominalizations(words, posTags);
   const rix = calculateRix(
     words,
-    sentences,
+    readingUnits,
     passiveCount,
     subordinateClauseRatio,
     nominalizationCount,
@@ -190,6 +236,10 @@ export function computeReadability(text: string, analysis: TextAnalysis, config:
     wordComplexity,
     lueLix,
     level,
+    textType,
+    readingUnit,
+    detectedTextType,
+    countReadingUnits,
     text,
     title,
     words: [...words],

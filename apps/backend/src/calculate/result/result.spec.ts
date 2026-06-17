@@ -769,6 +769,148 @@ describe('computeReadability Aufschlagsmodell (Issue #28: WK, LÜ-LIX, Niveaustu
   });
 });
 
+describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () => {
+  const config = {
+    alpha: { toNumber: () => 0.3 },
+    weightComplexSyllables: { toNumber: () => 50 },
+    weightMultiMemberedGraphemes: { toNumber: () => 25 },
+    weightRareGraphemes: { toNumber: () => 12.5 },
+    weightConsonantClusters: { toNumber: () => 12.5 },
+    id: 'test-config',
+  } satisfies ConfigWeights;
+
+  describe('Wörterliste ohne Override (AC1): heuristisch als Liste erkannt, plausibler LIX', () => {
+    const text =
+      'Hund\nKatze\nVogel\nMaus\nFisch\nBär\nLöwe\nWolf\nTiger\nAdler\n' +
+      'Hase\nIgel\nFrosch\nEule\nRabe\nElster\nMeise\nSpatz\nReh\nHirsch';
+    // R-Sidecar sieht die ganze Liste als einen Riesensatz, weil keine Punkte vorkommen.
+    const analysis = {
+      sentences: [
+        'Hund Katze Vogel Maus Fisch Bär Löwe Wolf Tiger Adler Hase Igel Frosch Eule Rabe Elster Meise Spatz Reh Hirsch',
+      ],
+      words: [
+        'Hund', 'Katze', 'Vogel', 'Maus', 'Fisch', 'Bär', 'Löwe', 'Wolf', 'Tiger', 'Adler',
+        'Hase', 'Igel', 'Frosch', 'Eule', 'Rabe', 'Elster', 'Meise', 'Spatz', 'Reh', 'Hirsch',
+      ],
+      syllablesPerWord: [1, 2, 2, 1, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2],
+      posTags: Array(20).fill('NN'),
+    };
+
+    test('Texttyp wird automatisch als Liste erkannt', () => {
+      const result = computeReadability(text, analysis, config);
+      expect(result.textType).toBe('list');
+      expect(result.detectedTextType).toBe('list');
+      expect(result.readingUnit).toBe('line');
+    });
+
+    test('Nenner satzbezogener Maße ist die Zeilenzahl (20), nicht die Satzzahl (1)', () => {
+      const result = computeReadability(text, analysis, config);
+      // averagePhraseLength als „durchschnittlich Wörter pro Leseeinheit": 20 / 20 = 1
+      expect(result.averagePhraseLength).toBe(1);
+      // Als Fließtext wären es 20 / 1 = 20 — der „Riesensatz" — und LIX > 20.
+      expect(result.lix).toBeLessThan(20);
+    });
+
+    test('countReadingUnits ist die Zeilenzahl', () => {
+      const result = computeReadability(text, analysis, config);
+      expect(result.countReadingUnits).toBe(20);
+    });
+  });
+
+  describe('AC2: derselbe Inhalt als Fließtext vs. Liste — sätzbezogene Werte unterscheiden sich', () => {
+    // Vier Zeilen, jede ohne Punkt — als Fließtext eine einzige „Satz"-Liste.
+    const text = 'Hund Katze\nVogel Maus\nFisch Schaf\nLöwe Bär';
+    const analysis = {
+      sentences: ['Hund Katze Vogel Maus Fisch Schaf Löwe Bär'],
+      words: ['Hund', 'Katze', 'Vogel', 'Maus', 'Fisch', 'Schaf', 'Löwe', 'Bär'],
+      syllablesPerWord: [1, 2, 2, 1, 1, 1, 2, 1],
+      posTags: ['NN', 'NN', 'NN', 'NN', 'NN', 'NN', 'NN', 'NN'],
+    };
+
+    test('Fließtext: averagePhraseLength = Wörter pro Satz (8/1 = 8)', () => {
+      const result = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
+      expect(result.textType).toBe('prose');
+      expect(result.readingUnit).toBe('sentence');
+      expect(result.averagePhraseLength).toBe(8);
+      expect(result.countReadingUnits).toBe(1);
+    });
+
+    test('Liste: averagePhraseLength = Wörter pro Zeile (8/4 = 2)', () => {
+      const result = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      expect(result.textType).toBe('list');
+      expect(result.readingUnit).toBe('line');
+      expect(result.averagePhraseLength).toBe(2);
+      expect(result.countReadingUnits).toBe(4);
+    });
+
+    test('LIX als Fließtext > LIX als Liste (Riesensatz-Effekt entschärft)', () => {
+      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
+      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      expect(prose.lix).toBeGreaterThan(list.lix);
+    });
+
+    test('gSmog, Flesch-Kincaid und WSTF nutzen ebenfalls die Zeile als Nenner', () => {
+      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
+      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      expect(list.fleschKincaid).not.toBe(prose.fleschKincaid);
+      expect(list.wst4).not.toBe(prose.wst4);
+    });
+
+    test('RIX nutzt ebenfalls die Zeile als Nenner', () => {
+      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
+      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      expect(list.ratte).not.toBe(prose.ratte);
+    });
+
+    test('averageSyllablesPerPhrase nutzt die Zeile als Nenner', () => {
+      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      // Gesamt-Silben = 1+2+2+1+1+1+2+1 = 11; 11 / 4 Zeilen = 2,75
+      expect(list.averageSyllablesPerPhrase).toBeCloseTo(11 / 4, 5);
+    });
+  });
+
+  describe('Override schlägt die heuristische Erkennung (AC3)', () => {
+    // Mehrere Sätze mit Punkten — wird als Fließtext erkannt; Override zwingt Liste.
+    const text = 'Der Hund läuft.\nDie Katze schläft.';
+    const analysis = {
+      sentences: ['Der Hund läuft.', 'Die Katze schläft.'],
+      words: ['Der', 'Hund', 'läuft', 'Die', 'Katze', 'schläft'],
+      syllablesPerWord: [1, 1, 1, 1, 2, 2],
+      posTags: ['ART', 'NN', 'VVFIN', 'ART', 'NN', 'VVFIN'],
+    };
+
+    test('ohne Override: heuristisch Fließtext', () => {
+      const result = computeReadability(text, analysis, config);
+      expect(result.textType).toBe('prose');
+      expect(result.detectedTextType).toBe('prose');
+    });
+
+    test('Override list: textType ist list, detectedTextType bleibt prose', () => {
+      const result = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      expect(result.textType).toBe('list');
+      expect(result.readingUnit).toBe('line');
+      expect(result.detectedTextType).toBe('prose');
+      expect(result.countReadingUnits).toBe(2);
+    });
+  });
+
+  describe('Mischform "Sommer" (AC5: Wörter, Formulierungen, Sätze gemischt)', () => {
+    const text = 'Sonne\nEis essen\nIm Garten spielen.\nSchwimmen';
+    const analysis = {
+      sentences: ['Sonne Eis essen Im Garten spielen.', 'Schwimmen'],
+      words: ['Sonne', 'Eis', 'essen', 'Im', 'Garten', 'spielen', 'Schwimmen'],
+      syllablesPerWord: [2, 1, 2, 1, 2, 2, 2],
+      posTags: ['NN', 'NN', 'VVINF', 'APPR', 'NN', 'VVINF', 'VVINF'],
+    };
+
+    test('wird als Liste erkannt und über die Zeilenzählung (4) abgebildet', () => {
+      const result = computeReadability(text, analysis, config);
+      expect(result.textType).toBe('list');
+      expect(result.countReadingUnits).toBe(4);
+    });
+  });
+});
+
 describe('computeReadability Titel-Guard', () => {
   const config = {
     alpha: { toNumber: () => 0.3 },

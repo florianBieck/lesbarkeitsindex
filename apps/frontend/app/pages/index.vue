@@ -11,6 +11,27 @@
       @text-change="(event) => (text = event.textValue)"
     />
 
+    <!-- Texttyp-Schalter (ADR 0002): heuristisch erkannt, manuell übersteuerbar -->
+    <div class="mt-4 flex items-center flex-wrap gap-3">
+      <label class="text-sm font-medium text-surface-700">Texttyp</label>
+      <SelectButton
+        v-model="textType"
+        :options="textTypeOptions"
+        optionLabel="label"
+        optionValue="value"
+        :allowEmpty="false"
+        aria-label="Texttyp wählen"
+      />
+      <span v-if="textType === detectedTextType" class="text-xs text-surface-500">
+        automatisch erkannt als
+        {{ detectedTextType === 'list' ? 'Liste' : 'Fließtext' }}
+      </span>
+      <span v-else class="text-xs text-surface-500">
+        manuell übersteuert (automatisch erkannt:
+        {{ detectedTextType === 'list' ? 'Liste' : 'Fließtext' }})
+      </span>
+    </div>
+
     <div class="mt-4">
       <Fieldset legend="Erweiterte Einstellungen" :toggleable="true" :collapsed="true">
         <p class="text-sm text-surface-500 mb-4">
@@ -184,11 +205,13 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, defineAsyncComponent, onMounted } from 'vue';
+import { ref, defineAsyncComponent, onMounted, computed, watch } from 'vue';
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
 import Fieldset from 'primevue/fieldset';
 import Checkbox from 'primevue/checkbox';
+import SelectButton from 'primevue/selectbutton';
+import { detectTextType, type TextType } from '@lesbarkeitsindex/api-client';
 
 const Editor = defineAsyncComponent(() => import('primevue/editor'));
 import { useApiClient, type ResultData } from '~/composables/useApiClient';
@@ -201,6 +224,29 @@ const loading = ref(false);
 const result = ref<ResultData | null>(null);
 const validationError = ref('');
 const saveResult = ref(false);
+
+// Texttyp-Erkennung (ADR 0002): die Heuristik aktualisiert sich beim Tippen,
+// der Nutzer kann den Wert übersteuern. Der Override geht mit der Anfrage mit.
+const detectedTextType = ref<TextType>('prose');
+const textType = ref<TextType>('prose');
+const userOverrode = ref(false);
+const textTypeOptions = [
+  { label: 'Fließtext', value: 'prose' as TextType },
+  { label: 'Liste', value: 'list' as TextType },
+];
+
+watch(text, (next) => {
+  const detected = detectTextType(next);
+  detectedTextType.value = detected;
+  // Solange der Nutzer nicht selbst gewechselt hat, folgt die Auswahl der Heuristik.
+  if (!userOverrode.value) textType.value = detected;
+});
+
+watch(textType, (next, prev) => {
+  if (prev !== undefined && next !== detectedTextType.value) {
+    userOverrode.value = true;
+  }
+});
 
 // Aufschlagsmodell-Parameter — Startwerte werden beim Mount aus der gespeicherten
 // Admin-Konfiguration geladen, damit Admin-Änderungen die nächste Analyse erreichen.
@@ -241,6 +287,7 @@ async function calculate() {
       weightMultiMemberedGraphemes: weightMultiMemberedGraphemes.value,
       weightRareGraphemes: weightRareGraphemes.value,
       weightConsonantClusters: weightConsonantClusters.value,
+      textType: textType.value,
     });
     result.value = data;
   } catch (e) {
@@ -250,4 +297,7 @@ async function calculate() {
     loading.value = false;
   }
 }
+
+// Für Tests, die den effektiven Zustand und die Aktion auslesen.
+defineExpose({ text, textType, detectedTextType, calculate });
 </script>

@@ -65,6 +65,10 @@ model Result {
   wordComplexity                              Decimal // Wortkomplexität (WK 0–100)
   lueLix                                      Decimal // LÜ-LIX = LIX + α·WK
   level                                       Decimal // Niveaustufe 1–5 (aus LÜ-LIX)
+  textType                                    String   @default("prose") // "prose" | "list" (ADR 0002)
+  readingUnit                                 String   @default("sentence") // "sentence" | "line" (ADR 0002)
+  detectedTextType                            String   @default("prose") // heuristisch erkannter Texttyp (ADR 0002)
+  countReadingUnits                           Decimal  @default(0) // Nenner satzbezogener Maße: Satzzahl bei Fließtext, Zeilenzahl bei Liste
   text                                        String
   title                                       String   @default("")
   words                                       String[]

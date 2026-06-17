@@ -4,13 +4,31 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { z } from 'zod';
 
-const UpdateConfigSchema = z.object({
-  alpha: z.number().min(0).max(10),
-  weightComplexSyllables: z.number().min(0),
-  weightMultiMemberedGraphemes: z.number().min(0),
-  weightRareGraphemes: z.number().min(0),
-  weightConsonantClusters: z.number().min(0),
-});
+// Toleranz für die Summenprüfung der WK-Gewichte (Gleitkomma-Eingaben).
+const WEIGHT_SUM_EPSILON = 0.01;
+
+const UpdateConfigSchema = z
+  .object({
+    alpha: z.number().min(0).max(10),
+    weightComplexSyllables: z.number().min(0),
+    weightMultiMemberedGraphemes: z.number().min(0),
+    weightRareGraphemes: z.number().min(0),
+    weightConsonantClusters: z.number().min(0),
+  })
+  .refine(
+    (cfg) => {
+      const sum =
+        cfg.weightComplexSyllables +
+        cfg.weightMultiMemberedGraphemes +
+        cfg.weightRareGraphemes +
+        cfg.weightConsonantClusters;
+      return Math.abs(sum - 100) <= WEIGHT_SUM_EPSILON;
+    },
+    {
+      message: 'Die Summe der vier WK-Gewichte muss 100 ergeben.',
+      path: ['weightSum'],
+    },
+  );
 
 @Controller('config')
 export class AppConfigController {

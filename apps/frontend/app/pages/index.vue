@@ -184,7 +184,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, defineAsyncComponent } from 'vue';
+import { ref, defineAsyncComponent, onMounted } from 'vue';
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
 import Fieldset from 'primevue/fieldset';
@@ -202,12 +202,26 @@ const result = ref<ResultData | null>(null);
 const validationError = ref('');
 const saveResult = ref(false);
 
-// Aufschlagsmodell-Parameter (Startwerte gemäß ADR 0001 / Seed).
+// Aufschlagsmodell-Parameter — Startwerte werden beim Mount aus der gespeicherten
+// Admin-Konfiguration geladen, damit Admin-Änderungen die nächste Analyse erreichen.
 const alpha = ref(0.3);
 const weightComplexSyllables = ref(50);
 const weightMultiMemberedGraphemes = ref(25);
 const weightRareGraphemes = ref(12.5);
 const weightConsonantClusters = ref(12.5);
+
+onMounted(async () => {
+  try {
+    const config = await client.getConfig();
+    alpha.value = Number(config.alpha);
+    weightComplexSyllables.value = Number(config.weightComplexSyllables);
+    weightMultiMemberedGraphemes.value = Number(config.weightMultiMemberedGraphemes);
+    weightRareGraphemes.value = Number(config.weightRareGraphemes);
+    weightConsonantClusters.value = Number(config.weightConsonantClusters);
+  } catch (e) {
+    console.error('Konfiguration konnte nicht geladen werden', e);
+  }
+});
 
 async function calculate() {
   validationError.value = '';

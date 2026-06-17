@@ -100,6 +100,11 @@ const items = computed(() => {
         to: '/results',
       },
       {
+        label: 'Konfiguration',
+        icon: 'pi pi-cog',
+        to: '/admin',
+      },
+      {
         label: 'Abmelden',
         icon: 'pi pi-sign-out',
         to: '/logout',

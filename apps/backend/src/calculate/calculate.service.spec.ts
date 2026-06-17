@@ -109,6 +109,27 @@ describe('CalculateService', () => {
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
+  test('reicht textTypeOverride durch und schickt bei Liste den vollen Text an den R-Sidecar', async () => {
+    const { service, analyzeTextMock, createMock } = makeService();
+    analyzeTextMock.mockResolvedValueOnce({
+      sentences: ['Sonne Eis essen Im Garten spielen.', 'Schwimmen'],
+      words: ['Sonne', 'Eis', 'essen', 'Im', 'Garten', 'spielen', 'Schwimmen'],
+      syllablesPerWord: [2, 1, 2, 1, 2, 2, 2],
+      posTags: ['NN', 'NN', 'VVINF', 'APPR', 'NN', 'VVINF', 'VVINF'],
+    });
+    const text = 'Sonne\nEis essen\nIm Garten spielen.\nSchwimmen';
+
+    await service.calculate(text, makeConfig(), true, { textTypeOverride: 'list' });
+
+    expect(analyzeTextMock).toHaveBeenCalledExactlyOnceWith(text);
+    const { data } = createMock.mock.calls[0]![0];
+    expect(data['textType']).toBe('list');
+    expect(data['readingUnit']).toBe('line');
+    expect(data['countReadingUnits']).toBe(4);
+    // Titel bleibt leer — die erste Zeile einer Liste ist ein Listenelement.
+    expect(data['title']).toBe('');
+  });
+
   test('übersetzt sonstige Fehler in InternalServerErrorException', async () => {
     const { service, analyzeTextMock } = makeService();
     analyzeTextMock.mockRejectedValueOnce(new Error('kaputt'));

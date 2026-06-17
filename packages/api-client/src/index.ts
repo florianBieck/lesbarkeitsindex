@@ -1,5 +1,42 @@
 import { ofetch, type $Fetch } from 'ofetch';
 
+/** Texttyp eines Textes (ADR 0002): Fließtext oder Liste. */
+export type TextType = 'prose' | 'list';
+
+/** Leseeinheit (ADR 0002): Satz bei Fließtext, Zeile bei Liste. */
+export type ReadingUnit = 'sentence' | 'line';
+
+/**
+ * Heuristische Texttyp-Erkennung (ADR 0002, Issue #30). Liefert „list", wenn
+ * die Mehrheit der nicht-leeren Zeilen kein Satzendzeichen (`.`, `!`, `?`)
+ * trägt; sonst „prose". Die kanonische Implementierung lebt im Backend; diese
+ * Kopie nutzen Backend und Frontend, damit die Erkennung an beiden Stellen
+ * identisch bleibt — die Oberfläche zeigt sie schon vor dem Absenden an.
+ */
+export function detectTextType(text: string): TextType {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (lines.length === 0) return 'prose';
+
+  let withoutTerminal = 0;
+  let withTerminal = 0;
+  for (const line of lines) {
+    if (/[.!?]$/.test(line)) {
+      withTerminal++;
+    } else {
+      withoutTerminal++;
+    }
+  }
+  return withoutTerminal > withTerminal ? 'list' : 'prose';
+}
+
+/** Leseeinheit aus dem Texttyp (ADR 0002). */
+export function readingUnitForTextType(textType: TextType): ReadingUnit {
+  return textType === 'list' ? 'line' : 'sentence';
+}
+
 export interface Config {
   id: string;
   createdAt: string;
@@ -58,6 +95,10 @@ export interface ResultData {
   wordComplexity: string;
   lueLix: string;
   level: string;
+  textType: TextType;
+  readingUnit: ReadingUnit;
+  detectedTextType: TextType;
+  countReadingUnits: string;
   text: string;
   title: string;
   words: string[];
@@ -91,6 +132,8 @@ export interface CalculateRequest {
   weightMultiMemberedGraphemes?: number;
   weightRareGraphemes?: number;
   weightConsonantClusters?: number;
+  /** Manueller Texttyp-Override (ADR 0002); übersteuert die Heuristik. */
+  textType?: TextType;
 }
 
 export interface UpdateConfigRequest {

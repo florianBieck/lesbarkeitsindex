@@ -89,10 +89,19 @@ const meters = computed(() => {
   ];
 });
 
+// Texttyp & Leseeinheit (ADR 0002): nur mit Leseeinheit Satz heißt der LIX
+// „LIX nach Bamberger". Bei Liste werden „Sätze" zu „Zeilen" umetikettiert.
+const isList = computed(() => props.result.textType === 'list');
+const textTypeLabel = computed(() => (isList.value ? 'Liste' : 'Fließtext'));
+const readingUnitLabel = computed(() => (isList.value ? 'Zeile' : 'Satz'));
+const readingUnitPlural = computed(() => (isList.value ? 'Zeilen' : 'Sätze'));
+const lixLabel = computed(() => (isList.value ? 'LIX' : 'LIX nach Bamberger'));
+const readingUnitCount = computed(() => Number(props.result.countReadingUnits));
+
 const readabilityIndices = computed(() => [
   { label: 'LÜ-LIX', value: lueLix.value },
   { label: 'Wortkomplexität (WK)', value: wordComplexity.value },
-  { label: 'LIX', value: lix.value },
+  { label: lixLabel.value, value: lix.value },
   { label: 'gSMOG', value: round2(props.result.gsmog) },
   { label: 'WST4', value: round2(props.result.wst4) },
   { label: 'Flesch-Kincaid', value: round2(props.result.fleschKincaid) },
@@ -110,7 +119,7 @@ const textStats = computed(() => [
     value: `${round2(props.result.averageWordLength)} Buchstaben`,
   },
   {
-    label: 'Satzlänge',
+    label: isList.value ? 'Zeilenlänge' : 'Satzlänge',
     value: `${round2(props.result.averagePhraseLength)} Wörter`,
   },
   {
@@ -122,7 +131,7 @@ const textStats = computed(() => [
     value: round2(props.result.averageSyllablesPerWord),
   },
   {
-    label: 'Silben pro Satz',
+    label: isList.value ? 'Silben pro Zeile' : 'Silben pro Satz',
     value: round2(props.result.averageSyllablesPerPhrase),
   },
 ]);
@@ -339,7 +348,11 @@ onMounted(() => {
         <div class="text-3xl font-semibold text-surface-900">{{ result.countWords }}</div>
         <div class="text-sm text-surface-500">Wörter</div>
         <div class="text-sm text-surface-600 mt-1">
-          {{ result.countPhrases }} Sätze &middot; {{ result.countSyllables }} Silben
+          {{ readingUnitCount }} {{ readingUnitPlural }} &middot;
+          {{ result.countSyllables }} Silben
+        </div>
+        <div class="text-xs text-surface-500 mt-1">
+          Texttyp {{ textTypeLabel }} &middot; Leseeinheit {{ readingUnitLabel }}
         </div>
       </div>
     </div>
@@ -425,7 +438,9 @@ onMounted(() => {
             <p class="text-surface-700 leading-relaxed">{{ result.text }}</p>
           </div>
           <div>
-            <h3 class="font-medium text-surface-700 mb-2">Sätze ({{ result.phrases?.length }})</h3>
+            <h3 class="font-medium text-surface-700 mb-2">
+              {{ readingUnitPlural }} ({{ result.phrases?.length }})
+            </h3>
             <div class="flex flex-wrap gap-1">
               <Chip v-for="(phrase, index) in result.phrases" :key="index" :label="phrase" />
             </div>

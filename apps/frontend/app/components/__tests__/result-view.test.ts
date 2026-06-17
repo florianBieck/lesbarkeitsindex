@@ -83,6 +83,10 @@ const makeResult = (overrides: Partial<ResultData> = {}): ResultData => ({
   wordComplexity: '25',
   lueLix: '37',
   level: '2',
+  textType: 'prose',
+  readingUnit: 'sentence',
+  detectedTextType: 'prose',
+  countReadingUnits: '2',
   text: 'Igel sind nachtaktive Tiere. Sie schlafen am Tag.',
   title: '',
   words: ['Igel', 'sind', 'nachtaktive', 'Tiere', 'Sie', 'schlafen', 'am', 'Tag'],
@@ -174,6 +178,55 @@ describe('result-view', () => {
     expect(text).toContain('Konsonantenlauthäufung (10%)');
     // Der LIX trägt kein eigenes Gewicht mehr (LÜ-LIX = LIX + α·WK).
     expect(text).not.toContain('Lesbarkeitsindex (LIX) (');
+  });
+
+  it('nennt den LIX bei Fließtext „LIX nach Bamberger" und kennzeichnet die Leseeinheit Satz (AC4)', async () => {
+    const wrapper = await mountSuspended(ResultView, {
+      props: {
+        result: makeResult({ textType: 'prose', readingUnit: 'sentence' }),
+      },
+    });
+
+    const text = wrapper.text();
+    expect(text).toContain('LIX nach Bamberger');
+    expect(text).toContain('Fließtext');
+    expect(text).toContain('Leseeinheit');
+    expect(text).toContain('Satz');
+  });
+
+  it('nennt den LIX bei Liste NICHT „nach Bamberger" und kennzeichnet die Leseeinheit Zeile (AC4)', async () => {
+    const wrapper = await mountSuspended(ResultView, {
+      props: {
+        result: makeResult({
+          textType: 'list',
+          readingUnit: 'line',
+          countReadingUnits: '4',
+        }),
+      },
+    });
+
+    const text = wrapper.text();
+    expect(text).not.toContain('LIX nach Bamberger');
+    expect(text).toContain('Liste');
+    expect(text).toContain('Zeile');
+  });
+
+  it('zeigt im Umfang die Anzahl Leseeinheiten passend zum Texttyp an (AC6)', async () => {
+    const prose = await mountSuspended(ResultView, {
+      props: { result: makeResult({ textType: 'prose', readingUnit: 'sentence' }) },
+    });
+    expect(prose.text()).toContain('Sätze');
+
+    const list = await mountSuspended(ResultView, {
+      props: {
+        result: makeResult({
+          textType: 'list',
+          readingUnit: 'line',
+          countReadingUnits: '4',
+        }),
+      },
+    });
+    expect(list.text()).toContain('Zeilen');
   });
 
   it('verwendet die verbindlichen Glossar-Begriffe statt der alten Begriffe', async () => {

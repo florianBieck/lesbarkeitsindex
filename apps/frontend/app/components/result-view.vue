@@ -28,13 +28,13 @@ const props = defineProps<{
 const chartData = ref();
 const chartOptions = ref();
 
-const round2 = (value: unknown) => Math.round(Number(value) * 100) / 100;
+const round2 = (value: number) => Math.round(value * 100) / 100;
 
 // Schwierigkeit: LÜ-LIX als Kopfzahl, WK und Niveaustufe kommen aus dem Backend.
 const lueLix = computed(() => round2(props.result.lueLix));
 const lix = computed(() => round2(props.result.lix));
 const wordComplexity = computed(() => round2(props.result.wordComplexity));
-const level = computed(() => Math.round(Number(props.result.level)));
+const level = computed(() => Math.round(props.result.level));
 const alpha = computed(() => round2(props.result.config.alpha));
 // Doughnut-Gauge auf 0–100 begrenzt; die Mitte zeigt den echten LÜ-LIX-Wert.
 const gauge = computed(() => Math.min(100, Math.max(0, lueLix.value)));
@@ -62,22 +62,22 @@ const meters = computed(() => {
     {
       label: 'Drei- und Mehrsilber',
       color: colors.complexSyllables,
-      value: Number(props.result.config.weightComplexSyllables),
+      value: props.result.config.weightComplexSyllables,
     },
     {
       label: 'Mehrgliedrige Grapheme',
       color: colors.multiGraphemes,
-      value: Number(props.result.config.weightMultiMemberedGraphemes),
+      value: props.result.config.weightMultiMemberedGraphemes,
     },
     {
       label: 'Seltene Grapheme',
       color: colors.rareGraphemes,
-      value: Number(props.result.config.weightRareGraphemes),
+      value: props.result.config.weightRareGraphemes,
     },
     {
       label: 'Konsonantenlauthäufung',
       color: colors.consonantClusters,
-      value: Number(props.result.config.weightConsonantClusters),
+      value: props.result.config.weightConsonantClusters,
     },
   ];
 });
@@ -89,7 +89,7 @@ const textTypeLabel = computed(() => (isList.value ? 'Liste' : 'Fließtext'));
 const readingUnitLabel = computed(() => (isList.value ? 'Zeile' : 'Satz'));
 const readingUnitPlural = computed(() => (isList.value ? 'Zeilen' : 'Sätze'));
 const lixLabel = computed(() => (isList.value ? 'LIX' : 'LIX nach Bamberger'));
-const readingUnitCount = computed(() => Number(props.result.countReadingUnits));
+const readingUnitCount = computed(() => props.result.countReadingUnits);
 
 const readabilityIndices = computed(() => [
   { label: 'LÜ-LIX', value: lueLix.value },
@@ -134,32 +134,32 @@ const textStats = computed(() => [
 const complexityFactors = computed(() => [
   {
     label: 'Lange Wörter (6+ Buchstaben)',
-    value: `${Math.round(Number(props.result.proportionOfLongWords) * 10000) / 100}%`,
+    value: `${Math.round(props.result.proportionOfLongWords * 10000) / 100}%`,
     count: null,
   },
   {
     label: 'Drei- und Mehrsilber',
-    value: `${Math.round(Number(props.result.proportionOfWordsWithComplexSyllables) * 10000) / 100}%`,
-    count: Number(props.result.countWordsWithComplexSyllables),
+    value: `${Math.round(props.result.proportionOfWordsWithComplexSyllables * 10000) / 100}%`,
+    count: props.result.countWordsWithComplexSyllables,
   },
   {
     label: 'Konsonantenlauthäufung',
-    value: `${Math.round(Number(props.result.proportionOfWordsWithConsonantClusters) * 10000) / 100}%`,
-    count: Number(props.result.countWordsWithConsonantClusters),
+    value: `${Math.round(props.result.proportionOfWordsWithConsonantClusters * 10000) / 100}%`,
+    count: props.result.countWordsWithConsonantClusters,
   },
   {
     label: 'Mehrgliedrige Grapheme',
-    value: `${Math.round(Number(props.result.proportionOfWordsWithMultiMemberedGraphemes) * 10000) / 100}%`,
-    count: Number(props.result.countWordsWithMultiMemberedGraphemes),
+    value: `${Math.round(props.result.proportionOfWordsWithMultiMemberedGraphemes * 10000) / 100}%`,
+    count: props.result.countWordsWithMultiMemberedGraphemes,
   },
   {
     label: 'Seltene Grapheme',
-    value: `${Math.round(Number(props.result.proportionOfWordsWithRareGraphemes) * 10000) / 100}%`,
-    count: Number(props.result.countWordsWithRareGraphemes),
+    value: `${Math.round(props.result.proportionOfWordsWithRareGraphemes * 10000) / 100}%`,
+    count: props.result.countWordsWithRareGraphemes,
   },
-  { label: 'Abkürzungen', value: null, count: Number(props.result.countAbbreviations) },
-  { label: 'Zahlen (2+ Ziffern)', value: null, count: Number(props.result.countNumbers) },
-  { label: 'Sonderzeichen', value: null, count: Number(props.result.countSpecialCharacters) },
+  { label: 'Abkürzungen', value: null, count: props.result.countAbbreviations },
+  { label: 'Zahlen (2+ Ziffern)', value: null, count: props.result.countNumbers },
+  { label: 'Sonderzeichen', value: null, count: props.result.countSpecialCharacters },
 ]);
 
 const sentenceComplexity = computed(() => [
@@ -171,34 +171,34 @@ const sentenceComplexity = computed(() => [
     label: 'Nebensätze pro Satz',
     value: round2(props.result.subordinateClauseRatio),
   },
-  { label: 'Passivkonstruktionen', value: Number(props.result.passiveCount) },
-  { label: 'Substantivierungen', value: Number(props.result.nominalizationCount) },
+  { label: 'Passivkonstruktionen', value: props.result.passiveCount },
+  { label: 'Substantivierungen', value: props.result.nominalizationCount },
 ]);
 
 const syllableGroups = computed(() => [
   {
     label: '1 Silbe',
-    count: Number(props.result.countWordsWithOneSyllable),
+    count: props.result.countWordsWithOneSyllable,
     words: props.result.wordsWithOneSyllable,
   },
   {
     label: '2 Silben',
-    count: Number(props.result.countWordsWithTwoSyllable),
+    count: props.result.countWordsWithTwoSyllable,
     words: props.result.wordsWithTwoSyllables,
   },
   {
     label: '3 Silben',
-    count: Number(props.result.countWordsWithThreeSyllable),
+    count: props.result.countWordsWithThreeSyllable,
     words: props.result.wordsWithThreeSyllables,
   },
   {
     label: '4 Silben',
-    count: Number(props.result.countWordsWithFourSyllable),
+    count: props.result.countWordsWithFourSyllable,
     words: props.result.wordsWithFourSyllables,
   },
   {
     label: '5+ Silben',
-    count: Number(props.result.countWordsWithFiveSyllable),
+    count: props.result.countWordsWithFiveSyllable,
     words: props.result.wordsWithFiveSyllables,
   },
 ]);
@@ -435,14 +435,6 @@ onMounted(() => {
             <h3 class="font-medium text-surface-700 mb-2">Wörter ({{ result.words?.length }})</h3>
             <div class="flex flex-wrap gap-1">
               <Chip v-for="(word, index) in result.words" :key="index" :label="word" />
-            </div>
-          </div>
-          <div>
-            <h3 class="font-medium text-surface-700 mb-2">
-              Silben ({{ result.syllables?.length }})
-            </h3>
-            <div class="flex flex-wrap gap-1">
-              <Chip v-for="(syllable, index) in result.syllables" :key="index" :label="syllable" />
             </div>
           </div>
         </div>

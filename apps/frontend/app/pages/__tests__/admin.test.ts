@@ -26,11 +26,11 @@ vi.mock('~/composables/useApiClient', () => ({
 const DB_CONFIG = {
   id: 'cfg-1',
   createdAt: '2026-06-12T08:00:00.000Z',
-  alpha: '0.3',
-  weightComplexSyllables: '50',
-  weightMultiMemberedGraphemes: '25',
-  weightRareGraphemes: '12.5',
-  weightConsonantClusters: '12.5',
+  alpha: 0.3,
+  weightComplexSyllables: 50,
+  weightMultiMemberedGraphemes: 25,
+  weightRareGraphemes: 12.5,
+  weightConsonantClusters: 12.5,
 };
 
 describe('AdminPage — Summe-100-Validierung (Issue #29, AC2)', () => {
@@ -46,11 +46,11 @@ describe('AdminPage — Summe-100-Validierung (Issue #29, AC2)', () => {
     // so können wir verifizieren, dass die Werte aus der API in die Form gelangen.
     getConfigMock.mockResolvedValueOnce({
       ...DB_CONFIG,
-      alpha: '0.45',
-      weightComplexSyllables: '40',
-      weightMultiMemberedGraphemes: '30',
-      weightRareGraphemes: '20',
-      weightConsonantClusters: '10',
+      alpha: 0.45,
+      weightComplexSyllables: 40,
+      weightMultiMemberedGraphemes: 30,
+      weightRareGraphemes: 20,
+      weightConsonantClusters: 10,
     });
 
     const wrapper = await mountSuspended(AdminPage);

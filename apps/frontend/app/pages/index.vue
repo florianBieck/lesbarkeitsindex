@@ -234,11 +234,11 @@ const weightConsonantClusters = ref(12.5);
 onMounted(async () => {
   try {
     const config = await client.getConfig();
-    alpha.value = Number(config.alpha);
-    weightComplexSyllables.value = Number(config.weightComplexSyllables);
-    weightMultiMemberedGraphemes.value = Number(config.weightMultiMemberedGraphemes);
-    weightRareGraphemes.value = Number(config.weightRareGraphemes);
-    weightConsonantClusters.value = Number(config.weightConsonantClusters);
+    alpha.value = config.alpha;
+    weightComplexSyllables.value = config.weightComplexSyllables;
+    weightMultiMemberedGraphemes.value = config.weightMultiMemberedGraphemes;
+    weightRareGraphemes.value = config.weightRareGraphemes;
+    weightConsonantClusters.value = config.weightConsonantClusters;
   } catch (e) {
     console.error('Konfiguration konnte nicht geladen werden', e);
   }

@@ -5,16 +5,12 @@
     - Niveaustufe 1–5 aus dem LÜ-LIX.
  */
 
-/** Die vier Coverage-Komponenten der Wortkomplexität, jeweils Anteil in [0, 1]. */
-export interface WordComplexityComponents {
-  readonly complexSyllables: number;
-  readonly multiMemberedGraphemes: number;
-  readonly rareGraphemes: number;
-  readonly consonantClusters: number;
-}
-
-/** Fachliche Gewichte der vier Komponenten (Startwerte 50 / 25 / 12,5 / 12,5). */
-export interface WordComplexityWeights {
+/**
+ * Die vier WK-Felder — genutzt sowohl für die Coverage-Komponenten (jeweils Anteil
+ * in [0, 1]) als auch für ihre fachlichen Gewichte (Startwerte 50 / 25 / 12,5 / 12,5).
+ * Beide teilen exakt dieselbe Struktur.
+ */
+export interface WordComplexityValues {
   readonly complexSyllables: number;
   readonly multiMemberedGraphemes: number;
   readonly rareGraphemes: number;
@@ -27,8 +23,8 @@ export interface WordComplexityWeights {
  * Ankertexte — WK bleibt roh und direkt aus dem Text erklärbar (ADR 0001).
  */
 export function calculateWordComplexity(
-  components: WordComplexityComponents,
-  weights: WordComplexityWeights,
+  components: WordComplexityValues,
+  weights: WordComplexityValues,
 ): number {
   const totalWeight =
     weights.complexSyllables +

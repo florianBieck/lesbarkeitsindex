@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module.js';
 import { PrismaService } from './prisma/prisma.service.js';
@@ -17,14 +16,6 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
-
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Lesbarkeitsindex API')
-    .setDescription('German text readability analysis API')
-    .setVersion('2.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(3000, '0.0.0.0');
 

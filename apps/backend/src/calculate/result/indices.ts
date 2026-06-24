@@ -1,24 +1,28 @@
+import { countWordsWithComplexSyllables } from './basic-metrics.js';
+
+/*
+    Lange Wörter (RATTE): Bindestriche werden zuvor entfernt, dann zählt jedes Wort
+    mit mehr als 6 Buchstaben. Buchstaben schließen Ziffern ein (gegen das
+    RATTE-Referenztool verifiziert). Gemeinsame Hilfsfunktion für LIX und RIX.
+ */
+function countLongWords(words: readonly string[]): number {
+  let count = 0;
+  for (const rawWord of words) {
+    if (rawWord.replace(/-/g, '').length > 6) count++;
+  }
+  return count;
+}
+
 /*
     LIX (Läsbarhetsindex) - Readability Index
     Formula: (Words / Sentences) + (Long Words * 100 / Words)
     Long words = words with more than 6 Buchstaben.
-    Per RATTE documentation: hyphens are removed before measuring word length
-    ("Bindestriche werden zuvor entfernt"). Buchstaben includes all alphanumeric
-    characters (digits count as Buchstaben, verified against RATTE reference tool).
  */
 export function calculateLix(words: readonly string[], sentences: readonly string[]): number {
   const wordCount = words.length;
   if (wordCount === 0) return 0;
   const sentenceCount = Math.max(1, sentences.length);
-  const LONG_WORD_MIN_LENGTH = 6;
-  let longWordCount = 0;
-  for (const rawWord of words) {
-    // Strip hyphens before measuring Buchstaben length (RATTE convention)
-    const buchstaben = rawWord.replace(/-/g, '');
-    if (buchstaben.length > LONG_WORD_MIN_LENGTH) {
-      longWordCount++;
-    }
-  }
+  const longWordCount = countLongWords(words);
   const lix = wordCount / sentenceCount + (longWordCount * 100) / wordCount;
   return Math.round(lix * 100) / 100;
 }
@@ -36,12 +40,7 @@ export function calculateGsmog(
 ): number {
   const sentenceCount = sentences.length;
   if (sentenceCount === 0) return 0;
-  let wordsWithThreeOrMoreSyllables = 0;
-  for (const count of syllablesPerWord) {
-    if (count >= 3) {
-      wordsWithThreeOrMoreSyllables++;
-    }
-  }
+  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(words, syllablesPerWord);
   const gsmog = Math.sqrt((wordsWithThreeOrMoreSyllables * 30) / sentenceCount) - 2;
   return Math.round(gsmog * 100) / 100;
 }
@@ -81,12 +80,7 @@ export function calculateWstf(
   const wordCount = words.length;
   const sentenceCount = sentences.length;
   if (wordCount === 0 || sentenceCount === 0) return 0;
-  let wordsWithThreeOrMoreSyllables = 0;
-  for (const count of syllablesPerWord) {
-    if (count >= 3) {
-      wordsWithThreeOrMoreSyllables++;
-    }
-  }
+  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(words, syllablesPerWord);
   const wstf =
     0.2656 * (wordCount / sentenceCount) +
     0.2744 * (wordsWithThreeOrMoreSyllables / wordCount) * 100 -
@@ -114,11 +108,7 @@ export function calculateRix(
   const sentenceCount = sentences.length;
   if (wordCount === 0 || sentenceCount === 0) return 0;
 
-  let longWordCount = 0;
-  for (const rawWord of words) {
-    const buchstaben = rawWord.replace(/-/g, '');
-    if (buchstaben.length > 6) longWordCount++;
-  }
+  const longWordCount = countLongWords(words);
 
   const avgSentenceLength = wordCount / sentenceCount;
   const longWordProportion = longWordCount / wordCount;

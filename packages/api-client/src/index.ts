@@ -32,11 +32,6 @@ export function detectTextType(text: string): TextType {
   return withoutTerminal > withTerminal ? 'list' : 'prose';
 }
 
-/** Leseeinheit aus dem Texttyp (ADR 0002). */
-export function readingUnitForTextType(textType: TextType): ReadingUnit {
-  return textType === 'list' ? 'line' : 'sentence';
-}
-
 export interface Config {
   id: string;
   createdAt: string;
@@ -144,23 +139,17 @@ export interface UpdateConfigRequest {
   weightConsonantClusters: number;
 }
 
-export interface ApiClient {
-  getConfig(): Promise<Config>;
-  updateConfig(body: UpdateConfigRequest): Promise<Config>;
-  calculate(body: CalculateRequest): Promise<ResultData>;
-  getResults(query?: { page?: number; limit?: number }): Promise<ResultsResponse>;
-}
-
-export function createApiClient(baseURL: string): ApiClient {
+export function createApiClient(baseURL: string) {
   const api: $Fetch = ofetch.create({
     baseURL,
     credentials: 'include',
   });
 
   return {
-    getConfig: () => api('/config'),
-    updateConfig: (body) => api('/config', { method: 'POST', body }),
-    calculate: (body) => api('/calculate', { method: 'POST', body }),
-    getResults: (query) => api('/results', { query }),
+    getConfig: () => api<Config>('/config'),
+    updateConfig: (body: UpdateConfigRequest) => api<Config>('/config', { method: 'POST', body }),
+    calculate: (body: CalculateRequest) => api<ResultData>('/calculate', { method: 'POST', body }),
+    getResults: (query?: { page?: number; limit?: number }) =>
+      api<ResultsResponse>('/results', { query }),
   };
 }

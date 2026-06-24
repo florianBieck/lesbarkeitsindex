@@ -15,17 +15,10 @@ const Chart = defineAsyncComponent(async () => {
 });
 
 const chartColors = ref({
-  lix: '',
   complexSyllables: '',
   consonantClusters: '',
   multiGraphemes: '',
   rareGraphemes: '',
-  avgWordLength: '',
-  avgPhraseLength: '',
-  avgSyllablesPerWord: '',
-  avgSyllablesPerPhrase: '',
-  proportions: '',
-  counts: '',
 });
 
 const props = defineProps<{
@@ -275,17 +268,10 @@ watch(
 onMounted(() => {
   const s = getComputedStyle(document.documentElement);
   chartColors.value = {
-    lix: s.getPropertyValue('--p-blue-500'),
     complexSyllables: s.getPropertyValue('--p-amber-500'),
     consonantClusters: s.getPropertyValue('--p-green-500'),
     multiGraphemes: s.getPropertyValue('--p-red-500'),
     rareGraphemes: s.getPropertyValue('--p-violet-500'),
-    avgWordLength: s.getPropertyValue('--p-amber-700'),
-    avgPhraseLength: s.getPropertyValue('--p-amber-600'),
-    avgSyllablesPerWord: s.getPropertyValue('--p-pink-500'),
-    avgSyllablesPerPhrase: s.getPropertyValue('--p-green-600'),
-    proportions: s.getPropertyValue('--p-cyan-500'),
-    counts: s.getPropertyValue('--p-surface-500'),
   };
   chartData.value = setChartData();
   chartOptions.value = setChartOptions();

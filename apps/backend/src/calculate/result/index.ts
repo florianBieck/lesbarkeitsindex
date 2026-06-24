@@ -2,8 +2,6 @@ import { createHash } from 'crypto';
 import type { TextAnalysis } from '../../r-sidecar/r-sidecar.service.js';
 
 import {
-  calculateCountWords,
-  calculateCountPhrases,
   countWordsWithComplexSyllables as computeWordsWithComplexSyllables,
   calculateAverageWordLength,
   calculateAverageCharsPerSyllable,
@@ -122,8 +120,8 @@ export function computeReadability(
       ? Array.from({ length: countReadingUnits }, (_, i) => `line-${i}`)
       : sentences;
 
-  const countWords = calculateCountWords(words);
-  const countPhrases = calculateCountPhrases(sentences);
+  const countWords = words.length;
+  const countPhrases = sentences.length;
   const countMultipleWords = countPhrases;
   const countWordsWithComplexSyllables = computeWordsWithComplexSyllables(words, syllablesPerWord);
   const countWordsWithConsonantClusters = computeWordsWithConsonantClusters(words);
@@ -136,11 +134,7 @@ export function computeReadability(
   const averageCharsPerSyllable = calculateAverageCharsPerSyllable(words, syllablesPerWord);
   const averageSyllablesPerWord = calculateAverageSyllablesPerWord(words, syllablesPerWord);
   const averagePhraseLength = calculateAveragePhraseLength(words, readingUnits);
-  const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(
-    readingUnits,
-    words,
-    syllablesPerWord,
-  );
+  const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(readingUnits, syllablesPerWord);
   const proportionOfLongWords = calculateProportionOfLongWords(words);
   const proportionOfWordsWithComplexSyllables =
     countWords > 0 ? countWordsWithComplexSyllables / countWords : 0;

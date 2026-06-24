@@ -3,19 +3,18 @@ import {
   calculateWordComplexity,
   calculateLueLix,
   calculateLevel,
-  type WordComplexityComponents,
-  type WordComplexityWeights,
+  type WordComplexityValues,
 } from './score-model.js';
 
 /** BL-Startgewichte: Drei-/Mehrsilber 50, mehrgliedrige Grapheme 25, seltene 12,5, Cluster 12,5. */
-const START_WEIGHTS: WordComplexityWeights = {
+const START_WEIGHTS: WordComplexityValues = {
   complexSyllables: 50,
   multiMemberedGraphemes: 25,
   rareGraphemes: 12.5,
   consonantClusters: 12.5,
 };
 
-const ZERO: WordComplexityComponents = {
+const ZERO: WordComplexityValues = {
   complexSyllables: 0,
   multiMemberedGraphemes: 0,
   rareGraphemes: 0,
@@ -28,7 +27,7 @@ describe('calculateWordComplexity (WK 0–100, gewichteter Mittelwert)', () => {
   });
 
   test('ist 100, wenn jede Komponente bei 100 % Coverage liegt', () => {
-    const all: WordComplexityComponents = {
+    const all: WordComplexityValues = {
       complexSyllables: 1,
       multiMemberedGraphemes: 1,
       rareGraphemes: 1,
@@ -46,7 +45,7 @@ describe('calculateWordComplexity (WK 0–100, gewichteter Mittelwert)', () => {
 
   test('ist der gewichtete Mittelwert gemischter Coverage-Anteile', () => {
     // 0,5·50 + 0,4·25 + 0,2·12,5 + 0,1·12,5 = 25 + 10 + 2,5 + 1,25 = 38,75
-    const components: WordComplexityComponents = {
+    const components: WordComplexityValues = {
       complexSyllables: 0.5,
       multiMemberedGraphemes: 0.4,
       rareGraphemes: 0.2,
@@ -57,7 +56,7 @@ describe('calculateWordComplexity (WK 0–100, gewichteter Mittelwert)', () => {
 
   test('normiert auf die Summe der Gewichte (beliebige Gewichte)', () => {
     // Gleichgewichtet 1/1/1/1: nur eine Komponente bei 100 % -> 25
-    const equal: WordComplexityWeights = {
+    const equal: WordComplexityValues = {
       complexSyllables: 1,
       multiMemberedGraphemes: 1,
       rareGraphemes: 1,
@@ -67,7 +66,7 @@ describe('calculateWordComplexity (WK 0–100, gewichteter Mittelwert)', () => {
   });
 
   test('liefert 0 bei Gesamtgewicht 0 (kein Division-durch-Null)', () => {
-    const zeroWeights: WordComplexityWeights = {
+    const zeroWeights: WordComplexityValues = {
       complexSyllables: 0,
       multiMemberedGraphemes: 0,
       rareGraphemes: 0,

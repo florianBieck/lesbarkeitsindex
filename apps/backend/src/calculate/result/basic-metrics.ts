@@ -1,24 +1,13 @@
 /*
-    Anzahl Wörter
- */
-export function calculateCountWords(words: readonly string[]): number {
-  return words.length;
-}
-
-/*
     Coverage: Anzahl der Wörter mit komplexen Silben (≥3 Silben), je Wort max. einmal.
+    `words` bleibt Teil der Signatur (Aufrufer übergeben beide Arrays), die Zählung
+    hängt aber allein an den Silbenzahlen.
  */
 export function countWordsWithComplexSyllables(
   words: readonly string[],
   syllablesPerWord: readonly number[],
 ): number {
-  let count = 0;
-  for (let i = 0; i < words.length; i++) {
-    if (syllablesPerWord[i] >= 3) {
-      count++;
-    }
-  }
-  return count;
+  return syllablesPerWord.filter((count) => count >= 3).length;
 }
 
 /*
@@ -69,13 +58,6 @@ export function calculateAverageSyllablesPerWord(
 }
 
 /*
-    Anzahl Sätze
- */
-export function calculateCountPhrases(sentences: readonly string[]): number {
-  return sentences.length;
-}
-
-/*
     Durchschnittliche Satzlänge
  */
 export function calculateAveragePhraseLength(
@@ -91,7 +73,6 @@ export function calculateAveragePhraseLength(
  */
 export function calculateAverageSyllablesPerPhrase(
   sentences: readonly string[],
-  words: readonly string[],
   syllablesPerWord: readonly number[],
 ): number {
   if (sentences.length === 0) return 0;

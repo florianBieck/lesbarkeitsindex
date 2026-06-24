@@ -3,8 +3,6 @@ import { test, expect, describe } from 'vitest';
 import {
   computeReadability,
   type ConfigWeights,
-  calculateCountWords,
-  calculateCountPhrases,
   countWordsWithComplexSyllables,
   countWordsWithMultiMemberedGraphemes,
   countWordsWithRareGraphemes,
@@ -35,22 +33,6 @@ const SENTENCES = ['Der Hund läuft über die Straße.'];
 const SYLLABLES = [1, 1, 1, 2, 1, 2];
 
 describe('metric functions with pre-computed arrays', () => {
-  test('calculateCountWords returns word count', () => {
-    expect(calculateCountWords(WORDS)).toBe(6);
-  });
-
-  test('calculateCountWords returns 0 for empty array', () => {
-    expect(calculateCountWords([])).toBe(0);
-  });
-
-  test('calculateCountPhrases returns sentence count', () => {
-    expect(calculateCountPhrases(SENTENCES)).toBe(1);
-  });
-
-  test('calculateCountPhrases returns 1 for single sentence without punctuation', () => {
-    expect(calculateCountPhrases(['Hallo Welt'])).toBe(1);
-  });
-
   test('countWordsWithComplexSyllables counts words with 3+ syllables', () => {
     expect(countWordsWithComplexSyllables(WORDS, SYLLABLES)).toBe(0);
     expect(countWordsWithComplexSyllables(['Ananas'], [3])).toBe(1);
@@ -219,7 +201,7 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateAverageSyllablesPerPhrase computes syllables per sentence', () => {
-    const avg = calculateAverageSyllablesPerPhrase(SENTENCES, WORDS, SYLLABLES);
+    const avg = calculateAverageSyllablesPerPhrase(SENTENCES, SYLLABLES);
     expect(avg).toBeCloseTo(8 / 1, 5);
   });
 
@@ -283,8 +265,6 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('all functions handle empty arrays without crashing', () => {
-    expect(calculateCountWords([])).toBe(0);
-    expect(calculateCountPhrases([])).toBe(0);
     expect(countWordsWithComplexSyllables([], [])).toBe(0);
     expect(countWordsWithMultiMemberedGraphemes([])).toBe(0);
     expect(countWordsWithRareGraphemes([])).toBe(0);
@@ -292,7 +272,7 @@ describe('metric functions with pre-computed arrays', () => {
     expect(calculateAverageWordLength([])).toBe(0);
     expect(calculateAverageSyllablesPerWord([], [])).toBe(0);
     expect(calculateAveragePhraseLength([], [])).toBe(0);
-    expect(calculateAverageSyllablesPerPhrase([], [], [])).toBe(0);
+    expect(calculateAverageSyllablesPerPhrase([], [])).toBe(0);
     expect(calculateProportionOfLongWords([])).toBe(0);
     expect(calculateLix([], [])).toBe(0);
     expect(calculateGsmog([], [], [])).toBe(0);

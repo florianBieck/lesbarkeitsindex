@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import MeterGroup from 'primevue/metergroup';
 import { type ResultData } from '~/composables/useApiClient';
+import { niveaustufe, type Severity } from '~/utils/niveaustufe';
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import Fieldset from 'primevue/fieldset';
 
@@ -39,22 +40,21 @@ const alpha = computed(() => round2(props.result.config.alpha));
 // Doughnut-Gauge auf 0–100 begrenzt; die Mitte zeigt den echten LÜ-LIX-Wert.
 const gauge = computed(() => Math.min(100, Math.max(0, lueLix.value)));
 
-// Niveaustufe-Interpretation ausschließlich aus dem Backend-Wert — keine eigene
-// Stufen-Logik mehr in der Oberfläche (Issue #28).
-const levelInfo = computed(() => {
-  switch (level.value) {
-    case 1:
-      return { description: 'Sehr leicht lesbar', severity: 'success' };
-    case 2:
-      return { description: 'Leicht lesbar', severity: 'success' };
-    case 3:
-      return { description: 'Mittelschwer', severity: 'warn' };
-    case 4:
-      return { description: 'Eher schwer lesbar', severity: 'error' };
-    default:
-      return { description: 'Schwer lesbar', severity: 'error' };
-  }
-});
+// Niveaustufe-Interpretation: Label + Severity kommen aus dem reinen Modul
+// (utils/niveaustufe), nicht aus einem Switch in der Oberfläche.
+const levelInfo = computed(() => niveaustufe(level.value));
+
+// Ampelfarben je Severity (ADR 0003) — eine Tabelle für Gauge (CSS-Variable),
+// Hero-Text (Tailwind-Klasse) und Icon. Stufe 3 ist amber, nicht Gelb.
+const SEVERITY_STYLES: Record<
+  Severity,
+  { readonly chartVar: string; readonly textClass: string; readonly icon: string }
+> = {
+  success: { chartVar: '--p-green-500', textClass: 'text-green-600', icon: 'pi pi-check-circle' },
+  warn: { chartVar: '--p-amber-500', textClass: 'text-amber-700', icon: 'pi pi-exclamation-triangle' },
+  error: { chartVar: '--p-red-500', textClass: 'text-red-600', icon: 'pi pi-times-circle' },
+};
+const severityStyle = computed(() => SEVERITY_STYLES[levelInfo.value.severity]);
 
 const meters = computed(() => {
   const colors = chartColors.value;
@@ -203,12 +203,8 @@ const syllableGroups = computed(() => [
   },
 ]);
 
-const levelColor = (documentStyle: CSSStyleDeclaration): string => {
-  if (levelInfo.value.severity === 'success')
-    return documentStyle.getPropertyValue('--p-green-500');
-  if (levelInfo.value.severity === 'warn') return documentStyle.getPropertyValue('--p-yellow-500');
-  return documentStyle.getPropertyValue('--p-red-500');
-};
+const levelColor = (documentStyle: CSSStyleDeclaration): string =>
+  documentStyle.getPropertyValue(severityStyle.value.chartVar);
 
 const setChartData = () => {
   if (typeof document === 'undefined') return { datasets: [] };
@@ -294,21 +290,10 @@ onMounted(() => {
       />
       <p
         class="text-lg font-medium text-center flex items-center justify-center gap-2"
-        :class="{
-          'text-green-600': levelInfo.severity === 'success',
-          'text-amber-700': levelInfo.severity === 'warn',
-          'text-red-600': levelInfo.severity === 'error',
-        }"
+        :class="severityStyle.textClass"
       >
-        <i
-          :class="{
-            'pi pi-check-circle': levelInfo.severity === 'success',
-            'pi pi-exclamation-triangle': levelInfo.severity === 'warn',
-            'pi pi-times-circle': levelInfo.severity === 'error',
-          }"
-          aria-hidden="true"
-        />
-        Niveaustufe {{ level }} &mdash; {{ levelInfo.description }}
+        <i :class="severityStyle.icon" aria-hidden="true" />
+        Niveaustufe {{ level }} &mdash; {{ levelInfo.label }}
       </p>
     </div>
 

@@ -8,8 +8,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { RSidecarService } from '../r-sidecar/r-sidecar.service.js';
 import {
   computeReadability,
-  detectTextType,
-  detectTitle,
+  resolveTextShape,
   type TextType,
 } from './result/index.js';
 
@@ -32,17 +31,15 @@ export class CalculateService {
     saveResult: boolean = false,
     options: CalculateOptions = {},
   ) {
-    // Titel-Guard ist ein Fließtext-Konzept (ADR 0002): bei Listen analysiert
-    // der R-Sidecar den vollen Text, damit das erste Listenelement nicht als
-    // „Titel" aus den Kennzahlen verschwindet.
-    const effectiveTextType: TextType =
-      options.textTypeOverride ?? detectTextType(text);
-    const bodyText =
-      effectiveTextType === 'list' ? text : detectTitle(text).bodyText;
+    // Dieselbe Textgestalt-Auflösung wie in computeReadability (text-shape.ts):
+    // so sieht der R-Sidecar genau den bodyText, aus dem die Kennzahlen
+    // berechnet werden (ADR 0002). Bei Listen der volle Text, bei Fließtext
+    // der Text ohne Titel.
+    const shape = resolveTextShape(text, options.textTypeOverride);
 
     let analysis;
     try {
-      analysis = await this.rSidecar.analyzeText(bodyText);
+      analysis = await this.rSidecar.analyzeText(shape.bodyText);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.includes('R sidecar')) {

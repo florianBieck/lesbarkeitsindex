@@ -34,14 +34,9 @@ import {
   calculateNumbers,
   calculateSpecialCharacters,
 } from './text-features.js';
-import { detectTitle } from './title-guard.js';
 import { calculateWordComplexity, calculateLueLix, calculateLevel } from './score-model.js';
-import {
-  detectTextType,
-  countNonEmptyLines,
-  readingUnitForTextType,
-  type TextType,
-} from './text-type.js';
+import { countNonEmptyLines, type TextType } from './text-type.js';
+import { resolveTextShape } from './text-shape.js';
 
 export * from './basic-metrics.js';
 export * from './grapheme-analysis.js';
@@ -51,6 +46,7 @@ export * from './text-features.js';
 export * from './title-guard.js';
 export * from './score-model.js';
 export * from './text-type.js';
+export * from './text-shape.js';
 
 /**
  * Konfiguration des Aufschlagsmodells: Aufschlagskoeffizient α plus die vier
@@ -100,14 +96,13 @@ export function computeReadability(
 ) {
   const { sentences, words, syllablesPerWord, posTags } = analysis;
 
-  // Texttyp zuerst bestimmen — der Titel-Guard ist ein Fließtext-Konzept und
-  // würde sonst das erste Listenelement als Titel ausweisen.
-  const detectedTextType = detectTextType(text);
-  const textType: TextType = options.textTypeOverride ?? detectedTextType;
-  const readingUnit = readingUnitForTextType(textType);
-
-  const titleSplit = textType === 'list' ? { title: '', bodyText: text } : detectTitle(text);
-  const { title, bodyText } = titleSplit;
+  // Textgestalt einmal auflösen (text-shape.ts): Texttyp, Leseeinheit, Titel,
+  // Fließtext. Der Service leitet die Sidecar-Eingabe aus derselben Funktion
+  // ab — beide Seiten teilen die Auflösung, statt sie zu duplizieren.
+  const { textType, detectedTextType, readingUnit, title, bodyText } = resolveTextShape(
+    text,
+    options.textTypeOverride,
+  );
 
   const countReadingUnits =
     textType === 'list' ? countNonEmptyLines(text) : sentences.length;

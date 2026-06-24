@@ -45,16 +45,17 @@ export * from './text-shape.js';
 export * from './word-complexity.js';
 
 /**
- * Konfiguration des Aufschlagsmodells: Aufschlagskoeffizient α plus die vier
- * Gewichte der Wortkomplexitäts-Komponenten. `toNumber()`-Schnittstelle, damit
- * sowohl Prisma-`Decimal` als auch einfache Test-Doubles passen.
+ * Effektive Konfiguration des Aufschlagsmodells: Aufschlagskoeffizient α plus die
+ * vier Gewichte der Wortkomplexitäts-Komponenten — als einfache Zahlen. Der Service
+ * löst Prisma-`Decimal` und Request-Overrides vorab auf, sodass die Berechnung
+ * selbst keine Decimal-Schnittstelle mehr kennt.
  */
 export interface ConfigWeights {
-  readonly alpha: { toNumber(): number };
-  readonly weightComplexSyllables: { toNumber(): number };
-  readonly weightMultiMemberedGraphemes: { toNumber(): number };
-  readonly weightRareGraphemes: { toNumber(): number };
-  readonly weightConsonantClusters: { toNumber(): number };
+  readonly alpha: number;
+  readonly weightComplexSyllables: number;
+  readonly weightMultiMemberedGraphemes: number;
+  readonly weightRareGraphemes: number;
+  readonly weightConsonantClusters: number;
   readonly id: string;
 }
 
@@ -113,15 +114,14 @@ export function computeReadability(
 
   const countWords = words.length;
   const countPhrases = sentences.length;
-  const countMultipleWords = countPhrases;
   // Wortkomplexität (ADR 0001): die vier WK-Komponente-Zähler, ihre Coverage-Anteile
   // und der gewichtete Mittelwert leben in word-complexity.ts. computeReadability
   // verteilt nur noch die acht Komponentenfelder ins Ergebnis.
   const { wordComplexity, components } = computeWordComplexity(words, syllablesPerWord, {
-    complexSyllables: config.weightComplexSyllables.toNumber(),
-    multiMemberedGraphemes: config.weightMultiMemberedGraphemes.toNumber(),
-    rareGraphemes: config.weightRareGraphemes.toNumber(),
-    consonantClusters: config.weightConsonantClusters.toNumber(),
+    complexSyllables: config.weightComplexSyllables,
+    multiMemberedGraphemes: config.weightMultiMemberedGraphemes,
+    rareGraphemes: config.weightRareGraphemes,
+    consonantClusters: config.weightConsonantClusters,
   });
   const {
     countWordsWithComplexSyllables,
@@ -159,7 +159,7 @@ export function computeReadability(
     nominalizationCount,
   );
 
-  const lueLix = calculateLueLix(lix, wordComplexity, config.alpha.toNumber());
+  const lueLix = calculateLueLix(lix, wordComplexity, config.alpha);
   const level = calculateLevel(lueLix);
 
   const totalSyllables = syllablesPerWord.reduce((sum, c) => sum + c, 0);
@@ -173,7 +173,6 @@ export function computeReadability(
     countWords,
     countPhrases,
     countSyllables: totalSyllables,
-    countMultipleWords,
     countWordsWithComplexSyllables,
     countWordsWithConsonantClusters,
     countWordsWithMultiMemberedGraphemes,
@@ -207,7 +206,6 @@ export function computeReadability(
     passiveCount,
     nominalizationCount,
     ratte: rix,
-    ratteLevel: 0,
     gsmog,
     wst4,
     fleschKincaid,
@@ -227,10 +225,6 @@ export function computeReadability(
     wordsWithFourSyllables,
     wordsWithFiveSyllables,
     phrases: [...sentences],
-    syllables: words.flatMap((word, i) => {
-      const count = syllablesPerWord[i];
-      return Array.from({ length: count }, () => word);
-    }),
     hashText: createHash('sha256').update(text, 'utf8').digest('hex'),
     configId: config.id,
   };

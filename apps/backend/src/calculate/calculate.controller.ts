@@ -1,7 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { Prisma } from '../generated/prisma/client.js';
-import { PrismaService } from '../prisma/prisma.service.js';
 import { CalculateService } from './calculate.service.js';
 import { z } from 'zod';
 
@@ -18,10 +16,7 @@ const CalculateSchema = z.object({
 
 @Controller('calculate')
 export class CalculateController {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly calculateService: CalculateService,
-  ) {}
+  constructor(private readonly calculateService: CalculateService) {}
 
   @Post()
   @HttpCode(HttpStatus.OK)
@@ -35,46 +30,12 @@ export class CalculateController {
 
     const { text, saveResult, textType, ...overrides } = parsed.data;
 
-    const dbConfig = await this.prisma.config.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-    if (!dbConfig) {
-      return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
-    }
-
-    const hasOverrides = Object.values(overrides).some((value) => value != null);
-
-    // Effektive Parameter: gespeicherte Standardkonfiguration, von der Anfrage überschrieben.
-    const merged = {
-      alpha: overrides.alpha ?? dbConfig.alpha.toNumber(),
-      weightComplexSyllables:
-        overrides.weightComplexSyllables ?? dbConfig.weightComplexSyllables.toNumber(),
-      weightMultiMemberedGraphemes:
-        overrides.weightMultiMemberedGraphemes ?? dbConfig.weightMultiMemberedGraphemes.toNumber(),
-      weightRareGraphemes: overrides.weightRareGraphemes ?? dbConfig.weightRareGraphemes.toNumber(),
-      weightConsonantClusters:
-        overrides.weightConsonantClusters ?? dbConfig.weightConsonantClusters.toNumber(),
-    };
-
-    let config;
-    if (!hasOverrides) {
-      config = dbConfig;
-    } else if (saveResult) {
-      // Beim Speichern die exakt verwendete Konfiguration festschreiben (FK des Ergebnisses).
-      config = await this.prisma.config.create({ data: merged });
-    } else {
-      // Live-Vorschau: Konfiguration nur im Speicher, nicht persistieren.
-      config = {
-        ...dbConfig,
-        alpha: new Prisma.Decimal(merged.alpha),
-        weightComplexSyllables: new Prisma.Decimal(merged.weightComplexSyllables),
-        weightMultiMemberedGraphemes: new Prisma.Decimal(merged.weightMultiMemberedGraphemes),
-        weightRareGraphemes: new Prisma.Decimal(merged.weightRareGraphemes),
-        weightConsonantClusters: new Prisma.Decimal(merged.weightConsonantClusters),
-      };
-    }
-
-    const result = await this.calculateService.calculate(text, config, saveResult, {
+    // Konfigurations-Auflösung (Standard + Overrides, Persistenz vs. Vorschau)
+    // lebt im Service — der Controller parst und delegiert nur noch.
+    const result = await this.calculateService.calculate({
+      text,
+      saveResult: saveResult ?? false,
+      overrides,
       textTypeOverride: textType,
     });
     return reply.send(result);

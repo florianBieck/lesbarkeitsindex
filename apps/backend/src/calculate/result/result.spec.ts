@@ -594,11 +594,11 @@ describe('Coverage-Semantik (Issue #28 AC2): ein Wort zählt je Komponente höch
 
 describe('computeReadability syllable buckets', () => {
   const config = {
-    alpha: { toNumber: () => 0.3 },
-    weightComplexSyllables: { toNumber: () => 50 },
-    weightMultiMemberedGraphemes: { toNumber: () => 25 },
-    weightRareGraphemes: { toNumber: () => 12.5 },
-    weightConsonantClusters: { toNumber: () => 12.5 },
+    alpha: 0.3,
+    weightComplexSyllables: 50,
+    weightMultiMemberedGraphemes: 25,
+    weightRareGraphemes: 12.5,
+    weightConsonantClusters: 12.5,
     id: 'test-config',
   } satisfies ConfigWeights;
 
@@ -655,11 +655,11 @@ describe('computeReadability syllable buckets', () => {
 
 describe('computeReadability Aufschlagsmodell (Issue #28: WK, LÜ-LIX, Niveaustufe, Coverage)', () => {
   const config = {
-    alpha: { toNumber: () => 0.3 },
-    weightComplexSyllables: { toNumber: () => 50 },
-    weightMultiMemberedGraphemes: { toNumber: () => 25 },
-    weightRareGraphemes: { toNumber: () => 12.5 },
-    weightConsonantClusters: { toNumber: () => 12.5 },
+    alpha: 0.3,
+    weightComplexSyllables: 50,
+    weightMultiMemberedGraphemes: 25,
+    weightRareGraphemes: 12.5,
+    weightConsonantClusters: 12.5,
     id: 'test-config',
   } satisfies ConfigWeights;
 
@@ -733,7 +733,7 @@ describe('computeReadability Aufschlagsmodell (Issue #28: WK, LÜ-LIX, Niveaustu
   test('AC1: bei α = 0 gilt LÜ-LIX = LIX', () => {
     const zeroAlpha = {
       ...config,
-      alpha: { toNumber: () => 0 },
+      alpha: 0,
     } satisfies ConfigWeights;
     const text = 'schickst Tag.';
     const analysis = {
@@ -751,11 +751,11 @@ describe('computeReadability Aufschlagsmodell (Issue #28: WK, LÜ-LIX, Niveaustu
 
 describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () => {
   const config = {
-    alpha: { toNumber: () => 0.3 },
-    weightComplexSyllables: { toNumber: () => 50 },
-    weightMultiMemberedGraphemes: { toNumber: () => 25 },
-    weightRareGraphemes: { toNumber: () => 12.5 },
-    weightConsonantClusters: { toNumber: () => 12.5 },
+    alpha: 0.3,
+    weightComplexSyllables: 50,
+    weightMultiMemberedGraphemes: 25,
+    weightRareGraphemes: 12.5,
+    weightConsonantClusters: 12.5,
     id: 'test-config',
   } satisfies ConfigWeights;
 
@@ -893,11 +893,11 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
 
 describe('computeReadability Titel-Guard', () => {
   const config = {
-    alpha: { toNumber: () => 0.3 },
-    weightComplexSyllables: { toNumber: () => 50 },
-    weightMultiMemberedGraphemes: { toNumber: () => 25 },
-    weightRareGraphemes: { toNumber: () => 12.5 },
-    weightConsonantClusters: { toNumber: () => 12.5 },
+    alpha: 0.3,
+    weightComplexSyllables: 50,
+    weightMultiMemberedGraphemes: 25,
+    weightRareGraphemes: 12.5,
+    weightConsonantClusters: 12.5,
     id: 'test-config',
   } satisfies ConfigWeights;
 

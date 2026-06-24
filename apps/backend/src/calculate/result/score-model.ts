@@ -1,47 +1,11 @@
 /*
-    Zwei-Werte-Score (ADR 0001, Aufschlagsmodell):
-    - Wortkomplexität (WK) als eigenständiger Wert 0–100,
+    Aufschlagsmodell (ADR 0001):
     - LÜ-LIX = LIX + α·WK,
     - Niveaustufe 1–5 aus dem LÜ-LIX.
+
+    Die Wortkomplexität (WK) selbst lebt in word-complexity.ts — sie ist ein
+    eigenständiger Wert, dieses Modul setzt nur den Aufschlag darauf.
  */
-
-/**
- * Die vier WK-Felder — genutzt sowohl für die Coverage-Komponenten (jeweils Anteil
- * in [0, 1]) als auch für ihre fachlichen Gewichte (Startwerte 50 / 25 / 12,5 / 12,5).
- * Beide teilen exakt dieselbe Struktur.
- */
-export interface WordComplexityValues {
-  readonly complexSyllables: number;
-  readonly multiMemberedGraphemes: number;
-  readonly rareGraphemes: number;
-  readonly consonantClusters: number;
-}
-
-/**
- * Wortkomplexität (WK), 0–100: gewichteter Mittelwert der vier Coverage-Komponenten,
- * normiert auf die Summe der Gewichte und auf 0–100 skaliert. Keine Streckung auf
- * Ankertexte — WK bleibt roh und direkt aus dem Text erklärbar (ADR 0001).
- */
-export function calculateWordComplexity(
-  components: WordComplexityValues,
-  weights: WordComplexityValues,
-): number {
-  const totalWeight =
-    weights.complexSyllables +
-    weights.multiMemberedGraphemes +
-    weights.rareGraphemes +
-    weights.consonantClusters;
-  if (totalWeight <= 0) return 0;
-
-  const weightedSum =
-    components.complexSyllables * weights.complexSyllables +
-    components.multiMemberedGraphemes * weights.multiMemberedGraphemes +
-    components.rareGraphemes * weights.rareGraphemes +
-    components.consonantClusters * weights.consonantClusters;
-
-  const wordComplexity = (weightedSum / totalWeight) * 100;
-  return Math.round(wordComplexity * 100) / 100;
-}
 
 /**
  * LÜ-LIX = LIX + α·WK (Aufschlagsmodell). Die Wortkomplexität kann einen Text nur

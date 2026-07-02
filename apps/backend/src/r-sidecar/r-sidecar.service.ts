@@ -1,13 +1,24 @@
 import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 
 const TIMEOUT_MS = 30_000;
 
-export type TextAnalysis = {
-  readonly sentences: readonly string[];
-  readonly words: readonly string[];
-  readonly syllablesPerWord: readonly number[];
-  readonly posTags: readonly string[];
-};
+// Formvertrag der Sidecar-Antwort: nichtleere Satzliste plus drei wortparallele
+// Arrays — words, syllablesPerWord und posTags müssen gleich lang sein.
+// z.number() lehnt NaN bereits ab (invalid_type).
+const TextAnalysisSchema = z
+  .object({
+    sentences: z.array(z.string()).min(1),
+    words: z.array(z.string()),
+    syllablesPerWord: z.array(z.number()),
+    posTags: z.array(z.string()),
+  })
+  .refine(
+    (d) => d.words.length === d.syllablesPerWord.length && d.words.length === d.posTags.length,
+    { message: 'words, syllablesPerWord and posTags must have equal length' },
+  );
+
+export type TextAnalysis = z.infer<typeof TextAnalysisSchema>;
 
 @Injectable()
 export class RSidecarService {
@@ -47,56 +58,16 @@ export class RSidecarService {
       throw new Error(`R sidecar returned status ${response.status}: ${await response.text()}`);
     }
 
-    const data = await response.json();
-
-    if (
-      !Array.isArray(data.sentences) ||
-      !Array.isArray(data.words) ||
-      !Array.isArray(data.syllablesPerWord) ||
-      !Array.isArray(data.posTags)
-    ) {
-      throw new Error(
-        'R sidecar response missing required fields: sentences, words, syllablesPerWord, posTags',
-      );
+    const parsed = TextAnalysisSchema.safeParse(await response.json());
+    if (!parsed.success) {
+      const issues = parsed.error.issues
+        .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+        .join('; ');
+      // Präfix "R sidecar" beibehalten — calculate.service.ts mappt solche
+      // Fehler auf 503 (Service Unavailable).
+      throw new Error(`R sidecar response invalid: ${issues}`);
     }
 
-    if (data.words.length !== data.syllablesPerWord.length) {
-      throw new Error(
-        `R sidecar response mismatch: ${data.words.length} words but ${data.syllablesPerWord.length} syllable counts`,
-      );
-    }
-
-    if (data.words.length !== data.posTags.length) {
-      throw new Error(
-        `R sidecar response mismatch: ${data.words.length} words but ${data.posTags.length} POS tags`,
-      );
-    }
-
-    if (data.sentences.length === 0) {
-      throw new Error('R sidecar returned empty sentences array');
-    }
-
-    if (!data.sentences.every((s: unknown) => typeof s === 'string')) {
-      throw new Error('R sidecar response: sentences must all be strings');
-    }
-
-    if (!data.words.every((w: unknown) => typeof w === 'string')) {
-      throw new Error('R sidecar response: words must all be strings');
-    }
-
-    if (!data.syllablesPerWord.every((n: unknown) => typeof n === 'number' && !Number.isNaN(n))) {
-      throw new Error('R sidecar response: syllablesPerWord must all be numbers');
-    }
-
-    if (!data.posTags.every((t: unknown) => typeof t === 'string')) {
-      throw new Error('R sidecar response: posTags must all be strings');
-    }
-
-    return {
-      sentences: data.sentences,
-      words: data.words,
-      syllablesPerWord: data.syllablesPerWord,
-      posTags: data.posTags,
-    };
+    return parsed.data;
   }
 }

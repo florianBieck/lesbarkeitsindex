@@ -4,8 +4,7 @@ import { test, expect, type Page } from '@playwright/test';
  *  result is persisted and shows up on the results page. */
 async function analyzeAndSave(page: Page, text: string) {
   await page.goto('/');
-  const editor = page.locator('.ql-editor');
-  await editor.click();
+  const editor = page.getByLabel('Text zur Lesbarkeitsanalyse eingeben');
   await editor.fill(text);
   await page.getByLabel(/Ich akzeptiere die Speicherung/).check();
   await page.getByRole('button', { name: 'Text analysieren' }).click();

@@ -4,11 +4,11 @@
       Fügen Sie einen Text ein, um seine Lesbarkeit zu analysieren. Der LÜ-LIX kombiniert den
       klassischen Lesbarkeitsindex (LIX) mit einem Aufschlag für die Wortkomplexität.
     </p>
-    <Editor
+    <Textarea
+      v-model="text"
       class="w-full"
-      editorStyle="height: 280px; width: 100%;"
+      style="height: 280px"
       aria-label="Text zur Lesbarkeitsanalyse eingeben"
-      @text-change="(event) => (text = event.textValue)"
     />
 
     <!-- Texttyp-Schalter (ADR 0002): heuristisch erkannt, manuell übersteuerbar -->
@@ -80,14 +80,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, defineAsyncComponent, computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
 import Checkbox from 'primevue/checkbox';
 import SelectButton from 'primevue/selectbutton';
 import { detectTextType, type TextType } from '@lesbarkeitsindex/api-client';
-
-const Editor = defineAsyncComponent(() => import('primevue/editor'));
 import { useApiClient, type ResultData } from '~/composables/useApiClient';
 import ResultView from '~/components/result-view.vue';
 

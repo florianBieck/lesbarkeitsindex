@@ -29,9 +29,4 @@ export default defineNuxtConfig({
   devServer: {
     port: 3001,
   },
-  vite: {
-    optimizeDeps: {
-      include: ['quill'],
-    },
-  },
 });

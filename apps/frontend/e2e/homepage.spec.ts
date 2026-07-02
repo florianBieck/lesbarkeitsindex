@@ -8,9 +8,11 @@ async function expandFieldset(page: Page, legend: string) {
   await page.getByRole('button', { name: legend }).click();
 }
 
+/** The plain-text input for the text to analyze (formerly a Quill editor). */
+const textInput = (page: Page) => page.getByLabel('Text zur Lesbarkeitsanalyse eingeben');
+
 async function analyze(page: Page, text: string) {
-  const editor = page.locator('.ql-editor');
-  await editor.click();
+  const editor = textInput(page);
   await editor.fill(text);
   await page.getByRole('button', { name: 'Text analysieren' }).click();
   await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible({ timeout: 15000 });
@@ -18,8 +20,7 @@ async function analyze(page: Page, text: string) {
 
 /** Analyzes text and returns the parsed /calculate response (end-to-end through the API). */
 async function analyzeAndCapture(page: Page, text: string) {
-  const editor = page.locator('.ql-editor');
-  await editor.click();
+  const editor = textInput(page);
   await editor.fill(text);
   const [response] = await Promise.all([
     page.waitForResponse((r) => r.url().includes('/calculate') && r.request().method() === 'POST'),
@@ -50,8 +51,8 @@ test.describe('Homepage', () => {
     ).toBeVisible();
   });
 
-  test('renders the text editor', async ({ page }) => {
-    await expect(page.locator('.ql-editor')).toBeVisible();
+  test('renders the text input', async ({ page }) => {
+    await expect(textInput(page)).toBeVisible();
   });
 
   test('renders the analyze button', async ({ page }) => {
@@ -67,10 +68,9 @@ test.describe('Homepage', () => {
   });
 
   test('can type text into the editor', async ({ page }) => {
-    const editor = page.locator('.ql-editor');
-    await editor.click();
+    const editor = textInput(page);
     await editor.fill('Dies ist ein Testtext für die Lesbarkeitsanalyse.');
-    await expect(editor).toContainText('Dies ist ein Testtext');
+    await expect(editor).toHaveValue('Dies ist ein Testtext für die Lesbarkeitsanalyse.');
   });
 
   test('advanced settings expose the surcharge alpha and the four weight labels', async ({
@@ -145,7 +145,7 @@ test.describe('Homepage', () => {
   });
 
   test('shows the detected title after analyzing a text with a title line', async ({ page }) => {
-    const editor = page.locator('.ql-editor');
+    const editor = textInput(page);
     await editor.click();
     await page.keyboard.type('Der Igel');
     await page.keyboard.press('Enter');

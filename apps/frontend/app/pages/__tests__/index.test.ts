@@ -164,4 +164,16 @@ describe('IndexPage — Texttyp-Schalter (Issue #30, ADR 0002 AC3)', () => {
     // Die heuristische Erkennung bleibt unverändert sichtbar.
     expect(vm.detectedTextType).toBe('list');
   });
+
+  it('bindet die Texteingabe als einfaches Textfeld (kein Rich-Text-Editor)', async () => {
+    const wrapper = await mountSuspended(IndexPage);
+    await flushPromises();
+
+    const textarea = wrapper.find('textarea');
+    expect(textarea.exists()).toBe(true);
+
+    await textarea.setValue('Hund\nKatze\nVogel\nMaus');
+    const vm = wrapper.vm as unknown as IndexVm;
+    expect(vm.text).toBe('Hund\nKatze\nVogel\nMaus');
+  });
 });

@@ -55,9 +55,6 @@ importers:
       '@nestjs/cli':
         specifier: ^11.0.0
         version: 11.0.17(@swc/cli@0.6.0(@swc/core@1.15.24)(chokidar@4.0.3))(@swc/core@1.15.24)(@types/node@22.19.17)
-      '@nestjs/schematics':
-        specifier: ^11.0.0
-        version: 11.0.10(chokidar@4.0.3)(typescript@5.9.3)
       '@nestjs/testing':
         specifier: ^11.1.0
         version: 11.1.18(@nestjs/common@11.1.18(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.18(@nestjs/common@11.1.18(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))

@@ -1,9 +1,4 @@
-import {
-  detectTextType,
-  readingUnitForTextType,
-  type ReadingUnit,
-  type TextType,
-} from './text-type.js';
+import { detectTextType, type ReadingUnit, type TextType } from './text-type.js';
 import { detectTitle } from './title-guard.js';
 
 /**
@@ -39,7 +34,8 @@ export interface TextShape {
 export function resolveTextShape(text: string, textTypeOverride?: TextType): TextShape {
   const detectedTextType = detectTextType(text);
   const textType: TextType = textTypeOverride ?? detectedTextType;
-  const readingUnit = readingUnitForTextType(textType);
+  // Leseeinheit aus dem Texttyp: Fließtext → Satz, Liste → Zeile.
+  const readingUnit: ReadingUnit = textType === 'list' ? 'line' : 'sentence';
   const { title, bodyText } =
     textType === 'list' ? { title: '', bodyText: text } : detectTitle(text);
   return { textType, detectedTextType, readingUnit, title, bodyText };

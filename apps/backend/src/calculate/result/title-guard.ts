@@ -5,6 +5,8 @@
  * weiterer Text folgt. Ein erkannter Titel fließt in keine Kennzahl ein.
  */
 
+import { TERMINAL_PUNCTUATION } from './text-type.js';
+
 /** Maximale Länge (getrimmt, UTF-16-Einheiten) einer Titelzeile. */
 export const TITLE_MAX_LENGTH = 50;
 
@@ -15,9 +17,6 @@ export interface TitleSplit {
   /** Fließtext ohne Titelzeile; bei nicht erkanntem Titel der volle Originaltext. */
   readonly bodyText: string;
 }
-
-/** Eine Zeile, die mit '.', '!' oder '?' endet, ist ein Satz — kein Titel. */
-const TERMINAL_PUNCTUATION = /[.!?]$/;
 
 /** "Weiterer Text folgt" = der Rest enthält mindestens einen Buchstaben oder eine Ziffer. */
 const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;

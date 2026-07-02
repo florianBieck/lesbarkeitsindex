@@ -1,10 +1,6 @@
 {
   "name": "lesbarkeitsindex",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "type": "module",
   "scripts": {
     "dev": "vp run -r dev",
@@ -24,16 +20,5 @@
   "peerDependencies": {
     "typescript": "^5"
   },
-  "packageManager": "pnpm@11.9.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "prisma",
-      "esbuild",
-      "@parcel/watcher",
-      "unrs-resolver",
-      "@nestjs/core",
-      "@swc/core"
-    ]
-  }
+  "packageManager": "pnpm@11.9.0"
 }

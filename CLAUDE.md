@@ -158,7 +158,7 @@ vp check
 ## Gotchas
 
 - **`vp` in scripts/CI**: `vp` is a shell function loaded from your profile. In non-interactive shells (CI, Bash tool), use the full path `~/.vite-plus/bin/vp`. CI uses `pnpm` directly instead.
-- **Native build scripts**: Root `package.json` has `pnpm.onlyBuiltDependencies` — when adding deps with native code (e.g. `@swc/core`), add them to this list or `pnpm install` will skip their build scripts.
+- **Native build scripts**: `pnpm-workspace.yaml` has an `allowBuilds` map — when adding deps with native code (e.g. `@swc/core`), add them there or `pnpm install` will skip their build scripts.
 - **Prisma `generated/` inside `src/`**: The Prisma client generates to `apps/backend/src/generated/prisma/` so NestJS SWC compiles it alongside application code. Import via `../generated/prisma/client.js`.
 - **Prisma codegen required**: After any Prisma schema change, run `vp exec --filter backend prisma generate`
 - **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)

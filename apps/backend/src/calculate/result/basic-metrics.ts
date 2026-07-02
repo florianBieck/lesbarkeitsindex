@@ -8,13 +8,8 @@ export function stripNonLetters(word: string): string {
 
 /*
     Coverage: Anzahl der Wörter mit komplexen Silben (≥3 Silben), je Wort max. einmal.
-    `words` bleibt Teil der Signatur (Aufrufer übergeben beide Arrays), die Zählung
-    hängt aber allein an den Silbenzahlen.
  */
-export function countWordsWithComplexSyllables(
-  words: readonly string[],
-  syllablesPerWord: readonly number[],
-): number {
+export function countWordsWithComplexSyllables(syllablesPerWord: readonly number[]): number {
   return syllablesPerWord.filter((count) => count >= 3).length;
 }
 
@@ -51,18 +46,15 @@ export function calculateAverageWordLength(words: readonly string[]): number {
 }
 
 /*
-    ∅Silben/Wort
+    ∅Silben/Wort (Nenner: Silbenzahl-Liste — per Sidecar-Vertrag == Wortzahl)
  */
-export function calculateAverageSyllablesPerWord(
-  words: readonly string[],
-  syllablesPerWord: readonly number[],
-): number {
-  if (words.length === 0) return 0;
+export function calculateAverageSyllablesPerWord(syllablesPerWord: readonly number[]): number {
+  if (syllablesPerWord.length === 0) return 0;
   let total = 0;
   for (const count of syllablesPerWord) {
     total += count;
   }
-  return total / words.length;
+  return total / syllablesPerWord.length;
 }
 
 /*

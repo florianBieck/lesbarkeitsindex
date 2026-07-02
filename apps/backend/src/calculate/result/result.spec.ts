@@ -33,12 +33,12 @@ const SYLLABLES = [1, 1, 1, 2, 1, 2];
 
 describe('metric functions with pre-computed arrays', () => {
   test('countWordsWithComplexSyllables counts words with 3+ syllables', () => {
-    expect(countWordsWithComplexSyllables(WORDS, SYLLABLES)).toBe(0);
-    expect(countWordsWithComplexSyllables(['Ananas'], [3])).toBe(1);
+    expect(countWordsWithComplexSyllables(SYLLABLES)).toBe(0);
+    expect(countWordsWithComplexSyllables([3])).toBe(1);
   });
 
   test('countWordsWithComplexSyllables returns 0 for empty arrays', () => {
-    expect(countWordsWithComplexSyllables([], [])).toBe(0);
+    expect(countWordsWithComplexSyllables([])).toBe(0);
   });
 
   describe('countWordsWithMultiMemberedGraphemes', () => {
@@ -93,18 +93,9 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('countWordsWithComplexSyllables counts complex words in a sentence', () => {
-    const words = [
-      'Die',
-      'Bundesregierung',
-      'hat',
-      'eine',
-      'weitreichende',
-      'Entscheidung',
-      'getroffen',
-    ];
+    // "Bundesregierung" (5), "weitreichende" (4), "Entscheidung" (3), "getroffen" (3)
     const syllables = [1, 5, 1, 2, 4, 3, 3];
-    const result = countWordsWithComplexSyllables(words, syllables);
-    expect(result).toBeGreaterThan(0);
+    expect(countWordsWithComplexSyllables(syllables)).toBe(4);
   });
 
   test('countWordsWithRareGraphemes counts ä, ö, ü, ß, c, q, x, y', () => {
@@ -112,9 +103,7 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('countWordsWithComplexSyllables returns 0 for simple monosyllabic words', () => {
-    const words = ['Der', 'Hund', 'ist', 'alt'];
-    const syllables = [1, 1, 1, 1];
-    expect(countWordsWithComplexSyllables(words, syllables)).toBe(0);
+    expect(countWordsWithComplexSyllables([1, 1, 1, 1])).toBe(0);
   });
 
   describe('countWordsWithConsonantClusters', () => {
@@ -189,7 +178,7 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateAverageSyllablesPerWord computes average', () => {
-    const avg = calculateAverageSyllablesPerWord(WORDS, SYLLABLES);
+    const avg = calculateAverageSyllablesPerWord(SYLLABLES);
     const expected = (1 + 1 + 1 + 2 + 1 + 2) / 6;
     expect(avg).toBeCloseTo(expected, 5);
   });
@@ -247,7 +236,7 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateGsmog computes gSmog score', () => {
-    const gsmog = calculateGsmog(WORDS, SENTENCES, SYLLABLES);
+    const gsmog = calculateGsmog(SENTENCES, SYLLABLES);
     expect(gsmog).toBeCloseTo(-2, 1);
   });
 
@@ -264,17 +253,17 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('all functions handle empty arrays without crashing', () => {
-    expect(countWordsWithComplexSyllables([], [])).toBe(0);
+    expect(countWordsWithComplexSyllables([])).toBe(0);
     expect(countWordsWithMultiMemberedGraphemes([])).toBe(0);
     expect(countWordsWithRareGraphemes([])).toBe(0);
     expect(countWordsWithConsonantClusters([])).toBe(0);
     expect(calculateAverageWordLength([])).toBe(0);
-    expect(calculateAverageSyllablesPerWord([], [])).toBe(0);
+    expect(calculateAverageSyllablesPerWord([])).toBe(0);
     expect(calculateAveragePhraseLength([], [])).toBe(0);
     expect(calculateAverageSyllablesPerPhrase([], [])).toBe(0);
     expect(calculateProportionOfLongWords([])).toBe(0);
     expect(calculateLix([], [])).toBe(0);
-    expect(calculateGsmog([], [], [])).toBe(0);
+    expect(calculateGsmog([], [])).toBe(0);
     expect(calculateFleschKincaid([], [], [])).toBe(0);
     expect(calculateWstf([], [], [])).toBe(0);
     expect(calculateTTR([])).toBe(0);
@@ -551,7 +540,7 @@ describe('Coverage-Semantik (Issue #28 AC2): ein Wort zählt je Komponente höch
     expect(countWordsWithMultiMemberedGraphemes(words)).toBeLessThanOrEqual(words.length);
     expect(countWordsWithConsonantClusters(words)).toBeLessThanOrEqual(words.length);
     expect(countWordsWithRareGraphemes(words)).toBeLessThanOrEqual(words.length);
-    expect(countWordsWithComplexSyllables(words, [2, 3, 1, 1])).toBeLessThanOrEqual(words.length);
+    expect(countWordsWithComplexSyllables([2, 3, 1, 1])).toBeLessThanOrEqual(words.length);
   });
 });
 

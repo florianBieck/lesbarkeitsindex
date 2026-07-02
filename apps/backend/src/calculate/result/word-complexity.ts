@@ -81,7 +81,7 @@ export function computeWordComplexity(
 ): { readonly wordComplexity: number; readonly components: WordComplexityComponents } {
   const countWords = words.length;
 
-  const countWordsWithComplexSyllables = countComplexSyllableWords(words, syllablesPerWord);
+  const countWordsWithComplexSyllables = countComplexSyllableWords(syllablesPerWord);
   const countWordsWithConsonantClusters = countConsonantClusterWords(words);
   const countWordsWithMultiMemberedGraphemes = countMultiMemberedGraphemeWords(words);
   const countWordsWithRareGraphemes = countRareGraphemeWords(words);

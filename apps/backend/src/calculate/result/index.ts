@@ -136,12 +136,12 @@ export function computeReadability(
   const countSpecialCharacters = calculateSpecialCharacters(bodyText);
   const averageWordLength = calculateAverageWordLength(words);
   const averageCharsPerSyllable = calculateAverageCharsPerSyllable(words, syllablesPerWord);
-  const averageSyllablesPerWord = calculateAverageSyllablesPerWord(words, syllablesPerWord);
+  const averageSyllablesPerWord = calculateAverageSyllablesPerWord(syllablesPerWord);
   const averagePhraseLength = calculateAveragePhraseLength(words, readingUnits);
   const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(readingUnits, syllablesPerWord);
   const proportionOfLongWords = calculateProportionOfLongWords(words);
   const lix = calculateLix(words, readingUnits);
-  const gsmog = calculateGsmog(words, readingUnits, syllablesPerWord);
+  const gsmog = calculateGsmog(readingUnits, syllablesPerWord);
   const fleschKincaid = calculateFleschKincaid(words, readingUnits, syllablesPerWord);
   const wst4 = calculateWstf(words, readingUnits, syllablesPerWord);
   const ttr = calculateTTR(words);

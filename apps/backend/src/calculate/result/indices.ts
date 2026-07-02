@@ -34,13 +34,12 @@ export function calculateLix(words: readonly string[], sentences: readonly strin
     Result approximates the reading age (in school grades) for which the text is suitable.
  */
 export function calculateGsmog(
-  words: readonly string[],
   sentences: readonly string[],
   syllablesPerWord: readonly number[],
 ): number {
   const sentenceCount = sentences.length;
   if (sentenceCount === 0) return 0;
-  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(words, syllablesPerWord);
+  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(syllablesPerWord);
   const gsmog = Math.sqrt((wordsWithThreeOrMoreSyllables * 30) / sentenceCount) - 2;
   return Math.round(gsmog * 100) / 100;
 }
@@ -80,7 +79,7 @@ export function calculateWstf(
   const wordCount = words.length;
   const sentenceCount = sentences.length;
   if (wordCount === 0 || sentenceCount === 0) return 0;
-  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(words, syllablesPerWord);
+  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(syllablesPerWord);
   const wstf =
     0.2656 * (wordCount / sentenceCount) +
     0.2744 * (wordsWithThreeOrMoreSyllables / wordCount) * 100 -

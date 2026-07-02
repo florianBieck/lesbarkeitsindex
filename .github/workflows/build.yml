@@ -50,18 +50,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      BETTER_AUTH_SECRET: 'lesbarkeitsindex-produdction-secret'
-      BETTER_AUTH_URL: 'https://lix.florianbieck.com'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -103,8 +97,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -155,7 +147,6 @@ jobs:
       R_SIDECAR_URL: http://localhost:8787
       BETTER_AUTH_SECRET: lesbarkeitsindex-e2e-secret
       BETTER_AUTH_URL: http://localhost:3000
-      ADMIN_EMAILS: ''
       NUXT_PUBLIC_API_BASE: http://localhost:3000
     steps:
       - name: Checkout
@@ -179,8 +170,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

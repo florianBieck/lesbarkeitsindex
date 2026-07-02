@@ -96,7 +96,6 @@ DATABASE_URL=postgresql://admin:admin@localhost:5432/lesbarkeitsindex?schema=pub
 R_SIDECAR_URL=http://localhost:8787
 BETTER_AUTH_SECRET=dev-secret
 BETTER_AUTH_URL=http://localhost:3000
-ADMIN_EMAILS=
 ```
 
 Single `.env` at the project root — used by both backend (via `ConfigModule.forRoot()`) and frontend (`NUXT_PUBLIC_API_BASE`, defaults to `http://localhost:3000`).
@@ -164,7 +163,6 @@ vp check
 - **Prisma codegen required**: After any Prisma schema change, run `vp exec --filter backend prisma generate`
 - **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)
 - **Same-origin routing in prod**: Caddy reverse proxy routes `/api/auth/*`, `/calculate`, `/config`, `/results` to backend; everything else to frontend. No CORS needed in production
-- **ADMIN_EMAILS**: Comma-separated list in root `.env`. If empty, any logged-in user gets admin access
 - **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth/auth.service.ts` — update when adding new domains
 - **NestJS + Better-Auth**: Auth routes are handled by a wildcard Fastify controller that converts requests to Web API format
 

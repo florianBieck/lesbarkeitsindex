@@ -106,9 +106,6 @@ importers:
       chartjs-plugin-annotation:
         specifier: ^3.1.0
         version: 3.1.0(chart.js@4.5.1)
-      dayjs:
-        specifier: ^1.11.19
-        version: 1.11.20
       nuxt:
         specifier: ^4.2.1
         version: 4.4.2(@babel/core@7.29.0)(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0))(@electric-sql/pglite@0.4.1)(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@parcel/watcher@2.5.6)(@types/node@25.5.2)(@vue/compiler-sfc@3.5.32)(cac@6.7.14)(db0@0.3.4(@electric-sql/pglite@0.4.1)(mysql2@3.15.3))(eslint@9.39.4(jiti@2.6.1))(ioredis@5.10.1)(lightningcss@1.32.0)(magicast@0.5.2)(mysql2@3.15.3)(optionator@0.9.4)(oxlint@1.58.0(oxlint-tsgolint@0.20.0))(rollup-plugin-visualizer@7.0.1(rollup@4.60.1))(rollup@4.60.1)(srvx@0.11.15)(terser@5.46.1)(typescript@5.9.3)(vite@7.3.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))(yaml@2.8.3)
@@ -3669,9 +3666,6 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
-
-  dayjs@1.11.20:
-    resolution: {integrity: sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ==}
 
   db0@0.3.4:
     resolution: {integrity: sha512-RiXXi4WaNzPTHEOu8UPQKMooIbqOEyqA1t7Z6MsdxSCeb8iUC9ko3LcmsLmeUt2SM5bctfArZKkRQggKZz7JNw==}
@@ -10377,8 +10371,6 @@ snapshots:
       css-tree: 2.2.1
 
   csstype@3.2.3: {}
-
-  dayjs@1.11.20: {}
 
   db0@0.3.4(@electric-sql/pglite@0.4.1)(mysql2@3.15.3):
     optionalDependencies:

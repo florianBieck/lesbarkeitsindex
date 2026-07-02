@@ -18,8 +18,7 @@
         lazy
         :total-records="totalRecords"
         :first="first"
-        :rows="rowsPerPage"
-        :rowsPerPageOptions="[10]"
+        :rows="PAGE_SIZE"
         @page="onPageEvent"
         aria-label="Bisherige Textanalysen"
       >
@@ -35,7 +34,7 @@
         <Column field="createdAt" header="Datum">
           <template #body="slotProps">
             <div class="truncate">
-              {{ dayjs(slotProps.data.createdAt).format('DD.MM.YYYY HH:mm') }}
+              {{ formatDate(slotProps.data.createdAt) }}
             </div>
           </template>
         </Column>
@@ -59,26 +58,36 @@ import { ref } from 'vue';
 import { useApiClient, type ResultData, type ResultsData } from '~/composables/useApiClient';
 import ResultView from '~/components/result-view.vue';
 import type { DataTablePageEvent, DataTableRowSelectEvent } from 'primevue';
-import dayjs from 'dayjs';
 
 const client = useApiClient();
+
+// Feste Seitengröße — die Tabelle bot ohnehin nur „10" zur Auswahl an.
+const PAGE_SIZE = 10;
 
 const loading = ref(false);
 const errorMessage = ref('');
 const results = ref<ResultsData | null>(null);
 const selected = ref<ResultData | null>(null);
-const page = ref(0);
 const totalRecords = ref(0);
-const rowsPerPage = ref(10);
 const first = ref(0);
 
-async function loadResults(pageToLoad: number, limit: number) {
+// Natives de-DE-Format, z.B. „02.07.2026, 14:30" (bewusst mit Komma).
+const formatDate = (iso: string): string =>
+  new Date(iso).toLocaleString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+async function loadResults(pageToLoad: number) {
   loading.value = true;
   errorMessage.value = '';
   try {
     const data = await client.getResults({
       page: pageToLoad,
-      limit,
+      limit: PAGE_SIZE,
     });
     results.value = data;
     totalRecords.value = data.meta.total;
@@ -93,7 +102,7 @@ async function loadResults(pageToLoad: number, limit: number) {
 
 const onPageEvent = (e: DataTablePageEvent) => {
   first.value = e.first;
-  loadResults(e.page, rowsPerPage.value);
+  loadResults(e.page);
 };
 
 const onRowSelectedEvent = (e: DataTableRowSelectEvent) => {
@@ -101,6 +110,6 @@ const onRowSelectedEvent = (e: DataTableRowSelectEvent) => {
 };
 
 onMounted(() => {
-  loadResults(page.value, rowsPerPage.value);
+  loadResults(0);
 });
 </script>

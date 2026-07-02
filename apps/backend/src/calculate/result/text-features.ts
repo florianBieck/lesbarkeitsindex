@@ -131,45 +131,21 @@ export function calculateSpecialCharacters(text: string): { count: number; match
 }
 
 /*
-    Zahlen erkennen — categorized by digit count per PDF:
-    - 2-digit: difficult for beginning readers
-    - 3-digit: somewhat difficult
-    - 4-digit: more difficult
-    - 5+ digit: very difficult
-    Numbers with dot separators (e.g. 5.289) are treated as one number,
-    digits only counted (dots stripped).
+    Zahlen erkennen — per PDF parameter list.
+    Numbers with dot separators (e.g. 5.289) are treated as one number.
     Single-digit numbers are ignored (not difficult).
  */
-export type NumberResult = {
-  count: number;
-  twoDigit: number;
-  threeDigit: number;
-  fourDigit: number;
-  fivePlusDigit: number;
-};
-
-export function calculateNumbers(words: readonly string[]): NumberResult {
-  const result: NumberResult = {
-    count: 0,
-    twoDigit: 0,
-    threeDigit: 0,
-    fourDigit: 0,
-    fivePlusDigit: 0,
-  };
-  if (words.length === 0) return result;
+export function calculateNumbers(words: readonly string[]): number {
+  if (words.length === 0) return 0;
+  let count = 0;
   for (const word of words) {
     // Match tokens that are purely numeric (with optional dot separators)
     const cleaned = word.replace(/[,;:!?]$/, '');
     if (!/^\d[\d.]*\d$|^\d{2,}$/.test(cleaned)) continue;
     const digitsOnly = cleaned.replace(/\./g, '');
     if (!/^\d+$/.test(digitsOnly)) continue;
-    const len = digitsOnly.length;
-    if (len < 2) continue;
-    result.count++;
-    if (len === 2) result.twoDigit++;
-    else if (len === 3) result.threeDigit++;
-    else if (len === 4) result.fourDigit++;
-    else result.fivePlusDigit++;
+    if (digitsOnly.length < 2) continue;
+    count++;
   }
-  return result;
+  return count;
 }

@@ -22,7 +22,6 @@ model Result {
   id                                          String   @id @default(cuid())
   createdAt                                   DateTime @default(now())
   countWords                                  Decimal
-  countPhrases                                Decimal
   countSyllables                              Decimal
   countWordsWithComplexSyllables              Decimal
   countWordsWithConsonantClusters             Decimal
@@ -51,10 +50,6 @@ model Result {
   ttr                                         Decimal
   countAbbreviations                          Decimal
   countNumbers                                Decimal
-  countNumbersTwoDigit                        Decimal
-  countNumbersThreeDigit                      Decimal
-  countNumbersFourDigit                       Decimal
-  countNumbersFivePlusDigit                   Decimal
   countSpecialCharacters                      Decimal
   proNIndex                                   Decimal
   subordinateClauseRatio                      Decimal
@@ -76,7 +71,6 @@ model Result {
   wordsWithFourSyllables                      String[]
   wordsWithFiveSyllables                      String[]
   phrases                                     String[]
-  hashText                                    String
   config                                      Config   @relation(fields: [configId], references: [id])
   configId                                    String
 }

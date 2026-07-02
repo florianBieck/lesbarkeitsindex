@@ -1,4 +1,3 @@
-import { createHash } from 'crypto';
 import { test, expect, describe } from 'vitest';
 import {
   computeReadability,
@@ -281,7 +280,7 @@ describe('metric functions with pre-computed arrays', () => {
     expect(calculateTTR([])).toBe(0);
     expect(calculateAverageCharsPerSyllable([], [])).toBe(0);
     expect(calculateAbbreviations([]).count).toBe(0);
-    expect(calculateNumbers([]).count).toBe(0);
+    expect(calculateNumbers([])).toBe(0);
     expect(calculateSpecialCharacters('').count).toBe(0);
   });
 
@@ -366,56 +365,39 @@ describe('metric functions with pre-computed arrays', () => {
 
   describe('calculateNumbers', () => {
     test('detects 2-digit numbers', () => {
-      const result = calculateNumbers(['Er', 'ist', '72', 'Jahre']);
-      expect(result.count).toBe(1);
-      expect(result.twoDigit).toBe(1);
+      expect(calculateNumbers(['Er', 'ist', '72', 'Jahre'])).toBe(1);
     });
 
     test('detects 3-digit numbers', () => {
-      const result = calculateNumbers(['Es', 'sind', '786', 'Meter']);
-      expect(result.count).toBe(1);
-      expect(result.threeDigit).toBe(1);
+      expect(calculateNumbers(['Es', 'sind', '786', 'Meter'])).toBe(1);
     });
 
     test('detects 4-digit numbers', () => {
-      const result = calculateNumbers(['Im', 'Jahr', '2024']);
-      expect(result.count).toBe(1);
-      expect(result.fourDigit).toBe(1);
+      expect(calculateNumbers(['Im', 'Jahr', '2024'])).toBe(1);
     });
 
     test('detects 5+ digit numbers', () => {
-      const result = calculateNumbers(['87945', 'Einwohner']);
-      expect(result.count).toBe(1);
-      expect(result.fivePlusDigit).toBe(1);
+      expect(calculateNumbers(['87945', 'Einwohner'])).toBe(1);
     });
 
     test('detects numbers with dot separators', () => {
-      const result = calculateNumbers(['5.289', 'Menschen']);
-      expect(result.count).toBe(1);
-      expect(result.fourDigit).toBe(1);
+      expect(calculateNumbers(['5.289', 'Menschen'])).toBe(1);
     });
 
     test('counts multiple numbers of different lengths', () => {
-      const result = calculateNumbers(['72', 'und', '786', 'und', '2024']);
-      expect(result.count).toBe(3);
-      expect(result.twoDigit).toBe(1);
-      expect(result.threeDigit).toBe(1);
-      expect(result.fourDigit).toBe(1);
+      expect(calculateNumbers(['72', 'und', '786', 'und', '2024'])).toBe(3);
     });
 
     test('ignores single-digit numbers', () => {
-      const result = calculateNumbers(['Er', 'hat', '5', 'Äpfel']);
-      expect(result.count).toBe(0);
+      expect(calculateNumbers(['Er', 'hat', '5', 'Äpfel'])).toBe(0);
     });
 
     test('returns 0 for text without numbers', () => {
-      const result = calculateNumbers(['Der', 'Hund', 'läuft']);
-      expect(result.count).toBe(0);
+      expect(calculateNumbers(['Der', 'Hund', 'läuft'])).toBe(0);
     });
 
     test('returns 0 for empty array', () => {
-      const result = calculateNumbers([]);
-      expect(result.count).toBe(0);
+      expect(calculateNumbers([])).toBe(0);
     });
   });
 
@@ -916,7 +898,6 @@ describe('computeReadability Titel-Guard', () => {
 
     test('zählt den einzigen Satz (Satzzahl >= 1)', () => {
       const result = computeReadability(text, analysis, config);
-      expect(result.countPhrases).toBe(1);
       expect(result.phrases).toEqual(['Der Hund läuft über die Straße.']);
     });
 
@@ -946,7 +927,6 @@ describe('computeReadability Titel-Guard', () => {
 
     test('der erste Satz zählt vollständig', () => {
       const result = computeReadability(text, analysis, config);
-      expect(result.countPhrases).toBe(2);
       expect(result.countWords).toBe(8);
       expect(result.phrases).toEqual(['Das ist ein Satz.', 'Weiter geht es hier.']);
     });
@@ -979,7 +959,7 @@ describe('computeReadability Titel-Guard', () => {
     test('erkennt keinen Titel und zählt beide Sätze', () => {
       const result = computeReadability(text, analysis, config);
       expect(result.title).toBe('');
-      expect(result.countPhrases).toBe(2);
+      expect(result.phrases).toHaveLength(2);
       expect(result.countWords).toBe(9);
     });
   });
@@ -1000,7 +980,6 @@ describe('computeReadability Titel-Guard', () => {
     test('Wort-, Satz- und Silbenzahlen stammen nur aus dem Fließtext', () => {
       const result = computeReadability(fullText, bodyOnlyAnalysis, config);
       expect(result.countWords).toBe(4);
-      expect(result.countPhrases).toBe(1);
       expect(result.countSyllables).toBe(6);
       expect(result.words).toEqual(['Igel', 'schlafen', 'am', 'Tag']);
       expect(result.phrases).toEqual(['Igel schlafen am Tag.']);
@@ -1037,10 +1016,9 @@ describe('computeReadability Titel-Guard', () => {
       expect(result.countSpecialCharacters).toBe(1);
     });
 
-    test('text und hashText behalten den vollen Originaltext', () => {
+    test('text behält den vollen Originaltext', () => {
       const result = computeReadability(fullText, bodyOnlyAnalysis, config);
       expect(result.text).toBe(fullText);
-      expect(result.hashText).toBe(createHash('sha256').update(fullText, 'utf8').digest('hex'));
     });
   });
 });

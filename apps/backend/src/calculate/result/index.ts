@@ -1,4 +1,3 @@
-import { createHash } from 'crypto';
 import type { TextAnalysis } from '../../r-sidecar/r-sidecar.service.js';
 
 import {
@@ -77,8 +76,8 @@ export interface ComputeReadabilityOptions {
  * Invariante: `analysis` MUSS aus `detectTitle(text).bodyText` erzeugt worden
  * sein. `detectTitle` ist deterministisch, daher leitet diese Funktion Titel
  * und Fließtext selbst aus `text` ab und kann nie von der Analyse abweichen.
- * Ein erkannter Titel fließt in keine Kennzahl ein; `text` und `hashText`
- * behalten den vollen Originaltext inklusive Titel.
+ * Ein erkannter Titel fließt in keine Kennzahl ein; `text` behält den vollen
+ * Originaltext inklusive Titel.
  *
  * Texttyp & Leseeinheit (ADR 0002): Bei Texttyp Liste ersetzt die nicht-leere
  * Zeilenzahl die Satzzahl als Nenner aller satzbezogenen Maße. Übergibt der
@@ -113,7 +112,6 @@ export function computeReadability(
       : sentences;
 
   const countWords = words.length;
-  const countPhrases = sentences.length;
   // Wortkomplexität (ADR 0001): die vier WK-Komponente-Zähler, ihre Coverage-Anteile
   // und der gewichtete Mittelwert leben in word-complexity.ts. computeReadability
   // verteilt nur noch die acht Komponentenfelder ins Ergebnis.
@@ -134,7 +132,7 @@ export function computeReadability(
     proportionOfWordsWithRareGraphemes,
   } = components;
   const abbreviations = calculateAbbreviations(words);
-  const numbers = calculateNumbers(words);
+  const countNumbers = calculateNumbers(words);
   const specialCharacters = calculateSpecialCharacters(bodyText);
   const averageWordLength = calculateAverageWordLength(words);
   const averageCharsPerSyllable = calculateAverageCharsPerSyllable(words, syllablesPerWord);
@@ -171,7 +169,6 @@ export function computeReadability(
 
   return {
     countWords,
-    countPhrases,
     countSyllables: totalSyllables,
     countWordsWithComplexSyllables,
     countWordsWithConsonantClusters,
@@ -195,11 +192,7 @@ export function computeReadability(
     lix,
     ttr,
     countAbbreviations: abbreviations.count,
-    countNumbers: numbers.count,
-    countNumbersTwoDigit: numbers.twoDigit,
-    countNumbersThreeDigit: numbers.threeDigit,
-    countNumbersFourDigit: numbers.fourDigit,
-    countNumbersFivePlusDigit: numbers.fivePlusDigit,
+    countNumbers,
     countSpecialCharacters: specialCharacters.count,
     proNIndex,
     subordinateClauseRatio,
@@ -225,7 +218,6 @@ export function computeReadability(
     wordsWithFourSyllables,
     wordsWithFiveSyllables,
     phrases: [...sentences],
-    hashText: createHash('sha256').update(text, 'utf8').digest('hex'),
     configId: config.id,
   };
 }

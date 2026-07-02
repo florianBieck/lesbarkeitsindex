@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
 import ConfigWeightsForm from '~/components/config-weights-form.vue';
 
@@ -11,15 +11,17 @@ import ConfigWeightsForm from '~/components/config-weights-form.vue';
  * Beim Mount hydriert sie die Modelle aus der gespeicherten Konfiguration.
  */
 
-const getConfigMock = vi.fn();
+const { getConfigMock } = vi.hoisted(() => ({
+  getConfigMock: vi.fn(),
+}));
 
-vi.mock('~/composables/useApiClient', () => ({
-  useApiClient: () => ({
-    getConfig: getConfigMock,
-    updateConfig: vi.fn(),
-    calculate: vi.fn(),
-    getResults: vi.fn(),
-  }),
+// useApiClient wird von der Komponente auto-importiert, daher wird der
+// Auto-Import selbst gemockt statt des Modulpfads.
+mockNuxtImport('useApiClient', () => () => ({
+  getConfig: getConfigMock,
+  updateConfig: vi.fn(),
+  calculate: vi.fn(),
+  getResults: vi.fn(),
 }));
 
 const DB_CONFIG = {

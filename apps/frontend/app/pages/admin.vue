@@ -40,10 +40,6 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import Button from 'primevue/button';
-import { useApiClient } from '~/composables/useApiClient';
-
 const WEIGHT_SUM_EPSILON = 0.01;
 const TARGET_WEIGHT_SUM = 100;
 

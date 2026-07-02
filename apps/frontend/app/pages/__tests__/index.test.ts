@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
 import IndexPage from '~/pages/index.vue';
 
@@ -11,16 +11,18 @@ import IndexPage from '~/pages/index.vue';
  * ihn beim Absenden als Override an die API weitergibt.
  */
 
-const calculateMock = vi.fn();
-const getConfigMock = vi.fn();
+const { calculateMock, getConfigMock } = vi.hoisted(() => ({
+  calculateMock: vi.fn(),
+  getConfigMock: vi.fn(),
+}));
 
-vi.mock('~/composables/useApiClient', () => ({
-  useApiClient: () => ({
-    getConfig: getConfigMock,
-    updateConfig: vi.fn(),
-    calculate: calculateMock,
-    getResults: vi.fn(),
-  }),
+// useApiClient wird von der Seite auto-importiert (kein expliziter Import mehr),
+// daher wird der Auto-Import selbst gemockt statt des Modulpfads.
+mockNuxtImport('useApiClient', () => () => ({
+  getConfig: getConfigMock,
+  updateConfig: vi.fn(),
+  calculate: calculateMock,
+  getResults: vi.fn(),
 }));
 
 const DB_CONFIG = {

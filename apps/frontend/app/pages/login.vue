@@ -59,13 +59,6 @@
   </div>
 </template>
 <script lang="ts" setup>
-import Button from 'primevue/button';
-import Checkbox from 'primevue/checkbox';
-import InputText from 'primevue/inputtext';
-import Password from 'primevue/password';
-import { ref } from 'vue';
-import { useAuthClient } from '~/composables/useAuthClient';
-
 const client = useAuthClient();
 
 const email = ref('');

@@ -50,13 +50,11 @@
         </Column>
       </DataTable>
     </div>
-    <result-view v-if="selected" :result="selected" />
+    <ResultView v-if="selected" :result="selected" />
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useApiClient, type ResultData, type ResultsData } from '~/composables/useApiClient';
-import ResultView from '~/components/result-view.vue';
+import type { ResultData, ResultsData } from '~/composables/useApiClient';
 import type { DataTablePageEvent, DataTableRowSelectEvent } from 'primevue';
 
 const client = useApiClient();

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
 import AdminPage from '~/pages/admin.vue';
 
@@ -11,16 +11,18 @@ import AdminPage from '~/pages/admin.vue';
  * sichtbar; bei gültiger Summe wird der API-Aufruf ausgelöst.
  */
 
-const updateConfigMock = vi.fn();
-const getConfigMock = vi.fn();
+const { updateConfigMock, getConfigMock } = vi.hoisted(() => ({
+  updateConfigMock: vi.fn(),
+  getConfigMock: vi.fn(),
+}));
 
-vi.mock('~/composables/useApiClient', () => ({
-  useApiClient: () => ({
-    getConfig: getConfigMock,
-    updateConfig: updateConfigMock,
-    calculate: vi.fn(),
-    getResults: vi.fn(),
-  }),
+// useApiClient wird auto-importiert (kein expliziter Import mehr in der Seite
+// bzw. in ConfigWeightsForm), daher wird der Auto-Import selbst gemockt.
+mockNuxtImport('useApiClient', () => () => ({
+  getConfig: getConfigMock,
+  updateConfig: updateConfigMock,
+  calculate: vi.fn(),
+  getResults: vi.fn(),
 }));
 
 const DB_CONFIG = {

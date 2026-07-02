@@ -69,7 +69,7 @@
 
     <!-- Results area — generous separation from input controls -->
     <div class="mt-10">
-      <result-view v-if="result" :result="result" />
+      <ResultView v-if="result" :result="result" />
       <div v-else class="text-center text-surface-500 py-8 border-t border-surface-100">
         <p class="text-lg mt-4">Noch kein Text analysiert</p>
         <p class="text-sm mt-1">
@@ -80,14 +80,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import Button from 'primevue/button';
-import Fieldset from 'primevue/fieldset';
-import Checkbox from 'primevue/checkbox';
-import SelectButton from 'primevue/selectbutton';
 import { detectTextType, type TextType } from '@lesbarkeitsindex/api-client';
-import { useApiClient, type ResultData } from '~/composables/useApiClient';
-import ResultView from '~/components/result-view.vue';
+import type { ResultData } from '~/composables/useApiClient';
 
 const client = useApiClient();
 

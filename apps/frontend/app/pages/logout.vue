@@ -17,7 +17,6 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { useAuthClient } from '~/composables/useAuthClient';
 
 const client = useAuthClient();
 const router = useRouter();

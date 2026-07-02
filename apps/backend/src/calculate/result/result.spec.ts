@@ -28,7 +28,6 @@ import {
 } from './index.js';
 
 const WORDS = ['Der', 'Hund', 'läuft', 'über', 'die', 'Straße'];
-const SENTENCES = ['Der Hund läuft über die Straße.'];
 const SYLLABLES = [1, 1, 1, 2, 1, 2];
 
 describe('metric functions with pre-computed arrays', () => {
@@ -184,12 +183,12 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateAveragePhraseLength computes words per sentence', () => {
-    const avg = calculateAveragePhraseLength(WORDS, SENTENCES);
+    const avg = calculateAveragePhraseLength(WORDS, 1);
     expect(avg).toBe(6);
   });
 
   test('calculateAverageSyllablesPerPhrase computes syllables per sentence', () => {
-    const avg = calculateAverageSyllablesPerPhrase(SENTENCES, SYLLABLES);
+    const avg = calculateAverageSyllablesPerPhrase(1, SYLLABLES);
     expect(avg).toBeCloseTo(8 / 1, 5);
   });
 
@@ -199,21 +198,17 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateLix computes LIX score', () => {
-    const lix = calculateLix(WORDS, SENTENCES);
+    const lix = calculateLix(WORDS, 1);
     expect(lix).toBeCloseTo(6.0, 1);
   });
 
   test('calculateLix strips hyphens before measuring word length', () => {
-    const words = ['ab-cde', 'Der', 'ist'];
-    const sentences = ['ab-cde Der ist.'];
-    const lix = calculateLix(words, sentences);
+    const lix = calculateLix(['ab-cde', 'Der', 'ist'], 1);
     expect(lix).toBe(3);
   });
 
   test('calculateLix counts hyphenated compound as long when Buchstaben > 6', () => {
-    const words = ['Carl-Heinrich', 'von'];
-    const sentences = ['Carl-Heinrich von.'];
-    const lix = calculateLix(words, sentences);
+    const lix = calculateLix(['Carl-Heinrich', 'von'], 1);
     expect(lix).toBe(52);
   });
 
@@ -236,18 +231,18 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateGsmog computes gSmog score', () => {
-    const gsmog = calculateGsmog(SENTENCES, SYLLABLES);
+    const gsmog = calculateGsmog(1, SYLLABLES);
     expect(gsmog).toBeCloseTo(-2, 1);
   });
 
   test('calculateFleschKincaid computes FK score', () => {
-    const fk = calculateFleschKincaid(WORDS, SENTENCES, SYLLABLES);
+    const fk = calculateFleschKincaid(WORDS, 1, SYLLABLES);
     const expected = 0.39 * 6 + 11.8 * (8 / 6) - 15.59;
     expect(fk).toBeCloseTo(expected, 1);
   });
 
   test('calculateWstf computes WSTF score', () => {
-    const wstf = calculateWstf(WORDS, SENTENCES, SYLLABLES);
+    const wstf = calculateWstf(WORDS, 1, SYLLABLES);
     const expected = 0.2656 * 6 + 0.2744 * 0 * 100 - 1.693;
     expect(wstf).toBeCloseTo(expected, 1);
   });
@@ -259,13 +254,13 @@ describe('metric functions with pre-computed arrays', () => {
     expect(countWordsWithConsonantClusters([])).toBe(0);
     expect(calculateAverageWordLength([])).toBe(0);
     expect(calculateAverageSyllablesPerWord([])).toBe(0);
-    expect(calculateAveragePhraseLength([], [])).toBe(0);
-    expect(calculateAverageSyllablesPerPhrase([], [])).toBe(0);
+    expect(calculateAveragePhraseLength([], 0)).toBe(0);
+    expect(calculateAverageSyllablesPerPhrase(0, [])).toBe(0);
     expect(calculateProportionOfLongWords([])).toBe(0);
-    expect(calculateLix([], [])).toBe(0);
-    expect(calculateGsmog([], [])).toBe(0);
-    expect(calculateFleschKincaid([], [], [])).toBe(0);
-    expect(calculateWstf([], [], [])).toBe(0);
+    expect(calculateLix([], 0)).toBe(0);
+    expect(calculateGsmog(0, [])).toBe(0);
+    expect(calculateFleschKincaid([], 0, [])).toBe(0);
+    expect(calculateWstf([], 0, [])).toBe(0);
     expect(calculateTTR([])).toBe(0);
     expect(calculateAverageCharsPerSyllable([], [])).toBe(0);
     expect(calculateAbbreviations([])).toBe(0);
@@ -433,23 +428,20 @@ describe('metric functions with pre-computed arrays', () => {
   describe('calculateSubordinateClauseRatio', () => {
     test('counts KOUS as subordinate clause', () => {
       expect(
-        calculateSubordinateClauseRatio(
-          ['ART', 'NN', 'KOUS', 'PPER', 'VVFIN'],
-          ['Satz eins.', 'weil er geht.'],
-        ),
+        calculateSubordinateClauseRatio(['ART', 'NN', 'KOUS', 'PPER', 'VVFIN'], 2),
       ).toBe(0.5);
     });
 
     test('counts KOUI as subordinate clause', () => {
-      expect(calculateSubordinateClauseRatio(['KOUI', 'VVINF'], ['Um zu gehen.'])).toBe(1);
+      expect(calculateSubordinateClauseRatio(['KOUI', 'VVINF'], 1)).toBe(1);
     });
 
     test('returns 0 when no subordinating conjunctions', () => {
-      expect(calculateSubordinateClauseRatio(['ART', 'NN', 'VVFIN'], ['Der Hund läuft.'])).toBe(0);
+      expect(calculateSubordinateClauseRatio(['ART', 'NN', 'VVFIN'], 1)).toBe(0);
     });
 
     test('returns 0 for empty arrays', () => {
-      expect(calculateSubordinateClauseRatio([], [])).toBe(0);
+      expect(calculateSubordinateClauseRatio([], 0)).toBe(0);
     });
   });
 
@@ -503,19 +495,16 @@ describe('metric functions with pre-computed arrays', () => {
   describe('calculateRix', () => {
     test('computes RIX with all components', () => {
       const words = ['Der', 'Hund', 'wird', 'gefüttert', 'das', 'Leichtes'];
-      const sentences = ['Der Hund wird gefüttert das Leichtes.'];
-      const result = calculateRix(words, sentences, 1, 0.5, 1);
+      const result = calculateRix(words, 1, 1, 0.5, 1);
       expect(result).toBeGreaterThan(0);
     });
 
     test('returns simplified value when no passive/subordinate/nominalization', () => {
-      const words = ['Der', 'Hund', 'ist', 'alt'];
-      const sentences = ['Der Hund ist alt.'];
-      expect(calculateRix(words, sentences, 0, 0, 0)).toBe(1.74);
+      expect(calculateRix(['Der', 'Hund', 'ist', 'alt'], 1, 0, 0, 0)).toBe(1.74);
     });
 
     test('returns 0 for empty arrays', () => {
-      expect(calculateRix([], [], 0, 0, 0)).toBe(0);
+      expect(calculateRix([], 0, 0, 0, 0)).toBe(0);
     });
   });
 });

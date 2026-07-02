@@ -100,16 +100,9 @@ export function computeReadability(
     options.textTypeOverride,
   );
 
+  // Nenner aller satzbezogenen Maße (ADR 0002): Zeilenzahl bei Liste, sonst Satzzahl.
   const countReadingUnits =
     textType === 'list' ? countNonEmptyLines(text) : sentences.length;
-
-  // Bei Listen ersetzt eine virtuelle „Lese­einheiten"-Liste die R-Sidecar-Sätze
-  // als Nenner satzbezogener Maße. Die Inhalte sind irrelevant — die
-  // sätzbezogenen Funktionen nutzen nur `.length`.
-  const readingUnits: readonly string[] =
-    textType === 'list'
-      ? Array.from({ length: countReadingUnits }, (_, i) => `line-${i}`)
-      : sentences;
 
   const countWords = words.length;
   // Wortkomplexität (ADR 0001): die vier WK-Komponente-Zähler, ihre Coverage-Anteile
@@ -137,21 +130,24 @@ export function computeReadability(
   const averageWordLength = calculateAverageWordLength(words);
   const averageCharsPerSyllable = calculateAverageCharsPerSyllable(words, syllablesPerWord);
   const averageSyllablesPerWord = calculateAverageSyllablesPerWord(syllablesPerWord);
-  const averagePhraseLength = calculateAveragePhraseLength(words, readingUnits);
-  const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(readingUnits, syllablesPerWord);
+  const averagePhraseLength = calculateAveragePhraseLength(words, countReadingUnits);
+  const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(
+    countReadingUnits,
+    syllablesPerWord,
+  );
   const proportionOfLongWords = calculateProportionOfLongWords(words);
-  const lix = calculateLix(words, readingUnits);
-  const gsmog = calculateGsmog(readingUnits, syllablesPerWord);
-  const fleschKincaid = calculateFleschKincaid(words, readingUnits, syllablesPerWord);
-  const wst4 = calculateWstf(words, readingUnits, syllablesPerWord);
+  const lix = calculateLix(words, countReadingUnits);
+  const gsmog = calculateGsmog(countReadingUnits, syllablesPerWord);
+  const fleschKincaid = calculateFleschKincaid(words, countReadingUnits, syllablesPerWord);
+  const wst4 = calculateWstf(words, countReadingUnits, syllablesPerWord);
   const ttr = calculateTTR(words);
   const proNIndex = calculateProNIndex(posTags);
-  const subordinateClauseRatio = calculateSubordinateClauseRatio(posTags, readingUnits);
+  const subordinateClauseRatio = calculateSubordinateClauseRatio(posTags, countReadingUnits);
   const passiveCount = calculatePassiveCount(words, posTags);
   const nominalizationCount = calculateNominalizations(words, posTags);
   const rix = calculateRix(
     words,
-    readingUnits,
+    countReadingUnits,
     passiveCount,
     subordinateClauseRatio,
     nominalizationCount,

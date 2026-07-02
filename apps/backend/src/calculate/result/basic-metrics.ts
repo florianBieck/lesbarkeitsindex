@@ -58,29 +58,29 @@ export function calculateAverageSyllablesPerWord(syllablesPerWord: readonly numb
 }
 
 /*
-    Durchschnittliche Satzlänge
+    Durchschnittliche Satzlänge (Nenner: Anzahl Leseeinheiten — Sätze oder Zeilen)
  */
 export function calculateAveragePhraseLength(
   words: readonly string[],
-  sentences: readonly string[],
+  sentenceCount: number,
 ): number {
-  if (sentences.length === 0) return 0;
-  return Math.round((words.length / sentences.length) * 100) / 100;
+  if (sentenceCount === 0) return 0;
+  return Math.round((words.length / sentenceCount) * 100) / 100;
 }
 
 /*
     ∅Silben/Satz
  */
 export function calculateAverageSyllablesPerPhrase(
-  sentences: readonly string[],
+  sentenceCount: number,
   syllablesPerWord: readonly number[],
 ): number {
-  if (sentences.length === 0) return 0;
+  if (sentenceCount === 0) return 0;
   let totalSyllables = 0;
   for (const count of syllablesPerWord) {
     totalSyllables += count;
   }
-  return totalSyllables / sentences.length;
+  return totalSyllables / sentenceCount;
 }
 
 /*

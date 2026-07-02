@@ -25,14 +25,14 @@ export function calculateProNIndex(posTags: readonly string[]): number {
  */
 export function calculateSubordinateClauseRatio(
   posTags: readonly string[],
-  sentences: readonly string[],
+  sentenceCount: number,
 ): number {
-  if (sentences.length === 0) return 0;
+  if (sentenceCount === 0) return 0;
   let subordinateClauses = 0;
   for (const tag of posTags) {
     if (tag === 'KOUS' || tag === 'KOUI') subordinateClauses++;
   }
-  return Math.round((subordinateClauses / sentences.length) * 100) / 100;
+  return Math.round((subordinateClauses / sentenceCount) * 100) / 100;
 }
 
 /*

@@ -749,7 +749,7 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     };
 
     test('Fließtext: averagePhraseLength = Wörter pro Satz (8/1 = 8)', () => {
-      const result = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
+      const result = computeReadability(text, analysis, config, 'prose');
       expect(result.textType).toBe('prose');
       expect(result.readingUnit).toBe('sentence');
       expect(result.averagePhraseLength).toBe(8);
@@ -757,7 +757,7 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     });
 
     test('Liste: averagePhraseLength = Wörter pro Zeile (8/4 = 2)', () => {
-      const result = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const result = computeReadability(text, analysis, config, 'list');
       expect(result.textType).toBe('list');
       expect(result.readingUnit).toBe('line');
       expect(result.averagePhraseLength).toBe(2);
@@ -765,26 +765,26 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     });
 
     test('LIX als Fließtext > LIX als Liste (Riesensatz-Effekt entschärft)', () => {
-      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
-      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const prose = computeReadability(text, analysis, config, 'prose');
+      const list = computeReadability(text, analysis, config, 'list');
       expect(prose.lix).toBeGreaterThan(list.lix);
     });
 
     test('gSmog, Flesch-Kincaid und WSTF nutzen ebenfalls die Zeile als Nenner', () => {
-      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
-      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const prose = computeReadability(text, analysis, config, 'prose');
+      const list = computeReadability(text, analysis, config, 'list');
       expect(list.fleschKincaid).not.toBe(prose.fleschKincaid);
       expect(list.wst4).not.toBe(prose.wst4);
     });
 
     test('RIX nutzt ebenfalls die Zeile als Nenner', () => {
-      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
-      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const prose = computeReadability(text, analysis, config, 'prose');
+      const list = computeReadability(text, analysis, config, 'list');
       expect(list.ratte).not.toBe(prose.ratte);
     });
 
     test('averageSyllablesPerPhrase nutzt die Zeile als Nenner', () => {
-      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const list = computeReadability(text, analysis, config, 'list');
       // Gesamt-Silben = 1+2+2+1+1+1+2+1 = 11; 11 / 4 Zeilen = 2,75
       expect(list.averageSyllablesPerPhrase).toBeCloseTo(11 / 4, 5);
     });
@@ -807,7 +807,7 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     });
 
     test('Override list: textType ist list, detectedTextType bleibt prose', () => {
-      const result = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const result = computeReadability(text, analysis, config, 'list');
       expect(result.textType).toBe('list');
       expect(result.readingUnit).toBe('line');
       expect(result.detectedTextType).toBe('prose');

@@ -82,7 +82,7 @@ export class CalculateService {
       throw new InternalServerErrorException(message);
     }
 
-    const resultData = computeReadability(text, analysis, effectiveConfig, { textTypeOverride });
+    const resultData = computeReadability(text, analysis, effectiveConfig, textTypeOverride);
 
     if (saveResult) {
       const row = await this.prisma.result.create({

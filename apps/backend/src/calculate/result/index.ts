@@ -58,17 +58,6 @@ export interface ConfigWeights {
   readonly id: string;
 }
 
-/** Optionale Zusatzparameter, etwa ein vom Nutzer gesetzter Texttyp-Override. */
-export interface ComputeReadabilityOptions {
-  /**
-   * Übersteuert die heuristische Texttyp-Erkennung (ADR 0002). Wenn gesetzt,
-   * wird `textType` exakt darauf festgelegt; `detectedTextType` bleibt das
-   * heuristisch erkannte Ergebnis, damit die Oberfläche „automatisch erkannt
-   * als X, manuell auf Y gesetzt" anzeigen kann.
-   */
-  readonly textTypeOverride?: TextType;
-}
-
 /**
  * Berechnet alle Kennzahlen aus dem vollen Originaltext und der
  * Sidecar-Analyse des Fließtexts.
@@ -88,7 +77,9 @@ export function computeReadability(
   text: string,
   analysis: TextAnalysis,
   config: ConfigWeights,
-  options: ComputeReadabilityOptions = {},
+  /** Übersteuert die heuristische Texttyp-Erkennung (ADR 0002); `detectedTextType`
+      bleibt das heuristisch erkannte Ergebnis. */
+  textTypeOverride?: TextType,
 ) {
   const { sentences, words, syllablesPerWord, posTags } = analysis;
 
@@ -97,7 +88,7 @@ export function computeReadability(
   // ab — beide Seiten teilen die Auflösung, statt sie zu duplizieren.
   const { textType, detectedTextType, readingUnit, title, bodyText } = resolveTextShape(
     text,
-    options.textTypeOverride,
+    textTypeOverride,
   );
 
   // Nenner aller satzbezogenen Maße (ADR 0002): Zeilenzahl bei Liste, sonst Satzzahl.

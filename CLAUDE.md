@@ -189,3 +189,17 @@ Parameters are stored in a `Config` model; analysis results in a `Result` model.
 **Aesthetic**: Warm & educational. PrimeVue Aura theme foundation. Light mode only. Soft colors, rounded shapes, generous white space. Readability scores use green/yellow/red. WCAG AA compliance required. Colorblind-safe chart colors.
 
 **Principles**: Clarity over cleverness. Warmth over sterility. Progressive disclosure (essential results first). Content-first layout.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live as GitHub issues (`florianBieck/lesbarkeitsindex`), managed via the `gh` CLI. External PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical roles use their default label strings (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

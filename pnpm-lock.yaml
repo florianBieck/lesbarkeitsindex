@@ -153,11 +153,7 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))
 
-  packages/api-client:
-    dependencies:
-      ofetch:
-        specifier: ^1.4.0
-        version: 1.5.1
+  packages/api-client: {}
 
 packages:
 

@@ -1,5 +1,3 @@
-import { ofetch, type $Fetch } from 'ofetch';
-
 /** Texttyp eines Textes (ADR 0002): Fließtext oder Liste. */
 export type TextType = 'prose' | 'list';
 
@@ -114,7 +112,12 @@ export interface ResultsResponse {
   };
 }
 
-export interface CalculateRequest {
+/*
+ * Request-Typen als Typaliasse, nicht als `interface`: Nur Objektliteral-Typen
+ * tragen die implizite Indexsignatur, die sie dem `body`-Feld von {@link ApiFetch}
+ * (`Record<string, unknown>`) zuweisbar macht.
+ */
+export type CalculateRequest = {
   text: string;
   saveResult?: boolean;
   alpha?: number;
@@ -124,27 +127,39 @@ export interface CalculateRequest {
   weightConsonantClusters?: number;
   /** Manueller Texttyp-Override (ADR 0002); übersteuert die Heuristik. */
   textType?: TextType;
-}
+};
 
-export interface UpdateConfigRequest {
+export type UpdateConfigRequest = {
   alpha: number;
   weightComplexSyllables: number;
   weightMultiMemberedGraphemes: number;
   weightRareGraphemes: number;
   weightConsonantClusters: number;
-}
+};
 
-export function createApiClient(baseURL: string) {
-  const api: $Fetch = ofetch.create({
-    baseURL,
-    credentials: 'include',
-  });
+/**
+ * Minimaler Fetch-Vertrag des API-Clients. Nuxts globales `$fetch` (ofetch)
+ * erfüllt ihn direkt — Basis-URL und Credentials konfiguriert der Aufrufer,
+ * z. B. via `$fetch.create({ baseURL, credentials: 'include' })`. Der Client
+ * selbst bleibt abhängigkeitsfrei.
+ */
+export type ApiFetch = <T>(
+  path: string,
+  options?: {
+    method?: 'GET' | 'POST';
+    body?: Record<string, unknown>;
+    query?: Record<string, unknown>;
+  },
+) => Promise<T>;
 
+export function createApiClient(fetcher: ApiFetch) {
   return {
-    getConfig: () => api<Config>('/config'),
-    updateConfig: (body: UpdateConfigRequest) => api<Config>('/config', { method: 'POST', body }),
-    calculate: (body: CalculateRequest) => api<ResultData>('/calculate', { method: 'POST', body }),
+    getConfig: () => fetcher<Config>('/config'),
+    updateConfig: (body: UpdateConfigRequest) =>
+      fetcher<Config>('/config', { method: 'POST', body }),
+    calculate: (body: CalculateRequest) =>
+      fetcher<ResultData>('/calculate', { method: 'POST', body }),
     getResults: (query?: { page?: number; limit?: number }) =>
-      api<ResultsResponse>('/results', { query }),
+      fetcher<ResultsResponse>('/results', { query }),
   };
 }

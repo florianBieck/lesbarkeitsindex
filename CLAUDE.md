@@ -18,7 +18,7 @@ Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`
 - **CSS**: Tailwind utility classes + PrimeVue Aura theme tokens
 - **Auth**: Better-Auth with email/password + admin plugin
 - **Schema validation**: Zod (backend DTOs validated with Zod schemas)
-- **API client**: `@lesbarkeitsindex/api-client` package using `ofetch` for typed frontend → backend calls
+- **API client**: `@lesbarkeitsindex/api-client` package (zero-dependency) — the frontend injects Nuxt's `$fetch` (ofetch) via `createApiClient(fetcher)` for typed frontend → backend calls
 - **Linting**: oxlint (via Vite+)
 - **Formatting**: oxfmt (via Vite+)
 - **Testing**: Vitest for all tests
@@ -134,7 +134,7 @@ All tests use Vitest. Frontend E2E uses Playwright (Chromium only, single worker
 - TypeScript strict mode everywhere
 - Frontend: `<script setup lang="ts">` with Composition API
 - Backend: NestJS modules with controllers, services, and Zod DTOs
-- API client: `createApiClient(baseURL)` from `@lesbarkeitsindex/api-client`
+- API client: `createApiClient(fetcher)` from `@lesbarkeitsindex/api-client` — caller supplies a configured `$fetch`/ofetch instance (baseURL + credentials)
 - DB changes: edit `prisma/schema.prisma` → `vp exec prisma generate` → `vp exec prisma migrate dev`
 - Auth in frontend: `useAuthClient()` composable
 - Runtime config: `useRuntimeConfig().public.apiBase` for API base URL

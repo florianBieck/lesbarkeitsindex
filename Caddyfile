@@ -1,21 +1,10 @@
 lix.florianbieck.com {
 	tls info@florianbieck.com
-	# Same-origin API proxy to avoid third-party cookies/CORS
-	# 1) Auth endpoints are already prefixed with /api/auth in the backend – keep path as-is
-	handle /api/auth/* {
-		reverse_proxy backend:3000
-	}
-	# 2) App API endpoints live at backend root (e.g., /calculate, /config, /results)
-	#    Proxy these paths to backend without any prefix stripping
-	handle /calculate* {
-		reverse_proxy backend:3000
-	}
-	handle /config* {
-		reverse_proxy backend:3000
-	}
-	handle /results* {
-		reverse_proxy backend:3000
-	}
+	# Same-origin API proxy to avoid third-party cookies/CORS.
+	# Auth endpoints keep their /api/auth prefix in the backend; app API
+	# endpoints (/calculate, /config, /results) live at the backend root.
+	@backend path /api/auth/* /calculate* /config* /results*
+	reverse_proxy @backend backend:3000
 	# Everything else goes to the frontend
 	reverse_proxy frontend:3000
 }

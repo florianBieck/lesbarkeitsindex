@@ -88,9 +88,6 @@ importers:
       '@lesbarkeitsindex/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
-      '@nuxt/test-utils':
-        specifier: ^3.21.0
-        version: 3.23.0(@playwright/test@1.59.1)(@vue/test-utils@2.4.6)(crossws@0.4.4(srvx@0.11.15))(happy-dom@20.8.9)(magicast@0.5.2)(playwright-core@1.59.1)(typescript@5.9.3)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3)))
       '@nuxtjs/tailwindcss':
         specifier: ^6.14.0
         version: 6.14.0(magicast@0.5.2)(yaml@2.8.3)
@@ -122,6 +119,9 @@ importers:
         specifier: ^4.6.3
         version: 4.6.4(vue@3.5.32(typescript@5.9.3))
     devDependencies:
+      '@nuxt/test-utils':
+        specifier: ^3.21.0
+        version: 3.23.0(@playwright/test@1.59.1)(@vue/test-utils@2.4.6)(crossws@0.4.4(srvx@0.11.15))(happy-dom@20.8.9)(magicast@0.5.2)(playwright-core@1.59.1)(typescript@5.9.3)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3)))
       '@playwright/test':
         specifier: ^1.58.2
         version: 1.59.1

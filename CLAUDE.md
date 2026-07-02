@@ -96,7 +96,7 @@ BETTER_AUTH_SECRET=dev-secret
 BETTER_AUTH_URL=http://localhost:3000
 ```
 
-Single `.env` at the project root — used by both backend (via `ConfigModule.forRoot()`) and frontend (`NUXT_PUBLIC_API_BASE`, defaults to `http://localhost:3000`).
+Single `.env` at the project root — used by both backend (via `process.loadEnvFile` in `main.ts`) and frontend (`NUXT_PUBLIC_API_BASE`, defaults to `http://localhost:3000`).
 
 ## Testing
 

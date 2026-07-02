@@ -51,7 +51,7 @@ apps/
   backend/          # NestJS/Fastify API
   frontend/         # Nuxt 4 SPA
 packages/
-  api-client/       # Typed API client (ofetch)
+  api-client/       # Typed API client (injected $fetch)
 r-sidecar/          # R Plumber NLP service (Docker only)
 ```
 

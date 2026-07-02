@@ -1,7 +1,9 @@
+# Production overlay — ALWAYS use together with the base file:
+#   docker compose -f docker-compose.yml -f docker-compose-prod.yml up -d
+# Requires Docker Compose v2.24.4+ (for the !reset merge tags).
 services:
   caddy:
     image: caddy:2-alpine
-    container_name: caddy
     restart: unless-stopped
     ports:
       - '80:80'
@@ -17,7 +19,6 @@ services:
 
   backend:
     image: ghcr.io/florianbieck/lesbarkeitsindex/backend:latest
-    container_name: backend
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://admin:admin@postgres:5432/lesbarkeitsindex
@@ -31,12 +32,9 @@ services:
         condition: service_started
       r-sidecar:
         condition: service_healthy
-    expose:
-      - '3000'
 
   frontend:
     image: ghcr.io/florianbieck/lesbarkeitsindex/frontend:latest
-    container_name: frontend
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -45,38 +43,17 @@ services:
       - NUXT_PUBLIC_API_BASE=https://lix.florianbieck.com
     depends_on:
       - backend
-    expose:
-      - '3000'
 
+  # Diffs against the base file only: pull the ghcr image instead of building,
+  # and do not publish the dev port. restart/healthcheck are inherited.
   r-sidecar:
     image: ghcr.io/florianbieck/lesbarkeitsindex/r-sidecar:latest
-    container_name: r-sidecar
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:8787/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    expose:
-      - '8787'
+    build: !reset null
+    ports: !reset []
 
-  postgres:
-    ports:
-      - ${POSTGRES_PORT:-5432}:5432
-    container_name: postgres
-    logging:
-      options:
-        max-size: 1g
-    volumes:
-      - postgres_db:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=lesbarkeitsindex
-    image: postgres:16
+  # postgres: fully inherited from docker-compose.yml (image, env, volume,
+  # healthcheck, published port, logging) — no overrides needed.
 
 volumes:
-  postgres_db:
   caddy_data:
   caddy_config:

@@ -22,12 +22,12 @@ jobs:
         run: |
           ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           ssh root@${{ secrets.SSH_HOST }} mkdir -p /opt/lesbarkeitsindex
-          scp -r docker-compose-prod.yml Caddyfile root@${{ secrets.SSH_HOST }}:/opt/lesbarkeitsindex/
+          scp -r docker-compose.yml docker-compose-prod.yml Caddyfile root@${{ secrets.SSH_HOST }}:/opt/lesbarkeitsindex/
 
       - name: Deploy new docker stack at Hetzner Server
         run: |
           ssh-keyscan ${{ secrets.SSH_HOST }} >> known_hosts
           docker context create prod --docker "host=ssh://root@${{ secrets.SSH_HOST }}"
           docker context use prod
-          docker compose pull
-          docker compose up -d
+          docker compose -f docker-compose.yml -f docker-compose-prod.yml pull
+          docker compose -f docker-compose.yml -f docker-compose-prod.yml up -d

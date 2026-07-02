@@ -1,3 +1,11 @@
+/** Alles außer deutschen Buchstaben (A–Z, Umlaute, ß). */
+const NON_LETTERS = /[^A-Za-zÄÖÜäöüß]/g;
+
+/** Entfernt alle Nicht-Buchstaben aus einem Wort — gemeinsamer Strip für alle Zähler. */
+export function stripNonLetters(word: string): string {
+  return word.replace(NON_LETTERS, '');
+}
+
 /*
     Coverage: Anzahl der Wörter mit komplexen Silben (≥3 Silben), je Wort max. einmal.
     `words` bleibt Teil der Signatur (Aufrufer übergeben beide Arrays), die Zählung
@@ -22,7 +30,7 @@ export function calculateAverageCharsPerSyllable(
   let totalChars = 0;
   let totalSyllables = 0;
   for (let i = 0; i < words.length; i++) {
-    const letters = words[i].replace(/[^A-Za-zÄÖÜäöüß]/g, '');
+    const letters = stripNonLetters(words[i]);
     totalChars += letters.length;
     totalSyllables += syllablesPerWord[i];
   }
@@ -91,9 +99,7 @@ export function calculateProportionOfLongWords(words: readonly string[]): number
   const LONG_WORD_MIN_LENGTH = 7;
   let longWordCount = 0;
   for (const rawWord of words) {
-    const word = rawWord.replace(/[^A-Za-zÄÖÜäöüß]/g, '');
-    if (!word) continue;
-    if (word.length >= LONG_WORD_MIN_LENGTH) {
+    if (stripNonLetters(rawWord).length >= LONG_WORD_MIN_LENGTH) {
       longWordCount++;
     }
   }

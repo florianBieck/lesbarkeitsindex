@@ -131,9 +131,9 @@ export function computeReadability(
     proportionOfWordsWithMultiMemberedGraphemes,
     proportionOfWordsWithRareGraphemes,
   } = components;
-  const abbreviations = calculateAbbreviations(words);
+  const countAbbreviations = calculateAbbreviations(words);
   const countNumbers = calculateNumbers(words);
-  const specialCharacters = calculateSpecialCharacters(bodyText);
+  const countSpecialCharacters = calculateSpecialCharacters(bodyText);
   const averageWordLength = calculateAverageWordLength(words);
   const averageCharsPerSyllable = calculateAverageCharsPerSyllable(words, syllablesPerWord);
   const averageSyllablesPerWord = calculateAverageSyllablesPerWord(words, syllablesPerWord);
@@ -191,9 +191,9 @@ export function computeReadability(
     proportionOfWordsWithRareGraphemes,
     lix,
     ttr,
-    countAbbreviations: abbreviations.count,
+    countAbbreviations,
     countNumbers,
-    countSpecialCharacters: specialCharacters.count,
+    countSpecialCharacters,
     proNIndex,
     subordinateClauseRatio,
     passiveCount,

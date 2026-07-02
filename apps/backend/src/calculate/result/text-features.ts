@@ -95,23 +95,19 @@ const ACRONYMS = new Set([
   'BUND',
 ]);
 
-export function calculateAbbreviations(words: readonly string[]): {
-  count: number;
-  matches: string[];
-} {
-  if (words.length === 0) return { count: 0, matches: [] };
-  const matches: string[] = [];
+export function calculateAbbreviations(words: readonly string[]): number {
+  let count = 0;
   for (const word of words) {
     const lower = word.toLowerCase().replace(/[,;:!?]$/, '');
-    if (UNIT_ABBREVIATIONS.has(lower)) {
-      matches.push(word);
-    } else if (DOTTED_ABBREVIATIONS.has(lower)) {
-      matches.push(word);
-    } else if (ACRONYMS.has(word.replace(/[,;:!?]$/, ''))) {
-      matches.push(word);
+    if (
+      UNIT_ABBREVIATIONS.has(lower) ||
+      DOTTED_ABBREVIATIONS.has(lower) ||
+      ACRONYMS.has(word.replace(/[,;:!?]$/, ''))
+    ) {
+      count++;
     }
   }
-  return { count: matches.length, matches };
+  return count;
 }
 
 /*
@@ -123,11 +119,8 @@ export function calculateAbbreviations(words: readonly string[]): {
  */
 const SPECIAL_CHAR_REGEX = /[?!""„"»«'‚'()%&§#@–—/]/g;
 
-export function calculateSpecialCharacters(text: string): { count: number; matches: string[] } {
-  if (!text) return { count: 0, matches: [] };
-  const found = text.match(SPECIAL_CHAR_REGEX);
-  if (!found) return { count: 0, matches: [] };
-  return { count: found.length, matches: found };
+export function calculateSpecialCharacters(text: string): number {
+  return (text.match(SPECIAL_CHAR_REGEX) ?? []).length;
 }
 
 /*
@@ -136,16 +129,12 @@ export function calculateSpecialCharacters(text: string): { count: number; match
     Single-digit numbers are ignored (not difficult).
  */
 export function calculateNumbers(words: readonly string[]): number {
-  if (words.length === 0) return 0;
   let count = 0;
   for (const word of words) {
-    // Match tokens that are purely numeric (with optional dot separators)
+    // Purely numeric tokens (with optional dot separators): the pattern requires
+    // a digit at both ends, so at least two digits remain after stripping dots.
     const cleaned = word.replace(/[,;:!?]$/, '');
-    if (!/^\d[\d.]*\d$|^\d{2,}$/.test(cleaned)) continue;
-    const digitsOnly = cleaned.replace(/\./g, '');
-    if (!/^\d+$/.test(digitsOnly)) continue;
-    if (digitsOnly.length < 2) continue;
-    count++;
+    if (/^\d[\d.]*\d$|^\d{2,}$/.test(cleaned)) count++;
   }
   return count;
 }

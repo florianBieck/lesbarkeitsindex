@@ -279,9 +279,9 @@ describe('metric functions with pre-computed arrays', () => {
     expect(calculateWstf([], [], [])).toBe(0);
     expect(calculateTTR([])).toBe(0);
     expect(calculateAverageCharsPerSyllable([], [])).toBe(0);
-    expect(calculateAbbreviations([]).count).toBe(0);
+    expect(calculateAbbreviations([])).toBe(0);
     expect(calculateNumbers([])).toBe(0);
-    expect(calculateSpecialCharacters('').count).toBe(0);
+    expect(calculateSpecialCharacters('')).toBe(0);
   });
 
   describe('calculateTTR', () => {
@@ -326,40 +326,27 @@ describe('metric functions with pre-computed arrays', () => {
 
   describe('calculateAbbreviations', () => {
     test('detects unit abbreviations', () => {
-      const result = calculateAbbreviations(['5', 'km', 'und', '3', 'kg']);
-      expect(result.count).toBe(2);
+      expect(calculateAbbreviations(['5', 'km', 'und', '3', 'kg'])).toBe(2);
     });
 
     test('detects common abbreviations with dots', () => {
-      const result = calculateAbbreviations(['z.B.', 'ist', 'd.h.', 'gut']);
-      expect(result.count).toBe(2);
+      expect(calculateAbbreviations(['z.B.', 'ist', 'd.h.', 'gut'])).toBe(2);
     });
 
     test('detects acronyms', () => {
-      const result = calculateAbbreviations(['Die', 'EU', 'und', 'USA']);
-      expect(result.count).toBe(2);
+      expect(calculateAbbreviations(['Die', 'EU', 'und', 'USA'])).toBe(2);
     });
 
     test('detects mixed abbreviation types', () => {
-      const result = calculateAbbreviations(['Die', 'EU', 'hat', 'ca.', '5', 'km']);
-      expect(result.count).toBe(3);
+      expect(calculateAbbreviations(['Die', 'EU', 'hat', 'ca.', '5', 'km'])).toBe(3);
     });
 
     test('returns 0 for text without abbreviations', () => {
-      const result = calculateAbbreviations(['Der', 'Hund', 'läuft']);
-      expect(result.count).toBe(0);
+      expect(calculateAbbreviations(['Der', 'Hund', 'läuft'])).toBe(0);
     });
 
     test('returns 0 for empty array', () => {
-      const result = calculateAbbreviations([]);
-      expect(result.count).toBe(0);
-    });
-
-    test('returns matched abbreviations list', () => {
-      const result = calculateAbbreviations(['Die', 'EU', 'hat', 'ca.', '5', 'km']);
-      expect(result.matches).toContain('EU');
-      expect(result.matches).toContain('ca.');
-      expect(result.matches).toContain('km');
+      expect(calculateAbbreviations([])).toBe(0);
     });
   });
 
@@ -403,39 +390,33 @@ describe('metric functions with pre-computed arrays', () => {
 
   describe('calculateSpecialCharacters', () => {
     test('counts question and exclamation marks', () => {
-      expect(calculateSpecialCharacters('Was ist das? Toll!').count).toBe(2);
+      expect(calculateSpecialCharacters('Was ist das? Toll!')).toBe(2);
     });
 
     test('counts quotation marks (German style)', () => {
-      expect(calculateSpecialCharacters('Er sagte: „Hallo"').count).toBe(2);
+      expect(calculateSpecialCharacters('Er sagte: „Hallo"')).toBe(2);
     });
 
     test('counts parentheses', () => {
-      expect(calculateSpecialCharacters('Der Hund (groß) läuft').count).toBe(2);
+      expect(calculateSpecialCharacters('Der Hund (groß) läuft')).toBe(2);
     });
 
     test('counts special symbols (%, &, §, #, @)', () => {
-      expect(calculateSpecialCharacters('50% & §1 #tag @user').count).toBe(5);
+      expect(calculateSpecialCharacters('50% & §1 #tag @user')).toBe(5);
     });
 
     test('counts em-dash and slash', () => {
-      expect(calculateSpecialCharacters('gut \u2013 schlecht und/oder').count).toBe(2);
+      expect(calculateSpecialCharacters('gut \u2013 schlecht und/oder')).toBe(2);
     });
 
     test('does NOT count period, comma, colon, semicolon', () => {
-      expect(calculateSpecialCharacters('Der Hund, die Katze; und: der Vogel.').count).toBe(0);
+      expect(calculateSpecialCharacters('Der Hund, die Katze; und: der Vogel.')).toBe(0);
     });
 
     test('returns 0 for empty string', () => {
-      expect(calculateSpecialCharacters('').count).toBe(0);
+      expect(calculateSpecialCharacters('')).toBe(0);
     });
 
-    test('returns matched characters', () => {
-      const result = calculateSpecialCharacters('50% (gut)');
-      expect(result.matches).toContain('%');
-      expect(result.matches).toContain('(');
-      expect(result.matches).toContain(')');
-    });
   });
 
   describe('calculateProNIndex', () => {

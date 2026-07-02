@@ -1,5 +1,4 @@
-# ---------- Base image with R ----------
-FROM rocker/r-ver:4.4.0 AS base
+FROM rocker/r-ver:4.4.0
 WORKDIR /app
 
 # Install system dependencies (Java for OpenNLP, zlib/sodium for plumber, wget for healthcheck)
@@ -22,9 +21,6 @@ RUN apt-get update -y \
 
 # Configure R to find Java
 RUN R CMD javareconf
-
-# ---------- Install R packages ----------
-FROM base AS deps
 
 # Install CRAN packages (fail build if any package fails to install)
 RUN R -e "\
@@ -51,13 +47,8 @@ RUN R -e "\
   install.packages(pkgs, repos=c('https://cloud.r-project.org/', 'https://undocumeantit.github.io/repos/l10n/')); \
   for (p in pkgs) { if (!requireNamespace(p, quietly=TRUE)) stop(paste('Failed to install:', p)) }"
 
-# ---------- Runtime ----------
-FROM deps AS runner
-WORKDIR /app
-
 COPY r-sidecar/ .
 
-ENV PORT=8787
 EXPOSE 8787
 
 CMD ["Rscript", "start.R"]

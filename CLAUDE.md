@@ -24,8 +24,6 @@ Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`
 - **Testing**: Vitest for all tests
 - **Build**: NestJS SWC compiler (`nest build --builder swc`)
 - **Charts**: Chart.js + `chartjs-plugin-annotation`
-- **Rich text**: Quill
-- **Dates**: Day.js
 
 ## Monorepo Structure
 

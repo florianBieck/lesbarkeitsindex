@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
+import { fromNodeHeaders } from 'better-auth/node';
 import { AuthService } from './auth.service.js';
-import { toWebHeaders } from './web-headers.js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -9,7 +9,7 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<FastifyRequest>();
-    const headers = toWebHeaders(request.headers);
+    const headers = fromNodeHeaders(request.headers);
 
     const session = await this.authService.auth.api.getSession({ headers });
 

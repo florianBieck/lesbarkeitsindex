@@ -32,16 +32,10 @@ import { computeWordComplexity } from './word-complexity.js';
 import { countNonEmptyLines, type TextType } from './text-type.js';
 import { resolveTextShape } from './text-shape.js';
 
-export * from './basic-metrics.js';
-export * from './grapheme-analysis.js';
-export * from './indices.js';
-export * from './linguistic-features.js';
-export * from './text-features.js';
-export * from './title-guard.js';
-export * from './score-model.js';
-export * from './text-type.js';
-export * from './text-shape.js';
-export * from './word-complexity.js';
+// Nur was der CalculateService konsumiert; Spezifikationen importieren die
+// Einzelmodule direkt.
+export { resolveTextShape } from './text-shape.js';
+export type { TextType } from './text-type.js';
 
 /**
  * Effektive Konfiguration des Aufschlagsmodells: Aufschlagskoeffizient α plus die

@@ -1,31 +1,38 @@
 import { test, expect, describe } from 'vitest';
+import { computeReadability, type ConfigWeights } from './index.js';
 import {
-  computeReadability,
-  type ConfigWeights,
   countWordsWithComplexSyllables,
-  countWordsWithMultiMemberedGraphemes,
-  countWordsWithRareGraphemes,
-  countWordsWithConsonantClusters,
+  calculateAverageCharsPerSyllable,
   calculateAverageWordLength,
   calculateAverageSyllablesPerWord,
   calculateAveragePhraseLength,
   calculateAverageSyllablesPerPhrase,
   calculateProportionOfLongWords,
+} from './basic-metrics.js';
+import {
+  countWordsWithMultiMemberedGraphemes,
+  countWordsWithRareGraphemes,
+  countWordsWithConsonantClusters,
+} from './grapheme-analysis.js';
+import {
   calculateLix,
   calculateGsmog,
   calculateFleschKincaid,
   calculateWstf,
-  calculateTTR,
-  calculateAverageCharsPerSyllable,
-  calculateAbbreviations,
-  calculateNumbers,
-  calculateSpecialCharacters,
+  calculateRix,
+} from './indices.js';
+import {
   calculateProNIndex,
   calculateSubordinateClauseRatio,
   calculatePassiveCount,
   calculateNominalizations,
-  calculateRix,
-} from './index.js';
+} from './linguistic-features.js';
+import {
+  calculateTTR,
+  calculateAbbreviations,
+  calculateNumbers,
+  calculateSpecialCharacters,
+} from './text-features.js';
 
 const WORDS = ['Der', 'Hund', 'läuft', 'über', 'die', 'Straße'];
 const SYLLABLES = [1, 1, 1, 2, 1, 2];

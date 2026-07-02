@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import MeterGroup from 'primevue/metergroup';
 import { type ResultData } from '~/composables/useApiClient';
+import { niveaustufe, type Severity } from '~/utils/niveaustufe';
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import Fieldset from 'primevue/fieldset';
 
@@ -15,17 +16,10 @@ const Chart = defineAsyncComponent(async () => {
 });
 
 const chartColors = ref({
-  lix: '',
   complexSyllables: '',
   consonantClusters: '',
   multiGraphemes: '',
   rareGraphemes: '',
-  avgWordLength: '',
-  avgPhraseLength: '',
-  avgSyllablesPerWord: '',
-  avgSyllablesPerPhrase: '',
-  proportions: '',
-  counts: '',
 });
 
 const props = defineProps<{
@@ -35,33 +29,32 @@ const props = defineProps<{
 const chartData = ref();
 const chartOptions = ref();
 
-const round2 = (value: unknown) => Math.round(Number(value) * 100) / 100;
+const round2 = (value: number) => Math.round(value * 100) / 100;
 
 // Schwierigkeit: LÜ-LIX als Kopfzahl, WK und Niveaustufe kommen aus dem Backend.
 const lueLix = computed(() => round2(props.result.lueLix));
 const lix = computed(() => round2(props.result.lix));
 const wordComplexity = computed(() => round2(props.result.wordComplexity));
-const level = computed(() => Math.round(Number(props.result.level)));
+const level = computed(() => Math.round(props.result.level));
 const alpha = computed(() => round2(props.result.config.alpha));
 // Doughnut-Gauge auf 0–100 begrenzt; die Mitte zeigt den echten LÜ-LIX-Wert.
 const gauge = computed(() => Math.min(100, Math.max(0, lueLix.value)));
 
-// Niveaustufe-Interpretation ausschließlich aus dem Backend-Wert — keine eigene
-// Stufen-Logik mehr in der Oberfläche (Issue #28).
-const levelInfo = computed(() => {
-  switch (level.value) {
-    case 1:
-      return { description: 'Sehr leicht lesbar', severity: 'success' };
-    case 2:
-      return { description: 'Leicht lesbar', severity: 'success' };
-    case 3:
-      return { description: 'Mittelschwer', severity: 'warn' };
-    case 4:
-      return { description: 'Eher schwer lesbar', severity: 'error' };
-    default:
-      return { description: 'Schwer lesbar', severity: 'error' };
-  }
-});
+// Niveaustufe-Interpretation: Label + Severity kommen aus dem reinen Modul
+// (utils/niveaustufe), nicht aus einem Switch in der Oberfläche.
+const levelInfo = computed(() => niveaustufe(level.value));
+
+// Ampelfarben je Severity (ADR 0003) — eine Tabelle für Gauge (CSS-Variable),
+// Hero-Text (Tailwind-Klasse) und Icon. Stufe 3 ist amber, nicht Gelb.
+const SEVERITY_STYLES: Record<
+  Severity,
+  { readonly chartVar: string; readonly textClass: string; readonly icon: string }
+> = {
+  success: { chartVar: '--p-green-500', textClass: 'text-green-600', icon: 'pi pi-check-circle' },
+  warn: { chartVar: '--p-amber-500', textClass: 'text-amber-700', icon: 'pi pi-exclamation-triangle' },
+  error: { chartVar: '--p-red-500', textClass: 'text-red-600', icon: 'pi pi-times-circle' },
+};
+const severityStyle = computed(() => SEVERITY_STYLES[levelInfo.value.severity]);
 
 const meters = computed(() => {
   const colors = chartColors.value;
@@ -69,22 +62,22 @@ const meters = computed(() => {
     {
       label: 'Drei- und Mehrsilber',
       color: colors.complexSyllables,
-      value: Number(props.result.config.weightComplexSyllables),
+      value: props.result.config.weightComplexSyllables,
     },
     {
       label: 'Mehrgliedrige Grapheme',
       color: colors.multiGraphemes,
-      value: Number(props.result.config.weightMultiMemberedGraphemes),
+      value: props.result.config.weightMultiMemberedGraphemes,
     },
     {
       label: 'Seltene Grapheme',
       color: colors.rareGraphemes,
-      value: Number(props.result.config.weightRareGraphemes),
+      value: props.result.config.weightRareGraphemes,
     },
     {
       label: 'Konsonantenlauthäufung',
       color: colors.consonantClusters,
-      value: Number(props.result.config.weightConsonantClusters),
+      value: props.result.config.weightConsonantClusters,
     },
   ];
 });
@@ -96,7 +89,7 @@ const textTypeLabel = computed(() => (isList.value ? 'Liste' : 'Fließtext'));
 const readingUnitLabel = computed(() => (isList.value ? 'Zeile' : 'Satz'));
 const readingUnitPlural = computed(() => (isList.value ? 'Zeilen' : 'Sätze'));
 const lixLabel = computed(() => (isList.value ? 'LIX' : 'LIX nach Bamberger'));
-const readingUnitCount = computed(() => Number(props.result.countReadingUnits));
+const readingUnitCount = computed(() => props.result.countReadingUnits);
 
 const readabilityIndices = computed(() => [
   { label: 'LÜ-LIX', value: lueLix.value },
@@ -141,32 +134,32 @@ const textStats = computed(() => [
 const complexityFactors = computed(() => [
   {
     label: 'Lange Wörter (6+ Buchstaben)',
-    value: `${Math.round(Number(props.result.proportionOfLongWords) * 10000) / 100}%`,
+    value: `${Math.round(props.result.proportionOfLongWords * 10000) / 100}%`,
     count: null,
   },
   {
     label: 'Drei- und Mehrsilber',
-    value: `${Math.round(Number(props.result.proportionOfWordsWithComplexSyllables) * 10000) / 100}%`,
-    count: Number(props.result.countWordsWithComplexSyllables),
+    value: `${Math.round(props.result.proportionOfWordsWithComplexSyllables * 10000) / 100}%`,
+    count: props.result.countWordsWithComplexSyllables,
   },
   {
     label: 'Konsonantenlauthäufung',
-    value: `${Math.round(Number(props.result.proportionOfWordsWithConsonantClusters) * 10000) / 100}%`,
-    count: Number(props.result.countWordsWithConsonantClusters),
+    value: `${Math.round(props.result.proportionOfWordsWithConsonantClusters * 10000) / 100}%`,
+    count: props.result.countWordsWithConsonantClusters,
   },
   {
     label: 'Mehrgliedrige Grapheme',
-    value: `${Math.round(Number(props.result.proportionOfWordsWithMultiMemberedGraphemes) * 10000) / 100}%`,
-    count: Number(props.result.countWordsWithMultiMemberedGraphemes),
+    value: `${Math.round(props.result.proportionOfWordsWithMultiMemberedGraphemes * 10000) / 100}%`,
+    count: props.result.countWordsWithMultiMemberedGraphemes,
   },
   {
     label: 'Seltene Grapheme',
-    value: `${Math.round(Number(props.result.proportionOfWordsWithRareGraphemes) * 10000) / 100}%`,
-    count: Number(props.result.countWordsWithRareGraphemes),
+    value: `${Math.round(props.result.proportionOfWordsWithRareGraphemes * 10000) / 100}%`,
+    count: props.result.countWordsWithRareGraphemes,
   },
-  { label: 'Abkürzungen', value: null, count: Number(props.result.countAbbreviations) },
-  { label: 'Zahlen (2+ Ziffern)', value: null, count: Number(props.result.countNumbers) },
-  { label: 'Sonderzeichen', value: null, count: Number(props.result.countSpecialCharacters) },
+  { label: 'Abkürzungen', value: null, count: props.result.countAbbreviations },
+  { label: 'Zahlen (2+ Ziffern)', value: null, count: props.result.countNumbers },
+  { label: 'Sonderzeichen', value: null, count: props.result.countSpecialCharacters },
 ]);
 
 const sentenceComplexity = computed(() => [
@@ -178,44 +171,40 @@ const sentenceComplexity = computed(() => [
     label: 'Nebensätze pro Satz',
     value: round2(props.result.subordinateClauseRatio),
   },
-  { label: 'Passivkonstruktionen', value: Number(props.result.passiveCount) },
-  { label: 'Substantivierungen', value: Number(props.result.nominalizationCount) },
+  { label: 'Passivkonstruktionen', value: props.result.passiveCount },
+  { label: 'Substantivierungen', value: props.result.nominalizationCount },
 ]);
 
 const syllableGroups = computed(() => [
   {
     label: '1 Silbe',
-    count: Number(props.result.countWordsWithOneSyllable),
+    count: props.result.countWordsWithOneSyllable,
     words: props.result.wordsWithOneSyllable,
   },
   {
     label: '2 Silben',
-    count: Number(props.result.countWordsWithTwoSyllable),
+    count: props.result.countWordsWithTwoSyllable,
     words: props.result.wordsWithTwoSyllables,
   },
   {
     label: '3 Silben',
-    count: Number(props.result.countWordsWithThreeSyllable),
+    count: props.result.countWordsWithThreeSyllable,
     words: props.result.wordsWithThreeSyllables,
   },
   {
     label: '4 Silben',
-    count: Number(props.result.countWordsWithFourSyllable),
+    count: props.result.countWordsWithFourSyllable,
     words: props.result.wordsWithFourSyllables,
   },
   {
     label: '5+ Silben',
-    count: Number(props.result.countWordsWithFiveSyllable),
+    count: props.result.countWordsWithFiveSyllable,
     words: props.result.wordsWithFiveSyllables,
   },
 ]);
 
-const levelColor = (documentStyle: CSSStyleDeclaration): string => {
-  if (levelInfo.value.severity === 'success')
-    return documentStyle.getPropertyValue('--p-green-500');
-  if (levelInfo.value.severity === 'warn') return documentStyle.getPropertyValue('--p-yellow-500');
-  return documentStyle.getPropertyValue('--p-red-500');
-};
+const levelColor = (documentStyle: CSSStyleDeclaration): string =>
+  documentStyle.getPropertyValue(severityStyle.value.chartVar);
 
 const setChartData = () => {
   if (typeof document === 'undefined') return { datasets: [] };
@@ -275,17 +264,10 @@ watch(
 onMounted(() => {
   const s = getComputedStyle(document.documentElement);
   chartColors.value = {
-    lix: s.getPropertyValue('--p-blue-500'),
     complexSyllables: s.getPropertyValue('--p-amber-500'),
     consonantClusters: s.getPropertyValue('--p-green-500'),
     multiGraphemes: s.getPropertyValue('--p-red-500'),
     rareGraphemes: s.getPropertyValue('--p-violet-500'),
-    avgWordLength: s.getPropertyValue('--p-amber-700'),
-    avgPhraseLength: s.getPropertyValue('--p-amber-600'),
-    avgSyllablesPerWord: s.getPropertyValue('--p-pink-500'),
-    avgSyllablesPerPhrase: s.getPropertyValue('--p-green-600'),
-    proportions: s.getPropertyValue('--p-cyan-500'),
-    counts: s.getPropertyValue('--p-surface-500'),
   };
   chartData.value = setChartData();
   chartOptions.value = setChartOptions();
@@ -308,21 +290,10 @@ onMounted(() => {
       />
       <p
         class="text-lg font-medium text-center flex items-center justify-center gap-2"
-        :class="{
-          'text-green-600': levelInfo.severity === 'success',
-          'text-amber-700': levelInfo.severity === 'warn',
-          'text-red-600': levelInfo.severity === 'error',
-        }"
+        :class="severityStyle.textClass"
       >
-        <i
-          :class="{
-            'pi pi-check-circle': levelInfo.severity === 'success',
-            'pi pi-exclamation-triangle': levelInfo.severity === 'warn',
-            'pi pi-times-circle': levelInfo.severity === 'error',
-          }"
-          aria-hidden="true"
-        />
-        Niveaustufe {{ level }} &mdash; {{ levelInfo.description }}
+        <i :class="severityStyle.icon" aria-hidden="true" />
+        Niveaustufe {{ level }} &mdash; {{ levelInfo.label }}
       </p>
     </div>
 
@@ -449,14 +420,6 @@ onMounted(() => {
             <h3 class="font-medium text-surface-700 mb-2">Wörter ({{ result.words?.length }})</h3>
             <div class="flex flex-wrap gap-1">
               <Chip v-for="(word, index) in result.words" :key="index" :label="word" />
-            </div>
-          </div>
-          <div>
-            <h3 class="font-medium text-surface-700 mb-2">
-              Silben ({{ result.syllables?.length }})
-            </h3>
-            <div class="flex flex-wrap gap-1">
-              <Chip v-for="(syllable, index) in result.syllables" :key="index" :label="syllable" />
             </div>
           </div>
         </div>

@@ -1,10 +1,13 @@
 import { ofetch, type $Fetch } from 'ofetch';
+import { z } from 'zod';
 
 /** Texttyp eines Textes (ADR 0002): Fließtext oder Liste. */
-export type TextType = 'prose' | 'list';
+export const textTypeSchema = z.enum(['prose', 'list']);
+export type TextType = z.infer<typeof textTypeSchema>;
 
 /** Leseeinheit (ADR 0002): Satz bei Fließtext, Zeile bei Liste. */
-export type ReadingUnit = 'sentence' | 'line';
+export const readingUnitSchema = z.enum(['sentence', 'line']);
+export type ReadingUnit = z.infer<typeof readingUnitSchema>;
 
 /**
  * Heuristische Texttyp-Erkennung (ADR 0002, Issue #30). Liefert „list", wenn
@@ -32,87 +35,86 @@ export function detectTextType(text: string): TextType {
   return withoutTerminal > withTerminal ? 'list' : 'prose';
 }
 
-/** Leseeinheit aus dem Texttyp (ADR 0002). */
-export function readingUnitForTextType(textType: TextType): ReadingUnit {
-  return textType === 'list' ? 'line' : 'sentence';
-}
+/**
+ * Datenvertrag der API — einzige Quelle der Wahrheit für die Antwortform.
+ * Das Backend liefert durchgängig Zahlen (kein Decimal-String mehr), daher sind
+ * alle Kennzahlen `z.number()`. `z.infer` leitet die Typen ab; die Schemas
+ * können bei Bedarf zur Laufzeit validieren.
+ */
+export const configSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  alpha: z.number(),
+  weightComplexSyllables: z.number(),
+  weightMultiMemberedGraphemes: z.number(),
+  weightRareGraphemes: z.number(),
+  weightConsonantClusters: z.number(),
+});
+export type Config = z.infer<typeof configSchema>;
 
-export interface Config {
-  id: string;
-  createdAt: string;
-  alpha: string;
-  weightComplexSyllables: string;
-  weightMultiMemberedGraphemes: string;
-  weightRareGraphemes: string;
-  weightConsonantClusters: string;
-  [key: string]: unknown;
-}
-
-export interface ResultData {
-  id: string;
-  createdAt: string;
-  countWords: string;
-  countPhrases: string;
-  countSyllables: string;
-  countMultipleWords: string;
-  countWordsWithComplexSyllables: string;
-  countWordsWithConsonantClusters: string;
-  countWordsWithMultiMemberedGraphemes: string;
-  countWordsWithRareGraphemes: string;
-  countWordsWithOneSyllable: string;
-  countWordsWithTwoSyllable: string;
-  countWordsWithThreeSyllable: string;
-  countWordsWithFourSyllable: string;
-  countWordsWithFiveSyllable: string;
-  averageWordLength: string;
-  averagePhraseLength: string;
-  averageCharsPerSyllable: string;
-  averageSyllablesPerWord: string;
-  averageSyllablesPerPhrase: string;
-  proportionOfLongWords: string;
-  proportionOfWordsWithComplexSyllables: string;
-  proportionOfWordsWithConsonantClusters: string;
-  proportionOfWordsWithMultiMemberedGraphemes: string;
-  proportionOfWordsWithRareGraphemes: string;
-  lix: string;
-  ratte: string;
-  ratteLevel: string;
-  gsmog: string;
-  wst4: string;
-  fleschKincaid: string;
-  ttr: string;
-  countAbbreviations: string;
-  countNumbers: string;
-  countNumbersTwoDigit: string;
-  countNumbersThreeDigit: string;
-  countNumbersFourDigit: string;
-  countNumbersFivePlusDigit: string;
-  countSpecialCharacters: string;
-  proNIndex: string;
-  subordinateClauseRatio: string;
-  passiveCount: string;
-  nominalizationCount: string;
-  wordComplexity: string;
-  lueLix: string;
-  level: string;
-  textType: TextType;
-  readingUnit: ReadingUnit;
-  detectedTextType: TextType;
-  countReadingUnits: string;
-  text: string;
-  title: string;
-  words: string[];
-  wordsWithOneSyllable: string[];
-  wordsWithTwoSyllables: string[];
-  wordsWithThreeSyllables: string[];
-  wordsWithFourSyllables: string[];
-  wordsWithFiveSyllables: string[];
-  phrases: string[];
-  syllables: string[];
-  hashText: string;
-  config: Config;
-  configId: string;
-}
+export const resultDataSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  countWords: z.number(),
+  countPhrases: z.number(),
+  countSyllables: z.number(),
+  countWordsWithComplexSyllables: z.number(),
+  countWordsWithConsonantClusters: z.number(),
+  countWordsWithMultiMemberedGraphemes: z.number(),
+  countWordsWithRareGraphemes: z.number(),
+  countWordsWithOneSyllable: z.number(),
+  countWordsWithTwoSyllable: z.number(),
+  countWordsWithThreeSyllable: z.number(),
+  countWordsWithFourSyllable: z.number(),
+  countWordsWithFiveSyllable: z.number(),
+  averageWordLength: z.number(),
+  averagePhraseLength: z.number(),
+  averageCharsPerSyllable: z.number(),
+  averageSyllablesPerWord: z.number(),
+  averageSyllablesPerPhrase: z.number(),
+  proportionOfLongWords: z.number(),
+  proportionOfWordsWithComplexSyllables: z.number(),
+  proportionOfWordsWithConsonantClusters: z.number(),
+  proportionOfWordsWithMultiMemberedGraphemes: z.number(),
+  proportionOfWordsWithRareGraphemes: z.number(),
+  lix: z.number(),
+  ratte: z.number(),
+  gsmog: z.number(),
+  wst4: z.number(),
+  fleschKincaid: z.number(),
+  ttr: z.number(),
+  countAbbreviations: z.number(),
+  countNumbers: z.number(),
+  countNumbersTwoDigit: z.number(),
+  countNumbersThreeDigit: z.number(),
+  countNumbersFourDigit: z.number(),
+  countNumbersFivePlusDigit: z.number(),
+  countSpecialCharacters: z.number(),
+  proNIndex: z.number(),
+  subordinateClauseRatio: z.number(),
+  passiveCount: z.number(),
+  nominalizationCount: z.number(),
+  wordComplexity: z.number(),
+  lueLix: z.number(),
+  level: z.number(),
+  textType: textTypeSchema,
+  readingUnit: readingUnitSchema,
+  detectedTextType: textTypeSchema,
+  countReadingUnits: z.number(),
+  text: z.string(),
+  title: z.string(),
+  words: z.array(z.string()),
+  wordsWithOneSyllable: z.array(z.string()),
+  wordsWithTwoSyllables: z.array(z.string()),
+  wordsWithThreeSyllables: z.array(z.string()),
+  wordsWithFourSyllables: z.array(z.string()),
+  wordsWithFiveSyllables: z.array(z.string()),
+  phrases: z.array(z.string()),
+  hashText: z.string(),
+  config: configSchema,
+  configId: z.string(),
+});
+export type ResultData = z.infer<typeof resultDataSchema>;
 
 export interface ResultsResponse {
   data: ResultData[];
@@ -144,23 +146,17 @@ export interface UpdateConfigRequest {
   weightConsonantClusters: number;
 }
 
-export interface ApiClient {
-  getConfig(): Promise<Config>;
-  updateConfig(body: UpdateConfigRequest): Promise<Config>;
-  calculate(body: CalculateRequest): Promise<ResultData>;
-  getResults(query?: { page?: number; limit?: number }): Promise<ResultsResponse>;
-}
-
-export function createApiClient(baseURL: string): ApiClient {
+export function createApiClient(baseURL: string) {
   const api: $Fetch = ofetch.create({
     baseURL,
     credentials: 'include',
   });
 
   return {
-    getConfig: () => api('/config'),
-    updateConfig: (body) => api('/config', { method: 'POST', body }),
-    calculate: (body) => api('/calculate', { method: 'POST', body }),
-    getResults: (query) => api('/results', { query }),
+    getConfig: () => api<Config>('/config'),
+    updateConfig: (body: UpdateConfigRequest) => api<Config>('/config', { method: 'POST', body }),
+    calculate: (body: CalculateRequest) => api<ResultData>('/calculate', { method: 'POST', body }),
+    getResults: (query?: { page?: number; limit?: number }) =>
+      api<ResultsResponse>('/results', { query }),
   };
 }

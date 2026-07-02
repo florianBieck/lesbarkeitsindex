@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import ResultView from '~/components/result-view.vue';
-import type { ResultData } from '~/composables/useApiClient';
+import type { ResultData, Config } from '~/composables/useApiClient';
 
 // The score chart loads chart.js lazily; happy-dom has no canvas support,
 // so the chart modules are replaced with inert stand-ins. `__esModule: true`
@@ -25,68 +25,66 @@ vi.mock('chartjs-plugin-annotation', () => ({
   default: {},
 }));
 
-const makeConfig = (overrides: Record<string, string> = {}) => ({
+const makeConfig = (overrides: Partial<Config> = {}): Config => ({
   id: 'config-1',
   createdAt: '2026-06-12T08:00:00.000Z',
-  alpha: '0.3',
-  weightComplexSyllables: '50',
-  weightMultiMemberedGraphemes: '25',
-  weightRareGraphemes: '12.5',
-  weightConsonantClusters: '12.5',
+  alpha: 0.3,
+  weightComplexSyllables: 50,
+  weightMultiMemberedGraphemes: 25,
+  weightRareGraphemes: 12.5,
+  weightConsonantClusters: 12.5,
   ...overrides,
 });
 
 const makeResult = (overrides: Partial<ResultData> = {}): ResultData => ({
   id: 'result-1',
   createdAt: '2026-06-12T08:00:00.000Z',
-  countWords: '8',
-  countPhrases: '2',
-  countSyllables: '13',
-  countMultipleWords: '0',
-  countWordsWithComplexSyllables: '1',
-  countWordsWithConsonantClusters: '1',
-  countWordsWithMultiMemberedGraphemes: '2',
-  countWordsWithRareGraphemes: '1',
-  countWordsWithOneSyllable: '4',
-  countWordsWithTwoSyllable: '3',
-  countWordsWithThreeSyllable: '0',
-  countWordsWithFourSyllable: '1',
-  countWordsWithFiveSyllable: '0',
-  averageWordLength: '4.6',
-  averagePhraseLength: '4',
-  averageCharsPerSyllable: '2.8',
-  averageSyllablesPerWord: '1.6',
-  averageSyllablesPerPhrase: '6.5',
-  proportionOfLongWords: '0.25',
-  proportionOfWordsWithComplexSyllables: '0.125',
-  proportionOfWordsWithConsonantClusters: '0.125',
-  proportionOfWordsWithMultiMemberedGraphemes: '0.25',
-  proportionOfWordsWithRareGraphemes: '0.125',
-  lix: '29.5',
-  ratte: '2.4',
-  ratteLevel: '1',
-  gsmog: '4.2',
-  wst4: '3.1',
-  fleschKincaid: '68.4',
-  ttr: '0.95',
-  countAbbreviations: '0',
-  countNumbers: '0',
-  countNumbersTwoDigit: '0',
-  countNumbersThreeDigit: '0',
-  countNumbersFourDigit: '0',
-  countNumbersFivePlusDigit: '0',
-  countSpecialCharacters: '0',
-  proNIndex: '0.5',
-  subordinateClauseRatio: '0',
-  passiveCount: '0',
-  nominalizationCount: '0',
-  wordComplexity: '25',
-  lueLix: '37',
-  level: '2',
+  countWords: 8,
+  countPhrases: 2,
+  countSyllables: 13,
+  countWordsWithComplexSyllables: 1,
+  countWordsWithConsonantClusters: 1,
+  countWordsWithMultiMemberedGraphemes: 2,
+  countWordsWithRareGraphemes: 1,
+  countWordsWithOneSyllable: 4,
+  countWordsWithTwoSyllable: 3,
+  countWordsWithThreeSyllable: 0,
+  countWordsWithFourSyllable: 1,
+  countWordsWithFiveSyllable: 0,
+  averageWordLength: 4.6,
+  averagePhraseLength: 4,
+  averageCharsPerSyllable: 2.8,
+  averageSyllablesPerWord: 1.6,
+  averageSyllablesPerPhrase: 6.5,
+  proportionOfLongWords: 0.25,
+  proportionOfWordsWithComplexSyllables: 0.125,
+  proportionOfWordsWithConsonantClusters: 0.125,
+  proportionOfWordsWithMultiMemberedGraphemes: 0.25,
+  proportionOfWordsWithRareGraphemes: 0.125,
+  lix: 29.5,
+  ratte: 2.4,
+  gsmog: 4.2,
+  wst4: 3.1,
+  fleschKincaid: 68.4,
+  ttr: 0.95,
+  countAbbreviations: 0,
+  countNumbers: 0,
+  countNumbersTwoDigit: 0,
+  countNumbersThreeDigit: 0,
+  countNumbersFourDigit: 0,
+  countNumbersFivePlusDigit: 0,
+  countSpecialCharacters: 0,
+  proNIndex: 0.5,
+  subordinateClauseRatio: 0,
+  passiveCount: 0,
+  nominalizationCount: 0,
+  wordComplexity: 25,
+  lueLix: 37,
+  level: 2,
   textType: 'prose',
   readingUnit: 'sentence',
   detectedTextType: 'prose',
-  countReadingUnits: '2',
+  countReadingUnits: 2,
   text: 'Igel sind nachtaktive Tiere. Sie schlafen am Tag.',
   title: '',
   words: ['Igel', 'sind', 'nachtaktive', 'Tiere', 'Sie', 'schlafen', 'am', 'Tag'],
@@ -96,7 +94,6 @@ const makeResult = (overrides: Partial<ResultData> = {}): ResultData => ({
   wordsWithFourSyllables: ['nachtaktive'],
   wordsWithFiveSyllables: [],
   phrases: ['Igel sind nachtaktive Tiere.', 'Sie schlafen am Tag.'],
-  syllables: ['I', 'gel', 'sind', 'nacht', 'ak', 'ti', 've'],
   hashText: 'abc123',
   config: makeConfig(),
   configId: 'config-1',
@@ -143,13 +140,13 @@ describe('result-view', () => {
   it('leitet die Niveaustufe ausschließlich aus dem Backend-Wert ab (keine eigene Stufen-Logik)', async () => {
     // Hoher LÜ-LIX, aber das Backend meldet Stufe 1 — die Oberfläche folgt dem Backend.
     const wrapper = await mountSuspended(ResultView, {
-      props: { result: makeResult({ lueLix: '90', level: '1' }) },
+      props: { result: makeResult({ lueLix: 90, level: 1 }) },
     });
     expect(wrapper.text()).toContain('Niveaustufe 1');
     expect(wrapper.text()).toContain('Sehr leicht lesbar');
 
     const harder = await mountSuspended(ResultView, {
-      props: { result: makeResult({ level: '4' }) },
+      props: { result: makeResult({ level: 4 }) },
     });
     expect(harder.text()).toContain('Niveaustufe 4');
     expect(harder.text()).toContain('Eher schwer lesbar');
@@ -162,10 +159,10 @@ describe('result-view', () => {
       props: {
         result: makeResult({
           config: makeConfig({
-            weightComplexSyllables: '50',
-            weightMultiMemberedGraphemes: '20',
-            weightRareGraphemes: '15',
-            weightConsonantClusters: '10',
+            weightComplexSyllables: 50,
+            weightMultiMemberedGraphemes: 20,
+            weightRareGraphemes: 15,
+            weightConsonantClusters: 10,
           }),
         }),
       },
@@ -200,7 +197,7 @@ describe('result-view', () => {
         result: makeResult({
           textType: 'list',
           readingUnit: 'line',
-          countReadingUnits: '4',
+          countReadingUnits: 4,
         }),
       },
     });
@@ -222,7 +219,7 @@ describe('result-view', () => {
         result: makeResult({
           textType: 'list',
           readingUnit: 'line',
-          countReadingUnits: '4',
+          countReadingUnits: 4,
         }),
       },
     });

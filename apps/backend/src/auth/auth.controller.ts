@@ -1,6 +1,7 @@
 import { All, Controller, Req, Res } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service.js';
+import { toWebHeaders } from './web-headers.js';
 
 @Controller('api/auth')
 export class AuthController {
@@ -9,18 +10,7 @@ export class AuthController {
   @All('*')
   async handleAuth(@Req() req: FastifyRequest, @Res() reply: FastifyReply) {
     const url = new URL(req.url, `http://${req.hostname}`);
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (value !== undefined) {
-        if (Array.isArray(value)) {
-          for (const v of value) {
-            headers.append(key, v);
-          }
-        } else {
-          headers.set(key, String(value));
-        }
-      }
-    }
+    const headers = toWebHeaders(req.headers);
 
     const webRequest = new Request(url.toString(), {
       method: req.method,

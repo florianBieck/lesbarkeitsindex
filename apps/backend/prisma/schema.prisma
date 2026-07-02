@@ -24,7 +24,6 @@ model Result {
   countWords                                  Decimal
   countPhrases                                Decimal
   countSyllables                              Decimal
-  countMultipleWords                          Decimal
   countWordsWithComplexSyllables              Decimal
   countWordsWithConsonantClusters             Decimal
   countWordsWithMultiMemberedGraphemes        Decimal
@@ -46,7 +45,6 @@ model Result {
   proportionOfWordsWithRareGraphemes          Decimal
   lix                                         Decimal
   ratte                                       Decimal
-  ratteLevel                                  Decimal
   gsmog                                       Decimal
   wst4                                        Decimal
   fleschKincaid                               Decimal
@@ -78,7 +76,6 @@ model Result {
   wordsWithFourSyllables                      String[]
   wordsWithFiveSyllables                      String[]
   phrases                                     String[]
-  syllables                                   String[]
   hashText                                    String
   config                                      Config   @relation(fields: [configId], references: [id])
   configId                                    String

@@ -26,14 +26,9 @@
           mode="decimal"
           :minFractionDigits="2"
           :maxFractionDigits="2"
-        >
-          <template #incrementbuttonicon>
-            <span class="pi pi-plus" />
-          </template>
-          <template #decrementbuttonicon>
-            <span class="pi pi-minus" />
-          </template>
-        </InputNumber>
+          incrementIcon="pi pi-plus"
+          decrementIcon="pi pi-minus"
+        />
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -55,14 +50,9 @@
             mode="decimal"
             :minFractionDigits="0"
             :maxFractionDigits="2"
-          >
-            <template #incrementbuttonicon>
-              <span class="pi pi-plus" />
-            </template>
-            <template #decrementbuttonicon>
-              <span class="pi pi-minus" />
-            </template>
-          </InputNumber>
+            incrementIcon="pi pi-plus"
+            decrementIcon="pi pi-minus"
+          />
         </div>
         <div class="flex flex-col gap-2 p-4 border rounded-md">
           <label for="weight-multi-graphemes" class="text-sm font-medium"
@@ -80,14 +70,9 @@
             mode="decimal"
             :minFractionDigits="0"
             :maxFractionDigits="2"
-          >
-            <template #incrementbuttonicon>
-              <span class="pi pi-plus" />
-            </template>
-            <template #decrementbuttonicon>
-              <span class="pi pi-minus" />
-            </template>
-          </InputNumber>
+            incrementIcon="pi pi-plus"
+            decrementIcon="pi pi-minus"
+          />
         </div>
         <div class="flex flex-col gap-2 p-4 border rounded-md">
           <label for="weight-rare-graphemes" class="text-sm font-medium"
@@ -105,14 +90,9 @@
             mode="decimal"
             :minFractionDigits="0"
             :maxFractionDigits="2"
-          >
-            <template #incrementbuttonicon>
-              <span class="pi pi-plus" />
-            </template>
-            <template #decrementbuttonicon>
-              <span class="pi pi-minus" />
-            </template>
-          </InputNumber>
+            incrementIcon="pi pi-plus"
+            decrementIcon="pi pi-minus"
+          />
         </div>
         <div class="flex flex-col gap-2 p-4 border rounded-md">
           <label for="weight-consonant-clusters" class="text-sm font-medium"
@@ -130,14 +110,9 @@
             mode="decimal"
             :minFractionDigits="0"
             :maxFractionDigits="2"
-          >
-            <template #incrementbuttonicon>
-              <span class="pi pi-plus" />
-            </template>
-            <template #decrementbuttonicon>
-              <span class="pi pi-minus" />
-            </template>
-          </InputNumber>
+            incrementIcon="pi pi-plus"
+            decrementIcon="pi pi-minus"
+          />
         </div>
       </div>
     </div>
@@ -203,11 +178,11 @@ const formattedWeightSum = computed(() => weightSum.value.toFixed(2).replace(/\.
 onMounted(async () => {
   try {
     const config = await client.getConfig();
-    alpha.value = Number(config.alpha);
-    weightComplexSyllables.value = Number(config.weightComplexSyllables);
-    weightMultiMemberedGraphemes.value = Number(config.weightMultiMemberedGraphemes);
-    weightRareGraphemes.value = Number(config.weightRareGraphemes);
-    weightConsonantClusters.value = Number(config.weightConsonantClusters);
+    alpha.value = config.alpha;
+    weightComplexSyllables.value = config.weightComplexSyllables;
+    weightMultiMemberedGraphemes.value = config.weightMultiMemberedGraphemes;
+    weightRareGraphemes.value = config.weightRareGraphemes;
+    weightConsonantClusters.value = config.weightConsonantClusters;
   } catch (e) {
     console.error('Konfiguration konnte nicht geladen werden', e);
   }

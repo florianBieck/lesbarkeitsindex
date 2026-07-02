@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } fro
 import { FastifyReply } from 'fastify';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuthGuard } from '../auth/auth.guard.js';
+import { toJsonNumbers } from '../serialize.js';
 import { z } from 'zod';
 
 // Toleranz für die Summenprüfung der WK-Gewichte (Gleitkomma-Eingaben).
@@ -42,7 +43,7 @@ export class AppConfigController {
     if (!config) {
       return reply.status(HttpStatus.NOT_FOUND).send();
     }
-    return reply.send(config);
+    return reply.send(toJsonNumbers(config));
   }
 
   @Post()
@@ -66,6 +67,6 @@ export class AppConfigController {
       },
     });
 
-    return reply.send(config);
+    return reply.send(toJsonNumbers(config));
   }
 }

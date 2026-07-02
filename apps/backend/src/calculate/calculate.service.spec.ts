@@ -4,7 +4,6 @@ import { CalculateService } from './calculate.service.js';
 
 type PrismaParam = ConstructorParameters<typeof CalculateService>[0];
 type SidecarParam = ConstructorParameters<typeof CalculateService>[1];
-type ConfigParam = Parameters<CalculateService['calculate']>[1];
 
 const BODY_ANALYSIS = {
   sentences: ['Igel sind nachtaktive Tiere.'],
@@ -13,37 +12,50 @@ const BODY_ANALYSIS = {
   posTags: ['NN', 'VAFIN', 'ADJA', 'NN'],
 };
 
-function makeConfig(): ConfigParam {
-  return {
-    id: 'config-1',
-    alpha: { toNumber: () => 0.3 },
-    weightComplexSyllables: { toNumber: () => 50 },
-    weightMultiMemberedGraphemes: { toNumber: () => 25 },
-    weightRareGraphemes: { toNumber: () => 12.5 },
-    weightConsonantClusters: { toNumber: () => 12.5 },
-  } as unknown as ConfigParam;
-}
+/** Gespeicherte Standardkonfiguration, wie sie prisma.config.findFirst liefert (Decimal-Doubles). */
+const DB_CONFIG = {
+  id: 'config-1',
+  createdAt: new Date('2026-06-24T00:00:00.000Z'),
+  alpha: { toNumber: () => 0.3 },
+  weightComplexSyllables: { toNumber: () => 50 },
+  weightMultiMemberedGraphemes: { toNumber: () => 25 },
+  weightRareGraphemes: { toNumber: () => 12.5 },
+  weightConsonantClusters: { toNumber: () => 12.5 },
+};
 
 function makeService() {
-  const createMock = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+  const resultCreateMock = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
     ...data,
     id: 'result-1',
   }));
+  const configFindFirstMock = vi.fn(async () => DB_CONFIG);
+  const configCreateMock = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+    ...DB_CONFIG,
+    ...data,
+    id: 'config-new',
+  }));
   const analyzeTextMock = vi.fn(async () => BODY_ANALYSIS);
-  const prismaMock = { result: { create: createMock } };
+  const prismaMock = {
+    result: { create: resultCreateMock },
+    config: { findFirst: configFindFirstMock, create: configCreateMock },
+  };
   const rSidecarMock = { analyzeText: analyzeTextMock };
   const service = new CalculateService(
     prismaMock as unknown as PrismaParam,
     rSidecarMock as unknown as SidecarParam,
   );
-  return { service, createMock, analyzeTextMock };
+  return { service, createMock: resultCreateMock, analyzeTextMock };
 }
 
 describe('CalculateService', () => {
   test('übergibt bei erkanntem Titel nur den Fließtext an den R-Sidecar', async () => {
     const { service, analyzeTextMock } = makeService();
 
-    await service.calculate('Der Igel\nIgel sind nachtaktive Tiere.', makeConfig());
+    await service.calculate({
+      text: 'Der Igel\nIgel sind nachtaktive Tiere.',
+      saveResult: false,
+      overrides: {},
+    });
 
     expect(analyzeTextMock).toHaveBeenCalledExactlyOnceWith('Igel sind nachtaktive Tiere.');
   });
@@ -51,7 +63,11 @@ describe('CalculateService', () => {
   test('übergibt einzeiligen Text vollständig an den R-Sidecar', async () => {
     const { service, analyzeTextMock } = makeService();
 
-    await service.calculate('Igel sind nachtaktive Tiere.', makeConfig());
+    await service.calculate({
+      text: 'Igel sind nachtaktive Tiere.',
+      saveResult: false,
+      overrides: {},
+    });
 
     expect(analyzeTextMock).toHaveBeenCalledExactlyOnceWith('Igel sind nachtaktive Tiere.');
   });
@@ -60,7 +76,7 @@ describe('CalculateService', () => {
     const { service, analyzeTextMock } = makeService();
     const text = 'Das ist ein Satz.\nWeiter geht es hier.';
 
-    await service.calculate(text, makeConfig());
+    await service.calculate({ text, saveResult: false, overrides: {} });
 
     expect(analyzeTextMock).toHaveBeenCalledExactlyOnceWith(text);
   });
@@ -69,7 +85,7 @@ describe('CalculateService', () => {
     const { service, createMock } = makeService();
     const text = 'Der Igel\nIgel sind nachtaktive Tiere.';
 
-    await service.calculate(text, makeConfig(), true);
+    await service.calculate({ text, saveResult: true, overrides: {} });
 
     expect(createMock).toHaveBeenCalledTimes(1);
     const { data } = createMock.mock.calls[0]![0];
@@ -78,22 +94,31 @@ describe('CalculateService', () => {
     expect(data['countWords']).toBe(4);
   });
 
-  test('liefert Titel und Config bei saveResult=false zurück', async () => {
+  test('liefert die effektiven Gewichte (numerisch) in result.config bei saveResult=false', async () => {
     const { service, createMock } = makeService();
-    const config = makeConfig();
 
-    const result = await service.calculate('Der Igel\nIgel sind nachtaktive Tiere.', config);
+    const result = await service.calculate({
+      text: 'Der Igel\nIgel sind nachtaktive Tiere.',
+      saveResult: false,
+      overrides: {},
+    });
 
     expect(createMock).not.toHaveBeenCalled();
     expect(result.title).toBe('Der Igel');
-    expect(result.config).toBe(config);
     expect(result.id).toBe('');
+    expect(result.config.id).toBe('config-1');
+    expect(result.config.alpha).toBe(0.3);
+    expect(result.config.weightComplexSyllables).toBe(50);
   });
 
   test('liefert leeren Titel für Text ohne Überschrift zurück', async () => {
     const { service } = makeService();
 
-    const result = await service.calculate('Igel sind nachtaktive Tiere.', makeConfig());
+    const result = await service.calculate({
+      text: 'Igel sind nachtaktive Tiere.',
+      saveResult: false,
+      overrides: {},
+    });
 
     expect(result.title).toBe('');
   });
@@ -105,7 +130,7 @@ describe('CalculateService', () => {
     );
 
     await expect(
-      service.calculate('Der Igel\nIgel schlafen.', makeConfig()),
+      service.calculate({ text: 'Der Igel\nIgel schlafen.', saveResult: false, overrides: {} }),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
@@ -119,7 +144,7 @@ describe('CalculateService', () => {
     });
     const text = 'Sonne\nEis essen\nIm Garten spielen.\nSchwimmen';
 
-    await service.calculate(text, makeConfig(), true, { textTypeOverride: 'list' });
+    await service.calculate({ text, saveResult: true, overrides: {}, textTypeOverride: 'list' });
 
     expect(analyzeTextMock).toHaveBeenCalledExactlyOnceWith(text);
     const { data } = createMock.mock.calls[0]![0];
@@ -135,7 +160,7 @@ describe('CalculateService', () => {
     analyzeTextMock.mockRejectedValueOnce(new Error('kaputt'));
 
     await expect(
-      service.calculate('Der Igel\nIgel schlafen.', makeConfig()),
+      service.calculate({ text: 'Der Igel\nIgel schlafen.', saveResult: false, overrides: {} }),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 });

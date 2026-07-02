@@ -54,6 +54,14 @@ endet und weiterer Text folgt. Wird im Ergebnis ausgewiesen, fließt aber in kei
 Kennzahl ein.
 _Avoid_: Überschrift, Titelzeile
 
+**Textgestalt**:
+Wie ein Text vor jeder Kennzahl in Leseeinheiten zerfällt: sein Texttyp ([[Fließtext]]
+oder [[Liste]], heuristisch erkannt und optional übersteuert), die zugehörige
+[[Leseeinheit]], ein etwaiger [[Titel]] und der titelbereinigte Fließtext, auf dem die
+NLP-Analyse läuft. Einmal aufgelöst, dann sowohl für die Analyse-Eingabe als auch für
+die satzbezogenen Kennzahlen genutzt.
+_Avoid_: Textstruktur (zu allgemein)
+
 ## WK-Komponenten
 
 **Drei- und Mehrsilber**:

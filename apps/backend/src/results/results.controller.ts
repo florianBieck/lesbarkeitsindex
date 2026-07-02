@@ -1,5 +1,6 @@
 import { Controller, Get, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { toJsonNumbers } from '../serialize.js';
 
 @Controller('results')
 export class ResultsController {
@@ -22,7 +23,7 @@ export class ResultsController {
     ]);
 
     return {
-      data,
+      data: toJsonNumbers(data),
       meta: {
         total,
         page,

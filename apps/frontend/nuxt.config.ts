@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     },
   },
   devtools: { enabled: true },
-  modules: ['@nuxt/eslint', '@nuxt/test-utils', '@primevue/nuxt-module', '@nuxtjs/tailwindcss'],
+  modules: ['@nuxt/test-utils', '@primevue/nuxt-module', '@nuxtjs/tailwindcss'],
   primevue: {
     options: {
       theme: {

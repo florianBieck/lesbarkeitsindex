@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "ofetch": "^1.4.0"
+    "ofetch": "^1.4.0",
+    "zod": "^3.25.0"
   }
 }

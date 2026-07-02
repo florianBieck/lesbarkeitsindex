@@ -116,22 +116,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Wait for r-sidecar health
-        run: |
-          for i in $(seq 1 60); do
-            if [ "$(docker inspect -f '{{.State.Running}}' r-sidecar)" != "true" ]; then
-              echo "r-sidecar container exited unexpectedly" >&2
-              docker logs r-sidecar >&2
-              exit 1
-            fi
-            if curl -fsS http://localhost:8787/health > /dev/null 2>&1; then
-              echo "r-sidecar healthy after ~$((i * 3))s"
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "r-sidecar did not become healthy within 180s" >&2
-          docker logs r-sidecar >&2
-          exit 1
+        run: curl -fsS --retry 60 --retry-delay 3 --retry-connrefused --retry-all-errors http://localhost:8787/health
 
       - name: Run e2e tests
         env:
@@ -222,24 +207,7 @@ jobs:
         run: pnpm --filter frontend exec playwright install --with-deps chromium
 
       - name: Wait for r-sidecar health
-        run: |
-          for i in $(seq 1 60); do
-            if [ "$(docker inspect -f '{{.State.Running}}' r-sidecar)" != "true" ]; then
-              echo "r-sidecar container exited unexpectedly" >&2
-              docker logs r-sidecar >&2
-              exit 1
-            fi
-            if curl -fsS http://localhost:8787/health > /dev/null 2>&1; then
-              echo "r-sidecar healthy after ~$((i * 3))s"
-              break
-            fi
-            if [ "$i" -eq 60 ]; then
-              echo "r-sidecar did not become healthy within 180s" >&2
-              docker logs r-sidecar >&2
-              exit 1
-            fi
-            sleep 3
-          done
+        run: curl -fsS --retry 60 --retry-delay 3 --retry-connrefused --retry-all-errors http://localhost:8787/health
 
       # Backend self-seeds the default config (and test users) on boot.
       # Run from apps/backend to match the production Docker start command.
@@ -247,18 +215,7 @@ jobs:
         run: |
           cd apps/backend
           node dist/main.js > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:3000/ > /dev/null 2>&1; then
-              echo "backend up after ~$((i * 2))s"
-              break
-            fi
-            if [ "$i" -eq 30 ]; then
-              echo "backend did not start within 60s" >&2
-              cat "$GITHUB_WORKSPACE/backend.log" >&2
-              exit 1
-            fi
-            sleep 2
-          done
+          curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3000/
 
       - name: Start frontend
         env:
@@ -267,18 +224,7 @@ jobs:
         run: |
           cd apps/frontend
           node .output/server/index.mjs > "$GITHUB_WORKSPACE/frontend.log" 2>&1 &
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:3001/ > /dev/null 2>&1; then
-              echo "frontend up after ~$((i * 2))s"
-              break
-            fi
-            if [ "$i" -eq 30 ]; then
-              echo "frontend did not start within 60s" >&2
-              cat "$GITHUB_WORKSPACE/frontend.log" >&2
-              exit 1
-            fi
-            sleep 2
-          done
+          curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3001/
 
       # No-auth smoke only: homepage (incl. the #27 weighting assertion) + results.
       # Auth-dependent specs (login, navigation, auth-flow) stay local-only.

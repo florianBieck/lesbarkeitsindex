@@ -1,0 +1,99 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
+import { flushPromises } from '@vue/test-utils';
+import ConfigWeightsForm from '~/components/config-weights-form.vue';
+
+/**
+ * Unit-Test für die gemeinsame Gewichtungs-Eingabemaske (Aufschlag α + vier
+ * WK-Gewichte), die von Startseite und Admin-Seite verwendet wird.
+ *
+ * Die Maske besitzt keinen eigenen Zustand: die Seiten binden per v-model.
+ * Beim Mount hydriert sie die Modelle aus der gespeicherten Konfiguration.
+ */
+
+const { getConfigMock } = vi.hoisted(() => ({
+  getConfigMock: vi.fn(),
+}));
+
+// useApiClient wird von der Komponente auto-importiert, daher wird der
+// Auto-Import selbst gemockt statt des Modulpfads.
+mockNuxtImport('useApiClient', () => () => ({
+  getConfig: getConfigMock,
+  updateConfig: vi.fn(),
+  calculate: vi.fn(),
+  getResults: vi.fn(),
+}));
+
+const DB_CONFIG = {
+  id: 'cfg-1',
+  createdAt: '2026-06-12T08:00:00.000Z',
+  alpha: 0.45,
+  weightComplexSyllables: 40,
+  weightMultiMemberedGraphemes: 30,
+  weightRareGraphemes: 20,
+  weightConsonantClusters: 10,
+};
+
+const MODEL_PROPS = {
+  alpha: 0.3,
+  weightComplexSyllables: 50,
+  weightMultiMemberedGraphemes: 25,
+  weightRareGraphemes: 12.5,
+  weightConsonantClusters: 12.5,
+};
+
+describe('ConfigWeightsForm', () => {
+  beforeEach(() => {
+    getConfigMock.mockReset();
+    getConfigMock.mockResolvedValue(DB_CONFIG);
+  });
+
+  it('rendert die fünf Eingabefelder mit den bekannten Ids und deutschen Labels', async () => {
+    const wrapper = await mountSuspended(ConfigWeightsForm, { props: MODEL_PROPS });
+    await flushPromises();
+
+    for (const id of [
+      'param-alpha',
+      'weight-complex-syllables',
+      'weight-multi-graphemes',
+      'weight-rare-graphemes',
+      'weight-consonant-clusters',
+    ]) {
+      expect(wrapper.find(`#${id}`).exists()).toBe(true);
+    }
+
+    const text = wrapper.text();
+    expect(text).toContain('Aufschlag');
+    expect(text).toContain('Drei- und Mehrsilber');
+    expect(text).toContain('Mehrgliedrige Grapheme');
+    expect(text).toContain('Seltene Grapheme');
+    expect(text).toContain('Konsonantenlauthäufung');
+  });
+
+  it('hydriert die Modelle beim Mount aus der gespeicherten Konfiguration', async () => {
+    const onAlpha = vi.fn();
+    const onComplex = vi.fn();
+    const onMulti = vi.fn();
+    const onRare = vi.fn();
+    const onClusters = vi.fn();
+
+    await mountSuspended(ConfigWeightsForm, {
+      props: {
+        ...MODEL_PROPS,
+        'onUpdate:alpha': onAlpha,
+        'onUpdate:weightComplexSyllables': onComplex,
+        'onUpdate:weightMultiMemberedGraphemes': onMulti,
+        'onUpdate:weightRareGraphemes': onRare,
+        'onUpdate:weightConsonantClusters': onClusters,
+      },
+    });
+    await flushPromises();
+
+    expect(getConfigMock).toHaveBeenCalledTimes(1);
+    expect(onAlpha).toHaveBeenCalledWith(0.45);
+    expect(onComplex).toHaveBeenCalledWith(40);
+    expect(onMulti).toHaveBeenCalledWith(30);
+    expect(onRare).toHaveBeenCalledWith(20);
+    expect(onClusters).toHaveBeenCalledWith(10);
+  });
+});

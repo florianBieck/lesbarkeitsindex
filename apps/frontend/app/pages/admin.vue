@@ -8,114 +8,13 @@
       WK-Gewichte. Änderungen wirken auf die nächste Analyse.
     </p>
 
-    <div class="flex flex-col gap-4">
-      <div class="flex flex-col gap-2 p-4 border rounded-md">
-        <label for="param-alpha" class="text-sm font-medium"
-          >Aufschlag &alpha;
-          <span class="text-surface-400 font-normal">(Stärke der Wortkomplexität)</span></label
-        >
-        <InputNumber
-          id="param-alpha"
-          v-model="alpha"
-          fluid
-          showButtons
-          buttonLayout="horizontal"
-          :step="0.05"
-          :min="0"
-          :max="10"
-          mode="decimal"
-          :minFractionDigits="2"
-          :maxFractionDigits="2"
-          incrementIcon="pi pi-plus"
-          decrementIcon="pi pi-minus"
-        />
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-2 p-4 border rounded-md">
-          <label for="weight-complex-syllables" class="text-sm font-medium"
-            >Drei- und Mehrsilber
-            <span class="text-surface-400 font-normal"
-              >(Wörter mit 3 oder mehr Silben)</span
-            ></label
-          >
-          <InputNumber
-            id="weight-complex-syllables"
-            v-model="weightComplexSyllables"
-            fluid
-            showButtons
-            buttonLayout="horizontal"
-            :step="5"
-            :min="0"
-            mode="decimal"
-            :minFractionDigits="0"
-            :maxFractionDigits="2"
-            incrementIcon="pi pi-plus"
-            decrementIcon="pi pi-minus"
-          />
-        </div>
-        <div class="flex flex-col gap-2 p-4 border rounded-md">
-          <label for="weight-multi-graphemes" class="text-sm font-medium"
-            >Mehrgliedrige Grapheme
-            <span class="text-surface-400 font-normal">(z.B. sch, ch, ck, ng)</span></label
-          >
-          <InputNumber
-            id="weight-multi-graphemes"
-            v-model="weightMultiMemberedGraphemes"
-            fluid
-            showButtons
-            buttonLayout="horizontal"
-            :step="5"
-            :min="0"
-            mode="decimal"
-            :minFractionDigits="0"
-            :maxFractionDigits="2"
-            incrementIcon="pi pi-plus"
-            decrementIcon="pi pi-minus"
-          />
-        </div>
-        <div class="flex flex-col gap-2 p-4 border rounded-md">
-          <label for="weight-rare-graphemes" class="text-sm font-medium"
-            >Seltene Grapheme
-            <span class="text-surface-400 font-normal">(ä, ö, ü, ß, c, q, x, y)</span></label
-          >
-          <InputNumber
-            id="weight-rare-graphemes"
-            v-model="weightRareGraphemes"
-            fluid
-            showButtons
-            buttonLayout="horizontal"
-            :step="5"
-            :min="0"
-            mode="decimal"
-            :minFractionDigits="0"
-            :maxFractionDigits="2"
-            incrementIcon="pi pi-plus"
-            decrementIcon="pi pi-minus"
-          />
-        </div>
-        <div class="flex flex-col gap-2 p-4 border rounded-md">
-          <label for="weight-consonant-clusters" class="text-sm font-medium"
-            >Konsonantenlauthäufung
-            <span class="text-surface-400 font-normal">(z.B. Str-, Spr-, -nkt)</span></label
-          >
-          <InputNumber
-            id="weight-consonant-clusters"
-            v-model="weightConsonantClusters"
-            fluid
-            showButtons
-            buttonLayout="horizontal"
-            :step="5"
-            :min="0"
-            mode="decimal"
-            :minFractionDigits="0"
-            :maxFractionDigits="2"
-            incrementIcon="pi pi-plus"
-            decrementIcon="pi pi-minus"
-          />
-        </div>
-      </div>
-    </div>
+    <ConfigWeightsForm
+      v-model:alpha="alpha"
+      v-model:weight-complex-syllables="weightComplexSyllables"
+      v-model:weight-multi-membered-graphemes="weightMultiMemberedGraphemes"
+      v-model:weight-rare-graphemes="weightRareGraphemes"
+      v-model:weight-consonant-clusters="weightConsonantClusters"
+    />
 
     <div class="mt-4 text-sm" :class="weightSumIsValid ? 'text-surface-500' : 'text-red-600 font-medium'" role="status">
       Aktuelle Summe der WK-Gewichte: {{ formattedWeightSum }} (Soll: 100)
@@ -141,11 +40,6 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import Button from 'primevue/button';
-import InputNumber from 'primevue/inputnumber';
-import { useApiClient } from '~/composables/useApiClient';
-
 const WEIGHT_SUM_EPSILON = 0.01;
 const TARGET_WEIGHT_SUM = 100;
 
@@ -174,19 +68,6 @@ const weightSumIsValid = computed(
 );
 
 const formattedWeightSum = computed(() => weightSum.value.toFixed(2).replace(/\.?0+$/, ''));
-
-onMounted(async () => {
-  try {
-    const config = await client.getConfig();
-    alpha.value = config.alpha;
-    weightComplexSyllables.value = config.weightComplexSyllables;
-    weightMultiMemberedGraphemes.value = config.weightMultiMemberedGraphemes;
-    weightRareGraphemes.value = config.weightRareGraphemes;
-    weightConsonantClusters.value = config.weightConsonantClusters;
-  } catch (e) {
-    console.error('Konfiguration konnte nicht geladen werden', e);
-  }
-});
 
 async function saveConfig() {
   validationError.value = '';

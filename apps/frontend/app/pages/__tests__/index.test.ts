@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
 import IndexPage from '~/pages/index.vue';
 
@@ -11,16 +11,18 @@ import IndexPage from '~/pages/index.vue';
  * ihn beim Absenden als Override an die API weitergibt.
  */
 
-const calculateMock = vi.fn();
-const getConfigMock = vi.fn();
+const { calculateMock, getConfigMock } = vi.hoisted(() => ({
+  calculateMock: vi.fn(),
+  getConfigMock: vi.fn(),
+}));
 
-vi.mock('~/composables/useApiClient', () => ({
-  useApiClient: () => ({
-    getConfig: getConfigMock,
-    updateConfig: vi.fn(),
-    calculate: calculateMock,
-    getResults: vi.fn(),
-  }),
+// useApiClient wird von der Seite auto-importiert (kein expliziter Import mehr),
+// daher wird der Auto-Import selbst gemockt statt des Modulpfads.
+mockNuxtImport('useApiClient', () => () => ({
+  getConfig: getConfigMock,
+  updateConfig: vi.fn(),
+  calculate: calculateMock,
+  getResults: vi.fn(),
 }));
 
 const DB_CONFIG = {
@@ -40,7 +42,6 @@ const STUB_RESULT = {
   id: 'r1',
   createdAt: '2026-06-17T10:00:00.000Z',
   countWords: 4,
-  countPhrases: 1,
   countSyllables: 4,
   countWordsWithComplexSyllables: 0,
   countWordsWithConsonantClusters: 0,
@@ -69,10 +70,6 @@ const STUB_RESULT = {
   ttr: 100,
   countAbbreviations: 0,
   countNumbers: 0,
-  countNumbersTwoDigit: 0,
-  countNumbersThreeDigit: 0,
-  countNumbersFourDigit: 0,
-  countNumbersFivePlusDigit: 0,
   countSpecialCharacters: 0,
   proNIndex: 0,
   subordinateClauseRatio: 0,
@@ -94,7 +91,6 @@ const STUB_RESULT = {
   wordsWithFourSyllables: [],
   wordsWithFiveSyllables: [],
   phrases: [],
-  hashText: 'h',
   config: DB_CONFIG,
   configId: 'cfg-1',
 };
@@ -169,5 +165,17 @@ describe('IndexPage — Texttyp-Schalter (Issue #30, ADR 0002 AC3)', () => {
     expect(body.textType).toBe('prose');
     // Die heuristische Erkennung bleibt unverändert sichtbar.
     expect(vm.detectedTextType).toBe('list');
+  });
+
+  it('bindet die Texteingabe als einfaches Textfeld (kein Rich-Text-Editor)', async () => {
+    const wrapper = await mountSuspended(IndexPage);
+    await flushPromises();
+
+    const textarea = wrapper.find('textarea');
+    expect(textarea.exists()).toBe(true);
+
+    await textarea.setValue('Hund\nKatze\nVogel\nMaus');
+    const vm = wrapper.vm as unknown as IndexVm;
+    expect(vm.text).toBe('Hund\nKatze\nVogel\nMaus');
   });
 });

@@ -1,45 +1,50 @@
-import { createHash } from 'crypto';
 import { test, expect, describe } from 'vitest';
+import { computeReadability, type ConfigWeights } from './index.js';
 import {
-  computeReadability,
-  type ConfigWeights,
   countWordsWithComplexSyllables,
-  countWordsWithMultiMemberedGraphemes,
-  countWordsWithRareGraphemes,
-  countWordsWithConsonantClusters,
+  calculateAverageCharsPerSyllable,
   calculateAverageWordLength,
   calculateAverageSyllablesPerWord,
   calculateAveragePhraseLength,
   calculateAverageSyllablesPerPhrase,
   calculateProportionOfLongWords,
+} from './basic-metrics.js';
+import {
+  countWordsWithMultiMemberedGraphemes,
+  countWordsWithRareGraphemes,
+  countWordsWithConsonantClusters,
+} from './grapheme-analysis.js';
+import {
   calculateLix,
   calculateGsmog,
   calculateFleschKincaid,
   calculateWstf,
-  calculateTTR,
-  calculateAverageCharsPerSyllable,
-  calculateAbbreviations,
-  calculateNumbers,
-  calculateSpecialCharacters,
+  calculateRix,
+} from './indices.js';
+import {
   calculateProNIndex,
   calculateSubordinateClauseRatio,
   calculatePassiveCount,
   calculateNominalizations,
-  calculateRix,
-} from './index.js';
+} from './linguistic-features.js';
+import {
+  calculateTTR,
+  calculateAbbreviations,
+  calculateNumbers,
+  calculateSpecialCharacters,
+} from './text-features.js';
 
 const WORDS = ['Der', 'Hund', 'läuft', 'über', 'die', 'Straße'];
-const SENTENCES = ['Der Hund läuft über die Straße.'];
 const SYLLABLES = [1, 1, 1, 2, 1, 2];
 
 describe('metric functions with pre-computed arrays', () => {
   test('countWordsWithComplexSyllables counts words with 3+ syllables', () => {
-    expect(countWordsWithComplexSyllables(WORDS, SYLLABLES)).toBe(0);
-    expect(countWordsWithComplexSyllables(['Ananas'], [3])).toBe(1);
+    expect(countWordsWithComplexSyllables(SYLLABLES)).toBe(0);
+    expect(countWordsWithComplexSyllables([3])).toBe(1);
   });
 
   test('countWordsWithComplexSyllables returns 0 for empty arrays', () => {
-    expect(countWordsWithComplexSyllables([], [])).toBe(0);
+    expect(countWordsWithComplexSyllables([])).toBe(0);
   });
 
   describe('countWordsWithMultiMemberedGraphemes', () => {
@@ -94,18 +99,9 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('countWordsWithComplexSyllables counts complex words in a sentence', () => {
-    const words = [
-      'Die',
-      'Bundesregierung',
-      'hat',
-      'eine',
-      'weitreichende',
-      'Entscheidung',
-      'getroffen',
-    ];
+    // "Bundesregierung" (5), "weitreichende" (4), "Entscheidung" (3), "getroffen" (3)
     const syllables = [1, 5, 1, 2, 4, 3, 3];
-    const result = countWordsWithComplexSyllables(words, syllables);
-    expect(result).toBeGreaterThan(0);
+    expect(countWordsWithComplexSyllables(syllables)).toBe(4);
   });
 
   test('countWordsWithRareGraphemes counts ä, ö, ü, ß, c, q, x, y', () => {
@@ -113,9 +109,7 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('countWordsWithComplexSyllables returns 0 for simple monosyllabic words', () => {
-    const words = ['Der', 'Hund', 'ist', 'alt'];
-    const syllables = [1, 1, 1, 1];
-    expect(countWordsWithComplexSyllables(words, syllables)).toBe(0);
+    expect(countWordsWithComplexSyllables([1, 1, 1, 1])).toBe(0);
   });
 
   describe('countWordsWithConsonantClusters', () => {
@@ -190,18 +184,18 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateAverageSyllablesPerWord computes average', () => {
-    const avg = calculateAverageSyllablesPerWord(WORDS, SYLLABLES);
+    const avg = calculateAverageSyllablesPerWord(SYLLABLES);
     const expected = (1 + 1 + 1 + 2 + 1 + 2) / 6;
     expect(avg).toBeCloseTo(expected, 5);
   });
 
   test('calculateAveragePhraseLength computes words per sentence', () => {
-    const avg = calculateAveragePhraseLength(WORDS, SENTENCES);
+    const avg = calculateAveragePhraseLength(WORDS, 1);
     expect(avg).toBe(6);
   });
 
   test('calculateAverageSyllablesPerPhrase computes syllables per sentence', () => {
-    const avg = calculateAverageSyllablesPerPhrase(SENTENCES, SYLLABLES);
+    const avg = calculateAverageSyllablesPerPhrase(1, SYLLABLES);
     expect(avg).toBeCloseTo(8 / 1, 5);
   });
 
@@ -211,21 +205,17 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateLix computes LIX score', () => {
-    const lix = calculateLix(WORDS, SENTENCES);
+    const lix = calculateLix(WORDS, 1);
     expect(lix).toBeCloseTo(6.0, 1);
   });
 
   test('calculateLix strips hyphens before measuring word length', () => {
-    const words = ['ab-cde', 'Der', 'ist'];
-    const sentences = ['ab-cde Der ist.'];
-    const lix = calculateLix(words, sentences);
+    const lix = calculateLix(['ab-cde', 'Der', 'ist'], 1);
     expect(lix).toBe(3);
   });
 
   test('calculateLix counts hyphenated compound as long when Buchstaben > 6', () => {
-    const words = ['Carl-Heinrich', 'von'];
-    const sentences = ['Carl-Heinrich von.'];
-    const lix = calculateLix(words, sentences);
+    const lix = calculateLix(['Carl-Heinrich', 'von'], 1);
     expect(lix).toBe(52);
   });
 
@@ -248,41 +238,41 @@ describe('metric functions with pre-computed arrays', () => {
   });
 
   test('calculateGsmog computes gSmog score', () => {
-    const gsmog = calculateGsmog(WORDS, SENTENCES, SYLLABLES);
+    const gsmog = calculateGsmog(1, SYLLABLES);
     expect(gsmog).toBeCloseTo(-2, 1);
   });
 
   test('calculateFleschKincaid computes FK score', () => {
-    const fk = calculateFleschKincaid(WORDS, SENTENCES, SYLLABLES);
+    const fk = calculateFleschKincaid(WORDS, 1, SYLLABLES);
     const expected = 0.39 * 6 + 11.8 * (8 / 6) - 15.59;
     expect(fk).toBeCloseTo(expected, 1);
   });
 
   test('calculateWstf computes WSTF score', () => {
-    const wstf = calculateWstf(WORDS, SENTENCES, SYLLABLES);
+    const wstf = calculateWstf(WORDS, 1, SYLLABLES);
     const expected = 0.2656 * 6 + 0.2744 * 0 * 100 - 1.693;
     expect(wstf).toBeCloseTo(expected, 1);
   });
 
   test('all functions handle empty arrays without crashing', () => {
-    expect(countWordsWithComplexSyllables([], [])).toBe(0);
+    expect(countWordsWithComplexSyllables([])).toBe(0);
     expect(countWordsWithMultiMemberedGraphemes([])).toBe(0);
     expect(countWordsWithRareGraphemes([])).toBe(0);
     expect(countWordsWithConsonantClusters([])).toBe(0);
     expect(calculateAverageWordLength([])).toBe(0);
-    expect(calculateAverageSyllablesPerWord([], [])).toBe(0);
-    expect(calculateAveragePhraseLength([], [])).toBe(0);
-    expect(calculateAverageSyllablesPerPhrase([], [])).toBe(0);
+    expect(calculateAverageSyllablesPerWord([])).toBe(0);
+    expect(calculateAveragePhraseLength([], 0)).toBe(0);
+    expect(calculateAverageSyllablesPerPhrase(0, [])).toBe(0);
     expect(calculateProportionOfLongWords([])).toBe(0);
-    expect(calculateLix([], [])).toBe(0);
-    expect(calculateGsmog([], [], [])).toBe(0);
-    expect(calculateFleschKincaid([], [], [])).toBe(0);
-    expect(calculateWstf([], [], [])).toBe(0);
+    expect(calculateLix([], 0)).toBe(0);
+    expect(calculateGsmog(0, [])).toBe(0);
+    expect(calculateFleschKincaid([], 0, [])).toBe(0);
+    expect(calculateWstf([], 0, [])).toBe(0);
     expect(calculateTTR([])).toBe(0);
     expect(calculateAverageCharsPerSyllable([], [])).toBe(0);
-    expect(calculateAbbreviations([]).count).toBe(0);
-    expect(calculateNumbers([]).count).toBe(0);
-    expect(calculateSpecialCharacters('').count).toBe(0);
+    expect(calculateAbbreviations([])).toBe(0);
+    expect(calculateNumbers([])).toBe(0);
+    expect(calculateSpecialCharacters('')).toBe(0);
   });
 
   describe('calculateTTR', () => {
@@ -327,133 +317,97 @@ describe('metric functions with pre-computed arrays', () => {
 
   describe('calculateAbbreviations', () => {
     test('detects unit abbreviations', () => {
-      const result = calculateAbbreviations(['5', 'km', 'und', '3', 'kg']);
-      expect(result.count).toBe(2);
+      expect(calculateAbbreviations(['5', 'km', 'und', '3', 'kg'])).toBe(2);
     });
 
     test('detects common abbreviations with dots', () => {
-      const result = calculateAbbreviations(['z.B.', 'ist', 'd.h.', 'gut']);
-      expect(result.count).toBe(2);
+      expect(calculateAbbreviations(['z.B.', 'ist', 'd.h.', 'gut'])).toBe(2);
     });
 
     test('detects acronyms', () => {
-      const result = calculateAbbreviations(['Die', 'EU', 'und', 'USA']);
-      expect(result.count).toBe(2);
+      expect(calculateAbbreviations(['Die', 'EU', 'und', 'USA'])).toBe(2);
     });
 
     test('detects mixed abbreviation types', () => {
-      const result = calculateAbbreviations(['Die', 'EU', 'hat', 'ca.', '5', 'km']);
-      expect(result.count).toBe(3);
+      expect(calculateAbbreviations(['Die', 'EU', 'hat', 'ca.', '5', 'km'])).toBe(3);
     });
 
     test('returns 0 for text without abbreviations', () => {
-      const result = calculateAbbreviations(['Der', 'Hund', 'läuft']);
-      expect(result.count).toBe(0);
+      expect(calculateAbbreviations(['Der', 'Hund', 'läuft'])).toBe(0);
     });
 
     test('returns 0 for empty array', () => {
-      const result = calculateAbbreviations([]);
-      expect(result.count).toBe(0);
-    });
-
-    test('returns matched abbreviations list', () => {
-      const result = calculateAbbreviations(['Die', 'EU', 'hat', 'ca.', '5', 'km']);
-      expect(result.matches).toContain('EU');
-      expect(result.matches).toContain('ca.');
-      expect(result.matches).toContain('km');
+      expect(calculateAbbreviations([])).toBe(0);
     });
   });
 
   describe('calculateNumbers', () => {
     test('detects 2-digit numbers', () => {
-      const result = calculateNumbers(['Er', 'ist', '72', 'Jahre']);
-      expect(result.count).toBe(1);
-      expect(result.twoDigit).toBe(1);
+      expect(calculateNumbers(['Er', 'ist', '72', 'Jahre'])).toBe(1);
     });
 
     test('detects 3-digit numbers', () => {
-      const result = calculateNumbers(['Es', 'sind', '786', 'Meter']);
-      expect(result.count).toBe(1);
-      expect(result.threeDigit).toBe(1);
+      expect(calculateNumbers(['Es', 'sind', '786', 'Meter'])).toBe(1);
     });
 
     test('detects 4-digit numbers', () => {
-      const result = calculateNumbers(['Im', 'Jahr', '2024']);
-      expect(result.count).toBe(1);
-      expect(result.fourDigit).toBe(1);
+      expect(calculateNumbers(['Im', 'Jahr', '2024'])).toBe(1);
     });
 
     test('detects 5+ digit numbers', () => {
-      const result = calculateNumbers(['87945', 'Einwohner']);
-      expect(result.count).toBe(1);
-      expect(result.fivePlusDigit).toBe(1);
+      expect(calculateNumbers(['87945', 'Einwohner'])).toBe(1);
     });
 
     test('detects numbers with dot separators', () => {
-      const result = calculateNumbers(['5.289', 'Menschen']);
-      expect(result.count).toBe(1);
-      expect(result.fourDigit).toBe(1);
+      expect(calculateNumbers(['5.289', 'Menschen'])).toBe(1);
     });
 
     test('counts multiple numbers of different lengths', () => {
-      const result = calculateNumbers(['72', 'und', '786', 'und', '2024']);
-      expect(result.count).toBe(3);
-      expect(result.twoDigit).toBe(1);
-      expect(result.threeDigit).toBe(1);
-      expect(result.fourDigit).toBe(1);
+      expect(calculateNumbers(['72', 'und', '786', 'und', '2024'])).toBe(3);
     });
 
     test('ignores single-digit numbers', () => {
-      const result = calculateNumbers(['Er', 'hat', '5', 'Äpfel']);
-      expect(result.count).toBe(0);
+      expect(calculateNumbers(['Er', 'hat', '5', 'Äpfel'])).toBe(0);
     });
 
     test('returns 0 for text without numbers', () => {
-      const result = calculateNumbers(['Der', 'Hund', 'läuft']);
-      expect(result.count).toBe(0);
+      expect(calculateNumbers(['Der', 'Hund', 'läuft'])).toBe(0);
     });
 
     test('returns 0 for empty array', () => {
-      const result = calculateNumbers([]);
-      expect(result.count).toBe(0);
+      expect(calculateNumbers([])).toBe(0);
     });
   });
 
   describe('calculateSpecialCharacters', () => {
     test('counts question and exclamation marks', () => {
-      expect(calculateSpecialCharacters('Was ist das? Toll!').count).toBe(2);
+      expect(calculateSpecialCharacters('Was ist das? Toll!')).toBe(2);
     });
 
     test('counts quotation marks (German style)', () => {
-      expect(calculateSpecialCharacters('Er sagte: „Hallo"').count).toBe(2);
+      expect(calculateSpecialCharacters('Er sagte: „Hallo"')).toBe(2);
     });
 
     test('counts parentheses', () => {
-      expect(calculateSpecialCharacters('Der Hund (groß) läuft').count).toBe(2);
+      expect(calculateSpecialCharacters('Der Hund (groß) läuft')).toBe(2);
     });
 
     test('counts special symbols (%, &, §, #, @)', () => {
-      expect(calculateSpecialCharacters('50% & §1 #tag @user').count).toBe(5);
+      expect(calculateSpecialCharacters('50% & §1 #tag @user')).toBe(5);
     });
 
     test('counts em-dash and slash', () => {
-      expect(calculateSpecialCharacters('gut \u2013 schlecht und/oder').count).toBe(2);
+      expect(calculateSpecialCharacters('gut \u2013 schlecht und/oder')).toBe(2);
     });
 
     test('does NOT count period, comma, colon, semicolon', () => {
-      expect(calculateSpecialCharacters('Der Hund, die Katze; und: der Vogel.').count).toBe(0);
+      expect(calculateSpecialCharacters('Der Hund, die Katze; und: der Vogel.')).toBe(0);
     });
 
     test('returns 0 for empty string', () => {
-      expect(calculateSpecialCharacters('').count).toBe(0);
+      expect(calculateSpecialCharacters('')).toBe(0);
     });
 
-    test('returns matched characters', () => {
-      const result = calculateSpecialCharacters('50% (gut)');
-      expect(result.matches).toContain('%');
-      expect(result.matches).toContain('(');
-      expect(result.matches).toContain(')');
-    });
   });
 
   describe('calculateProNIndex', () => {
@@ -481,23 +435,20 @@ describe('metric functions with pre-computed arrays', () => {
   describe('calculateSubordinateClauseRatio', () => {
     test('counts KOUS as subordinate clause', () => {
       expect(
-        calculateSubordinateClauseRatio(
-          ['ART', 'NN', 'KOUS', 'PPER', 'VVFIN'],
-          ['Satz eins.', 'weil er geht.'],
-        ),
+        calculateSubordinateClauseRatio(['ART', 'NN', 'KOUS', 'PPER', 'VVFIN'], 2),
       ).toBe(0.5);
     });
 
     test('counts KOUI as subordinate clause', () => {
-      expect(calculateSubordinateClauseRatio(['KOUI', 'VVINF'], ['Um zu gehen.'])).toBe(1);
+      expect(calculateSubordinateClauseRatio(['KOUI', 'VVINF'], 1)).toBe(1);
     });
 
     test('returns 0 when no subordinating conjunctions', () => {
-      expect(calculateSubordinateClauseRatio(['ART', 'NN', 'VVFIN'], ['Der Hund läuft.'])).toBe(0);
+      expect(calculateSubordinateClauseRatio(['ART', 'NN', 'VVFIN'], 1)).toBe(0);
     });
 
     test('returns 0 for empty arrays', () => {
-      expect(calculateSubordinateClauseRatio([], [])).toBe(0);
+      expect(calculateSubordinateClauseRatio([], 0)).toBe(0);
     });
   });
 
@@ -551,19 +502,16 @@ describe('metric functions with pre-computed arrays', () => {
   describe('calculateRix', () => {
     test('computes RIX with all components', () => {
       const words = ['Der', 'Hund', 'wird', 'gefüttert', 'das', 'Leichtes'];
-      const sentences = ['Der Hund wird gefüttert das Leichtes.'];
-      const result = calculateRix(words, sentences, 1, 0.5, 1);
+      const result = calculateRix(words, 1, 1, 0.5, 1);
       expect(result).toBeGreaterThan(0);
     });
 
     test('returns simplified value when no passive/subordinate/nominalization', () => {
-      const words = ['Der', 'Hund', 'ist', 'alt'];
-      const sentences = ['Der Hund ist alt.'];
-      expect(calculateRix(words, sentences, 0, 0, 0)).toBe(1.74);
+      expect(calculateRix(['Der', 'Hund', 'ist', 'alt'], 1, 0, 0, 0)).toBe(1.74);
     });
 
     test('returns 0 for empty arrays', () => {
-      expect(calculateRix([], [], 0, 0, 0)).toBe(0);
+      expect(calculateRix([], 0, 0, 0, 0)).toBe(0);
     });
   });
 });
@@ -588,7 +536,7 @@ describe('Coverage-Semantik (Issue #28 AC2): ein Wort zählt je Komponente höch
     expect(countWordsWithMultiMemberedGraphemes(words)).toBeLessThanOrEqual(words.length);
     expect(countWordsWithConsonantClusters(words)).toBeLessThanOrEqual(words.length);
     expect(countWordsWithRareGraphemes(words)).toBeLessThanOrEqual(words.length);
-    expect(countWordsWithComplexSyllables(words, [2, 3, 1, 1])).toBeLessThanOrEqual(words.length);
+    expect(countWordsWithComplexSyllables([2, 3, 1, 1])).toBeLessThanOrEqual(words.length);
   });
 });
 
@@ -808,7 +756,7 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     };
 
     test('Fließtext: averagePhraseLength = Wörter pro Satz (8/1 = 8)', () => {
-      const result = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
+      const result = computeReadability(text, analysis, config, 'prose');
       expect(result.textType).toBe('prose');
       expect(result.readingUnit).toBe('sentence');
       expect(result.averagePhraseLength).toBe(8);
@@ -816,7 +764,7 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     });
 
     test('Liste: averagePhraseLength = Wörter pro Zeile (8/4 = 2)', () => {
-      const result = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const result = computeReadability(text, analysis, config, 'list');
       expect(result.textType).toBe('list');
       expect(result.readingUnit).toBe('line');
       expect(result.averagePhraseLength).toBe(2);
@@ -824,26 +772,26 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     });
 
     test('LIX als Fließtext > LIX als Liste (Riesensatz-Effekt entschärft)', () => {
-      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
-      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const prose = computeReadability(text, analysis, config, 'prose');
+      const list = computeReadability(text, analysis, config, 'list');
       expect(prose.lix).toBeGreaterThan(list.lix);
     });
 
     test('gSmog, Flesch-Kincaid und WSTF nutzen ebenfalls die Zeile als Nenner', () => {
-      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
-      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const prose = computeReadability(text, analysis, config, 'prose');
+      const list = computeReadability(text, analysis, config, 'list');
       expect(list.fleschKincaid).not.toBe(prose.fleschKincaid);
       expect(list.wst4).not.toBe(prose.wst4);
     });
 
     test('RIX nutzt ebenfalls die Zeile als Nenner', () => {
-      const prose = computeReadability(text, analysis, config, { textTypeOverride: 'prose' });
-      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const prose = computeReadability(text, analysis, config, 'prose');
+      const list = computeReadability(text, analysis, config, 'list');
       expect(list.ratte).not.toBe(prose.ratte);
     });
 
     test('averageSyllablesPerPhrase nutzt die Zeile als Nenner', () => {
-      const list = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const list = computeReadability(text, analysis, config, 'list');
       // Gesamt-Silben = 1+2+2+1+1+1+2+1 = 11; 11 / 4 Zeilen = 2,75
       expect(list.averageSyllablesPerPhrase).toBeCloseTo(11 / 4, 5);
     });
@@ -866,7 +814,7 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     });
 
     test('Override list: textType ist list, detectedTextType bleibt prose', () => {
-      const result = computeReadability(text, analysis, config, { textTypeOverride: 'list' });
+      const result = computeReadability(text, analysis, config, 'list');
       expect(result.textType).toBe('list');
       expect(result.readingUnit).toBe('line');
       expect(result.detectedTextType).toBe('prose');
@@ -916,7 +864,6 @@ describe('computeReadability Titel-Guard', () => {
 
     test('zählt den einzigen Satz (Satzzahl >= 1)', () => {
       const result = computeReadability(text, analysis, config);
-      expect(result.countPhrases).toBe(1);
       expect(result.phrases).toEqual(['Der Hund läuft über die Straße.']);
     });
 
@@ -946,7 +893,6 @@ describe('computeReadability Titel-Guard', () => {
 
     test('der erste Satz zählt vollständig', () => {
       const result = computeReadability(text, analysis, config);
-      expect(result.countPhrases).toBe(2);
       expect(result.countWords).toBe(8);
       expect(result.phrases).toEqual(['Das ist ein Satz.', 'Weiter geht es hier.']);
     });
@@ -979,7 +925,7 @@ describe('computeReadability Titel-Guard', () => {
     test('erkennt keinen Titel und zählt beide Sätze', () => {
       const result = computeReadability(text, analysis, config);
       expect(result.title).toBe('');
-      expect(result.countPhrases).toBe(2);
+      expect(result.phrases).toHaveLength(2);
       expect(result.countWords).toBe(9);
     });
   });
@@ -1000,7 +946,6 @@ describe('computeReadability Titel-Guard', () => {
     test('Wort-, Satz- und Silbenzahlen stammen nur aus dem Fließtext', () => {
       const result = computeReadability(fullText, bodyOnlyAnalysis, config);
       expect(result.countWords).toBe(4);
-      expect(result.countPhrases).toBe(1);
       expect(result.countSyllables).toBe(6);
       expect(result.words).toEqual(['Igel', 'schlafen', 'am', 'Tag']);
       expect(result.phrases).toEqual(['Igel schlafen am Tag.']);
@@ -1037,10 +982,9 @@ describe('computeReadability Titel-Guard', () => {
       expect(result.countSpecialCharacters).toBe(1);
     });
 
-    test('text und hashText behalten den vollen Originaltext', () => {
+    test('text behält den vollen Originaltext', () => {
       const result = computeReadability(fullText, bodyOnlyAnalysis, config);
       expect(result.text).toBe(fullText);
-      expect(result.hashText).toBe(createHash('sha256').update(fullText, 'utf8').digest('hex'));
     });
   });
 });

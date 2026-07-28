@@ -1,4 +1,3 @@
-import { createHash } from 'crypto';
 import type { TextAnalysis } from '../../r-sidecar/r-sidecar.service.js';
 
 import {
@@ -33,16 +32,10 @@ import { computeWordComplexity } from './word-complexity.js';
 import { countNonEmptyLines, type TextType } from './text-type.js';
 import { resolveTextShape } from './text-shape.js';
 
-export * from './basic-metrics.js';
-export * from './grapheme-analysis.js';
-export * from './indices.js';
-export * from './linguistic-features.js';
-export * from './text-features.js';
-export * from './title-guard.js';
-export * from './score-model.js';
-export * from './text-type.js';
-export * from './text-shape.js';
-export * from './word-complexity.js';
+// Nur was der CalculateService konsumiert; Spezifikationen importieren die
+// Einzelmodule direkt.
+export { resolveTextShape } from './text-shape.js';
+export type { TextType } from './text-type.js';
 
 /**
  * Effektive Konfiguration des Aufschlagsmodells: Aufschlagskoeffizient α plus die
@@ -59,17 +52,6 @@ export interface ConfigWeights {
   readonly id: string;
 }
 
-/** Optionale Zusatzparameter, etwa ein vom Nutzer gesetzter Texttyp-Override. */
-export interface ComputeReadabilityOptions {
-  /**
-   * Übersteuert die heuristische Texttyp-Erkennung (ADR 0002). Wenn gesetzt,
-   * wird `textType` exakt darauf festgelegt; `detectedTextType` bleibt das
-   * heuristisch erkannte Ergebnis, damit die Oberfläche „automatisch erkannt
-   * als X, manuell auf Y gesetzt" anzeigen kann.
-   */
-  readonly textTypeOverride?: TextType;
-}
-
 /**
  * Berechnet alle Kennzahlen aus dem vollen Originaltext und der
  * Sidecar-Analyse des Fließtexts.
@@ -77,8 +59,8 @@ export interface ComputeReadabilityOptions {
  * Invariante: `analysis` MUSS aus `detectTitle(text).bodyText` erzeugt worden
  * sein. `detectTitle` ist deterministisch, daher leitet diese Funktion Titel
  * und Fließtext selbst aus `text` ab und kann nie von der Analyse abweichen.
- * Ein erkannter Titel fließt in keine Kennzahl ein; `text` und `hashText`
- * behalten den vollen Originaltext inklusive Titel.
+ * Ein erkannter Titel fließt in keine Kennzahl ein; `text` behält den vollen
+ * Originaltext inklusive Titel.
  *
  * Texttyp & Leseeinheit (ADR 0002): Bei Texttyp Liste ersetzt die nicht-leere
  * Zeilenzahl die Satzzahl als Nenner aller satzbezogenen Maße. Übergibt der
@@ -89,7 +71,9 @@ export function computeReadability(
   text: string,
   analysis: TextAnalysis,
   config: ConfigWeights,
-  options: ComputeReadabilityOptions = {},
+  /** Übersteuert die heuristische Texttyp-Erkennung (ADR 0002); `detectedTextType`
+      bleibt das heuristisch erkannte Ergebnis. */
+  textTypeOverride?: TextType,
 ) {
   const { sentences, words, syllablesPerWord, posTags } = analysis;
 
@@ -98,22 +82,14 @@ export function computeReadability(
   // ab — beide Seiten teilen die Auflösung, statt sie zu duplizieren.
   const { textType, detectedTextType, readingUnit, title, bodyText } = resolveTextShape(
     text,
-    options.textTypeOverride,
+    textTypeOverride,
   );
 
+  // Nenner aller satzbezogenen Maße (ADR 0002): Zeilenzahl bei Liste, sonst Satzzahl.
   const countReadingUnits =
     textType === 'list' ? countNonEmptyLines(text) : sentences.length;
 
-  // Bei Listen ersetzt eine virtuelle „Lese­einheiten"-Liste die R-Sidecar-Sätze
-  // als Nenner satzbezogener Maße. Die Inhalte sind irrelevant — die
-  // sätzbezogenen Funktionen nutzen nur `.length`.
-  const readingUnits: readonly string[] =
-    textType === 'list'
-      ? Array.from({ length: countReadingUnits }, (_, i) => `line-${i}`)
-      : sentences;
-
   const countWords = words.length;
-  const countPhrases = sentences.length;
   // Wortkomplexität (ADR 0001): die vier WK-Komponente-Zähler, ihre Coverage-Anteile
   // und der gewichtete Mittelwert leben in word-complexity.ts. computeReadability
   // verteilt nur noch die acht Komponentenfelder ins Ergebnis.
@@ -133,27 +109,30 @@ export function computeReadability(
     proportionOfWordsWithMultiMemberedGraphemes,
     proportionOfWordsWithRareGraphemes,
   } = components;
-  const abbreviations = calculateAbbreviations(words);
-  const numbers = calculateNumbers(words);
-  const specialCharacters = calculateSpecialCharacters(bodyText);
+  const countAbbreviations = calculateAbbreviations(words);
+  const countNumbers = calculateNumbers(words);
+  const countSpecialCharacters = calculateSpecialCharacters(bodyText);
   const averageWordLength = calculateAverageWordLength(words);
   const averageCharsPerSyllable = calculateAverageCharsPerSyllable(words, syllablesPerWord);
-  const averageSyllablesPerWord = calculateAverageSyllablesPerWord(words, syllablesPerWord);
-  const averagePhraseLength = calculateAveragePhraseLength(words, readingUnits);
-  const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(readingUnits, syllablesPerWord);
+  const averageSyllablesPerWord = calculateAverageSyllablesPerWord(syllablesPerWord);
+  const averagePhraseLength = calculateAveragePhraseLength(words, countReadingUnits);
+  const averageSyllablesPerPhrase = calculateAverageSyllablesPerPhrase(
+    countReadingUnits,
+    syllablesPerWord,
+  );
   const proportionOfLongWords = calculateProportionOfLongWords(words);
-  const lix = calculateLix(words, readingUnits);
-  const gsmog = calculateGsmog(words, readingUnits, syllablesPerWord);
-  const fleschKincaid = calculateFleschKincaid(words, readingUnits, syllablesPerWord);
-  const wst4 = calculateWstf(words, readingUnits, syllablesPerWord);
+  const lix = calculateLix(words, countReadingUnits);
+  const gsmog = calculateGsmog(countReadingUnits, syllablesPerWord);
+  const fleschKincaid = calculateFleschKincaid(words, countReadingUnits, syllablesPerWord);
+  const wst4 = calculateWstf(words, countReadingUnits, syllablesPerWord);
   const ttr = calculateTTR(words);
   const proNIndex = calculateProNIndex(posTags);
-  const subordinateClauseRatio = calculateSubordinateClauseRatio(posTags, readingUnits);
+  const subordinateClauseRatio = calculateSubordinateClauseRatio(posTags, countReadingUnits);
   const passiveCount = calculatePassiveCount(words, posTags);
   const nominalizationCount = calculateNominalizations(words, posTags);
   const rix = calculateRix(
     words,
-    readingUnits,
+    countReadingUnits,
     passiveCount,
     subordinateClauseRatio,
     nominalizationCount,
@@ -171,7 +150,6 @@ export function computeReadability(
 
   return {
     countWords,
-    countPhrases,
     countSyllables: totalSyllables,
     countWordsWithComplexSyllables,
     countWordsWithConsonantClusters,
@@ -194,13 +172,9 @@ export function computeReadability(
     proportionOfWordsWithRareGraphemes,
     lix,
     ttr,
-    countAbbreviations: abbreviations.count,
-    countNumbers: numbers.count,
-    countNumbersTwoDigit: numbers.twoDigit,
-    countNumbersThreeDigit: numbers.threeDigit,
-    countNumbersFourDigit: numbers.fourDigit,
-    countNumbersFivePlusDigit: numbers.fivePlusDigit,
-    countSpecialCharacters: specialCharacters.count,
+    countAbbreviations,
+    countNumbers,
+    countSpecialCharacters,
     proNIndex,
     subordinateClauseRatio,
     passiveCount,
@@ -225,7 +199,6 @@ export function computeReadability(
     wordsWithFourSyllables,
     wordsWithFiveSyllables,
     phrases: [...sentences],
-    hashText: createHash('sha256').update(text, 'utf8').digest('hex'),
     configId: config.id,
   };
 }

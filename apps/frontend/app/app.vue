@@ -78,7 +78,6 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useAuthClient } from '~/composables/useAuthClient';
 import 'primeicons/primeicons.css';
 
 const client = useAuthClient();

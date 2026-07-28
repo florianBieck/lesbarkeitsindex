@@ -111,19 +111,18 @@ function() {
 
 #* Analyze text: sentence detection, word tokenization, syllable counting
 #* @post /analyze
-#* @serializer contentType list(type="application/json")
 function(req) {
   body <- fromJSON(req$postBody)
   text <- body$text
 
   # Handle empty or whitespace-only text
   if (is.null(text) || trimws(text) == "") {
-    return(toJSON(list(
+    return(list(
       sentences = character(0),
       words = character(0),
       syllablesPerWord = integer(0),
       posTags = character(0)
-    ), auto_unbox = FALSE))
+    ))
   }
 
   # Convert to NLP String
@@ -141,19 +140,12 @@ function(req) {
   # whose `[` method cannot take the logical is_word index below
   words_raw <- as.character(s[word_annots])
 
-  # POS tagging (on all word annotations, before punctuation filtering)
+  # POS tagging (on all word annotations, before punctuation filtering).
+  # Maxent_POS_Tag_Annotator always emits features = list(POS = tag), so the
+  # documented openNLP idiom suffices.
   pos_annotations <- annotate(s, pos_annotator, word_annotations)
   word_pos_annots <- pos_annotations[pos_annotations$type == "word"]
-  all_pos_tags <- sapply(word_pos_annots, function(a) {
-    feats <- a$features
-    if (length(feats) > 0 && is.list(feats[[1]]) && !is.null(feats[[1]]$POS)) {
-      feats[[1]]$POS
-    } else if (!is.null(feats$POS)) {
-      feats$POS
-    } else {
-      "UNKNOWN"
-    }
-  })
+  all_pos_tags <- sapply(word_pos_annots$features, `[[`, "POS")
 
   # Filter out punctuation tokens
   is_word <- grepl("[[:alnum:]]", words_raw)
@@ -165,12 +157,12 @@ function(req) {
   # summed, so hyphenated compounds like "Carl-Heinrich" stay one token
   # with one total count.
   if (length(words_vec) == 0) {
-    return(toJSON(list(
+    return(list(
       sentences = sentences_vec,
       words = character(0),
       syllablesPerWord = integer(0),
       posTags = character(0)
-    ), auto_unbox = FALSE))
+    ))
   }
 
   parts_per_word <- regmatches(words_vec, gregexpr("[[:alpha:]]+", words_vec))
@@ -183,10 +175,10 @@ function(req) {
     syllable_counts[as.integer(names(part_sums))] <- part_sums
   }
 
-  toJSON(list(
+  list(
     sentences = sentences_vec,
     words = words_vec,
     syllablesPerWord = as.integer(syllable_counts),
     posTags = pos_tags_vec
-  ), auto_unbox = FALSE)
+  )
 }

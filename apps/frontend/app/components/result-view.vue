@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import MeterGroup from 'primevue/metergroup';
-import { type ResultData } from '~/composables/useApiClient';
-import { niveaustufe, type Severity } from '~/utils/niveaustufe';
-import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
-import Fieldset from 'primevue/fieldset';
+import type { ResultData } from '~/composables/useApiClient';
+import type { Severity } from '~/utils/niveaustufe';
 
 const Chart = defineAsyncComponent(async () => {
   const [chartModule, { Chart: ChartJs }, annotationPlugin] = await Promise.all([

@@ -4,11 +4,11 @@
       Fügen Sie einen Text ein, um seine Lesbarkeit zu analysieren. Der LÜ-LIX kombiniert den
       klassischen Lesbarkeitsindex (LIX) mit einem Aufschlag für die Wortkomplexität.
     </p>
-    <Editor
+    <Textarea
+      v-model="text"
       class="w-full"
-      editorStyle="height: 280px; width: 100%;"
+      style="height: 280px"
       aria-label="Text zur Lesbarkeitsanalyse eingeben"
-      @text-change="(event) => (text = event.textValue)"
     />
 
     <!-- Texttyp-Schalter (ADR 0002): heuristisch erkannt, manuell übersteuerbar -->
@@ -38,113 +38,13 @@
           Der Aufschlag &alpha; steuert, wie stark die Wortkomplexität (WK) den LIX erhöht (LÜ-LIX =
           LIX + &alpha;&middot;WK). Die vier Gewichte verteilen die WK auf ihre Komponenten.
         </p>
-        <div class="flex flex-col gap-4">
-          <div class="flex flex-col gap-2 p-4 border rounded-md">
-            <label for="param-alpha" class="text-sm font-medium"
-              >Aufschlag &alpha;
-              <span class="text-surface-400 font-normal">(Stärke der Wortkomplexität)</span></label
-            >
-            <InputNumber
-              id="param-alpha"
-              v-model="alpha"
-              fluid
-              showButtons
-              buttonLayout="horizontal"
-              :step="0.05"
-              :min="0"
-              mode="decimal"
-              :minFractionDigits="2"
-              :maxFractionDigits="2"
-              incrementIcon="pi pi-plus"
-              decrementIcon="pi pi-minus"
-            />
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="flex flex-col gap-2 p-4 border rounded-md">
-              <label for="weight-complex-syllables" class="text-sm font-medium"
-                >Drei- und Mehrsilber
-                <span class="text-surface-400 font-normal"
-                  >(Wörter mit 3 oder mehr Silben)</span
-                ></label
-              >
-              <InputNumber
-                id="weight-complex-syllables"
-                v-model="weightComplexSyllables"
-                fluid
-                showButtons
-                buttonLayout="horizontal"
-                :step="5"
-                :min="0"
-                mode="decimal"
-                :minFractionDigits="0"
-                :maxFractionDigits="2"
-                incrementIcon="pi pi-plus"
-                decrementIcon="pi pi-minus"
-              />
-            </div>
-            <div class="flex flex-col gap-2 p-4 border rounded-md">
-              <label for="weight-multi-graphemes" class="text-sm font-medium"
-                >Mehrgliedrige Grapheme
-                <span class="text-surface-400 font-normal">(z.B. sch, ch, ck, ng)</span></label
-              >
-              <InputNumber
-                id="weight-multi-graphemes"
-                v-model="weightMultiMemberedGraphemes"
-                fluid
-                showButtons
-                buttonLayout="horizontal"
-                :step="5"
-                :min="0"
-                mode="decimal"
-                :minFractionDigits="0"
-                :maxFractionDigits="2"
-                incrementIcon="pi pi-plus"
-                decrementIcon="pi pi-minus"
-              />
-            </div>
-            <div class="flex flex-col gap-2 p-4 border rounded-md">
-              <label for="weight-rare-graphemes" class="text-sm font-medium"
-                >Seltene Grapheme
-                <span class="text-surface-400 font-normal">(ä, ö, ü, ß, c, q, x, y)</span></label
-              >
-              <InputNumber
-                id="weight-rare-graphemes"
-                v-model="weightRareGraphemes"
-                fluid
-                showButtons
-                buttonLayout="horizontal"
-                :step="5"
-                :min="0"
-                mode="decimal"
-                :minFractionDigits="0"
-                :maxFractionDigits="2"
-                incrementIcon="pi pi-plus"
-                decrementIcon="pi pi-minus"
-              />
-            </div>
-            <div class="flex flex-col gap-2 p-4 border rounded-md">
-              <label for="weight-consonant-clusters" class="text-sm font-medium"
-                >Konsonantenlauthäufung
-                <span class="text-surface-400 font-normal">(z.B. Str-, Spr-, -nkt)</span></label
-              >
-              <InputNumber
-                id="weight-consonant-clusters"
-                v-model="weightConsonantClusters"
-                fluid
-                showButtons
-                buttonLayout="horizontal"
-                :step="5"
-                :min="0"
-                mode="decimal"
-                :minFractionDigits="0"
-                :maxFractionDigits="2"
-                incrementIcon="pi pi-plus"
-                decrementIcon="pi pi-minus"
-              />
-            </div>
-          </div>
-        </div>
+        <ConfigWeightsForm
+          v-model:alpha="alpha"
+          v-model:weight-complex-syllables="weightComplexSyllables"
+          v-model:weight-multi-membered-graphemes="weightMultiMemberedGraphemes"
+          v-model:weight-rare-graphemes="weightRareGraphemes"
+          v-model:weight-consonant-clusters="weightConsonantClusters"
+        />
       </Fieldset>
     </div>
 
@@ -169,7 +69,7 @@
 
     <!-- Results area — generous separation from input controls -->
     <div class="mt-10">
-      <result-view v-if="result" :result="result" />
+      <ResultView v-if="result" :result="result" />
       <div v-else class="text-center text-surface-500 py-8 border-t border-surface-100">
         <p class="text-lg mt-4">Noch kein Text analysiert</p>
         <p class="text-sm mt-1">
@@ -180,17 +80,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, defineAsyncComponent, onMounted, computed, watch } from 'vue';
-import Button from 'primevue/button';
-import InputNumber from 'primevue/inputnumber';
-import Fieldset from 'primevue/fieldset';
-import Checkbox from 'primevue/checkbox';
-import SelectButton from 'primevue/selectbutton';
 import { detectTextType, type TextType } from '@lesbarkeitsindex/api-client';
-
-const Editor = defineAsyncComponent(() => import('primevue/editor'));
-import { useApiClient, type ResultData } from '~/composables/useApiClient';
-import ResultView from '~/components/result-view.vue';
+import type { ResultData } from '~/composables/useApiClient';
 
 const client = useApiClient();
 
@@ -223,26 +114,13 @@ watch(textType, (next, prev) => {
   }
 });
 
-// Aufschlagsmodell-Parameter — Startwerte werden beim Mount aus der gespeicherten
-// Admin-Konfiguration geladen, damit Admin-Änderungen die nächste Analyse erreichen.
+// Aufschlagsmodell-Parameter — die gemeinsame Eingabemaske (ConfigWeightsForm)
+// hydriert die Werte beim Mount aus der gespeicherten Admin-Konfiguration.
 const alpha = ref(0.3);
 const weightComplexSyllables = ref(50);
 const weightMultiMemberedGraphemes = ref(25);
 const weightRareGraphemes = ref(12.5);
 const weightConsonantClusters = ref(12.5);
-
-onMounted(async () => {
-  try {
-    const config = await client.getConfig();
-    alpha.value = config.alpha;
-    weightComplexSyllables.value = config.weightComplexSyllables;
-    weightMultiMemberedGraphemes.value = config.weightMultiMemberedGraphemes;
-    weightRareGraphemes.value = config.weightRareGraphemes;
-    weightConsonantClusters.value = config.weightConsonantClusters;
-  } catch (e) {
-    console.error('Konfiguration konnte nicht geladen werden', e);
-  }
-});
 
 async function calculate() {
   validationError.value = '';

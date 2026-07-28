@@ -76,4 +76,20 @@ describe('RSidecarService.analyzeText', () => {
     const service = createService();
     await expect(service.analyzeText('Test.')).rejects.toThrow();
   });
+
+  test('validation errors keep the "R sidecar" message prefix (503 mapping in CalculateService)', async () => {
+    const badTypes = {
+      sentences: ['Test.'],
+      words: ['Test', 42],
+      syllablesPerWord: [1, 1],
+      posTags: ['NN', 'NN'],
+    };
+
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve(new Response(JSON.stringify(badTypes), { status: 200 })),
+    ) as typeof fetch;
+
+    const service = createService();
+    await expect(service.analyzeText('Test.')).rejects.toThrow(/R sidecar/);
+  });
 });

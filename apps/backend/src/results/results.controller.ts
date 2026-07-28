@@ -1,4 +1,4 @@
-import { Controller, Get, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { toJsonNumbers } from '../serialize.js';
 
@@ -7,7 +7,6 @@ export class ResultsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
-  @HttpCode(HttpStatus.OK)
   async getResults(@Query('page') pageParam?: string, @Query('limit') limitParam?: string) {
     const page = Math.max(0, parseInt(pageParam ?? '0', 10) || 0);
     const limit = Math.min(100, Math.max(1, parseInt(limitParam ?? '10', 10) || 10));

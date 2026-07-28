@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     },
   },
   devtools: { enabled: true },
-  modules: ['@nuxt/test-utils', '@primevue/nuxt-module', '@nuxtjs/tailwindcss'],
+  modules: ['@primevue/nuxt-module', '@nuxtjs/tailwindcss'],
   primevue: {
     options: {
       theme: {
@@ -28,10 +28,5 @@ export default defineNuxtConfig({
   },
   devServer: {
     port: 3001,
-  },
-  vite: {
-    optimizeDeps: {
-      include: ['quill'],
-    },
   },
 });

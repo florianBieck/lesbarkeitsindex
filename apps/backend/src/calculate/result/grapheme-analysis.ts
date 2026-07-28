@@ -1,3 +1,5 @@
+import { stripNonLetters } from './basic-metrics.js';
+
 /*
     Mehrgliedrige Grapheme — following Brügelmann (Br 10).
 
@@ -11,39 +13,27 @@
  */
 
 // Digraphs/trigraphs + diphthongs — matched anywhere in the word
-const graphemeRegex = /(sch|ch|ck|ng|äu|au|eu|ei|ie)/gi;
+const graphemeRegex = /(sch|ch|ck|ng|äu|au|eu|ei|ie)/i;
 
 // sp/st only at word beginning (syllable-onset grapheme per Br 10)
-const onsetGraphemeRegex = /\b(sp|st)/gi;
+const onsetGraphemeRegex = /\b(sp|st)/i;
 
 export function countWordsWithMultiMemberedGraphemes(words: readonly string[]): number {
   // Coverage: Anzahl der Wörter mit mindestens einem Vorkommen (je Wort max. einmal).
-  let count = 0;
-  for (const rawWord of words) {
-    const word = rawWord.replace(/[^A-Za-zÄÖÜäöüß]/g, '');
-    if (!word) continue;
-    if (word.match(graphemeRegex) !== null || word.match(onsetGraphemeRegex) !== null) {
-      count++;
-    }
-  }
-  return count;
+  return words.filter((rawWord) => {
+    const word = stripNonLetters(rawWord);
+    return graphemeRegex.test(word) || onsetGraphemeRegex.test(word);
+  }).length;
 }
 
 /*
     seltene Grapheme (ä, ö, ü, ß, c, q, x, y)
  */
+const rareGraphemeRegex = /[äöüÄÖÜßcqxyCQXY]/;
+
 export function countWordsWithRareGraphemes(words: readonly string[]): number {
   // Coverage: Anzahl der Wörter mit mindestens einem seltenen Graphem (je Wort max. einmal).
-  const rareGraphemeRegex = /[äöüÄÖÜßcqxyCQXY]/;
-  let count = 0;
-  for (const rawWord of words) {
-    const word = rawWord.replace(/[^A-Za-zÄÖÜäöüß]/g, '');
-    if (!word) continue;
-    if (rareGraphemeRegex.test(word)) {
-      count++;
-    }
-  }
-  return count;
+  return words.filter((rawWord) => rareGraphemeRegex.test(stripNonLetters(rawWord))).length;
 }
 
 /*
@@ -62,22 +52,17 @@ export function countWordsWithRareGraphemes(words: readonly string[]): number {
 
 // Onset: at word boundary — 2+ consonant sounds at syllable start
 const onsetClusterRegex =
-  /\b(schl|schm|schn|schr|str|spr|bl|br|cl|cr|dr|fl|fr|gl|gn|gr|kl|kn|kr|pf|pl|pr|tr)/gi;
+  /\b(schl|schm|schn|schr|str|spr|bl|br|cl|cr|dr|fl|fr|gl|gn|gr|kl|kn|kr|pf|pl|pr|tr)/i;
 
 // Coda: at word boundary — 3+ consonant sounds at word/syllable end
 // Ordered longest-first to avoid partial matches
 const codaClusterRegex =
-  /(rchst|mpfst|rbst|chst|chts|rcht|ckst|lfst|rfst|mpft|mpst|ngst|nkst|rnst|rbt|bst|ckt|dst|fst|rft|gst|lfs|mpf|mpt|nft|nkt|nst|nzt|rnt|rkt|rzt|rts|tzt)\b/gi;
+  /(rchst|mpfst|rbst|chst|chts|rcht|ckst|lfst|rfst|mpft|mpst|ngst|nkst|rnst|rbt|bst|ckt|dst|fst|rft|gst|lfs|mpf|mpt|nft|nkt|nst|nzt|rnt|rkt|rzt|rts|tzt)\b/i;
 
 export function countWordsWithConsonantClusters(words: readonly string[]): number {
   // Coverage: Anzahl der Wörter mit mindestens einem Cluster (je Wort max. einmal).
-  let count = 0;
-  for (const rawWord of words) {
-    const word = rawWord.replace(/[^A-Za-zÄÖÜäöüß]/g, '');
-    if (!word) continue;
-    if (word.match(onsetClusterRegex) !== null || word.match(codaClusterRegex) !== null) {
-      count++;
-    }
-  }
-  return count;
+  return words.filter((rawWord) => {
+    const word = stripNonLetters(rawWord);
+    return onsetClusterRegex.test(word) || codaClusterRegex.test(word);
+  }).length;
 }

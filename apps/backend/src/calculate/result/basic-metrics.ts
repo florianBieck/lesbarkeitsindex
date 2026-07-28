@@ -1,12 +1,15 @@
+/** Alles außer deutschen Buchstaben (A–Z, Umlaute, ß). */
+const NON_LETTERS = /[^A-Za-zÄÖÜäöüß]/g;
+
+/** Entfernt alle Nicht-Buchstaben aus einem Wort — gemeinsamer Strip für alle Zähler. */
+export function stripNonLetters(word: string): string {
+  return word.replace(NON_LETTERS, '');
+}
+
 /*
     Coverage: Anzahl der Wörter mit komplexen Silben (≥3 Silben), je Wort max. einmal.
-    `words` bleibt Teil der Signatur (Aufrufer übergeben beide Arrays), die Zählung
-    hängt aber allein an den Silbenzahlen.
  */
-export function countWordsWithComplexSyllables(
-  words: readonly string[],
-  syllablesPerWord: readonly number[],
-): number {
+export function countWordsWithComplexSyllables(syllablesPerWord: readonly number[]): number {
   return syllablesPerWord.filter((count) => count >= 3).length;
 }
 
@@ -22,7 +25,7 @@ export function calculateAverageCharsPerSyllable(
   let totalChars = 0;
   let totalSyllables = 0;
   for (let i = 0; i < words.length; i++) {
-    const letters = words[i].replace(/[^A-Za-zÄÖÜäöüß]/g, '');
+    const letters = stripNonLetters(words[i]);
     totalChars += letters.length;
     totalSyllables += syllablesPerWord[i];
   }
@@ -43,44 +46,41 @@ export function calculateAverageWordLength(words: readonly string[]): number {
 }
 
 /*
-    ∅Silben/Wort
+    ∅Silben/Wort (Nenner: Silbenzahl-Liste — per Sidecar-Vertrag == Wortzahl)
  */
-export function calculateAverageSyllablesPerWord(
-  words: readonly string[],
-  syllablesPerWord: readonly number[],
-): number {
-  if (words.length === 0) return 0;
+export function calculateAverageSyllablesPerWord(syllablesPerWord: readonly number[]): number {
+  if (syllablesPerWord.length === 0) return 0;
   let total = 0;
   for (const count of syllablesPerWord) {
     total += count;
   }
-  return total / words.length;
+  return total / syllablesPerWord.length;
 }
 
 /*
-    Durchschnittliche Satzlänge
+    Durchschnittliche Satzlänge (Nenner: Anzahl Leseeinheiten — Sätze oder Zeilen)
  */
 export function calculateAveragePhraseLength(
   words: readonly string[],
-  sentences: readonly string[],
+  sentenceCount: number,
 ): number {
-  if (sentences.length === 0) return 0;
-  return Math.round((words.length / sentences.length) * 100) / 100;
+  if (sentenceCount === 0) return 0;
+  return Math.round((words.length / sentenceCount) * 100) / 100;
 }
 
 /*
     ∅Silben/Satz
  */
 export function calculateAverageSyllablesPerPhrase(
-  sentences: readonly string[],
+  sentenceCount: number,
   syllablesPerWord: readonly number[],
 ): number {
-  if (sentences.length === 0) return 0;
+  if (sentenceCount === 0) return 0;
   let totalSyllables = 0;
   for (const count of syllablesPerWord) {
     totalSyllables += count;
   }
-  return totalSyllables / sentences.length;
+  return totalSyllables / sentenceCount;
 }
 
 /*
@@ -91,9 +91,7 @@ export function calculateProportionOfLongWords(words: readonly string[]): number
   const LONG_WORD_MIN_LENGTH = 7;
   let longWordCount = 0;
   for (const rawWord of words) {
-    const word = rawWord.replace(/[^A-Za-zÄÖÜäöüß]/g, '');
-    if (!word) continue;
-    if (word.length >= LONG_WORD_MIN_LENGTH) {
+    if (stripNonLetters(rawWord).length >= LONG_WORD_MIN_LENGTH) {
       longWordCount++;
     }
   }

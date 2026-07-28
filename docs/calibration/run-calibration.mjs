@@ -55,11 +55,6 @@ Ziege`,
   },
 ];
 
-function pad(value, width) {
-  const s = String(value);
-  return s.length >= width ? s : s + ' '.repeat(width - s.length);
-}
-
 function round(n, digits = 1) {
   const factor = 10 ** digits;
   return Math.round(n * factor) / factor;
@@ -99,44 +94,49 @@ for (const sample of TEXTS) {
 console.log('\nCalibration — Kinderkurztexte');
 console.log('='.repeat(96));
 console.log(
-  pad('id', 7) +
-    pad('title', 26) +
-    pad('Stufe', 6) +
-    pad('LÜ-LIX', 8) +
-    pad('LIX', 6) +
-    pad('WK', 6) +
-    pad('Wörter', 8) +
-    pad('Texttyp', 8) +
-    pad('Leseeinheit', 13),
+  'id'.padEnd(7) +
+    'title'.padEnd(26) +
+    'Stufe'.padEnd(6) +
+    'LÜ-LIX'.padEnd(8) +
+    'LIX'.padEnd(6) +
+    'WK'.padEnd(6) +
+    'Wörter'.padEnd(8) +
+    'Texttyp'.padEnd(8) +
+    'Leseeinheit'.padEnd(13),
 );
 console.log('-'.repeat(96));
 for (const r of rows) {
   console.log(
-    pad(r.id, 7) +
-      pad(r.title, 26) +
-      pad(r.level, 6) +
-      pad(r.lueLix, 8) +
-      pad(r.lix, 6) +
-      pad(r.wk, 6) +
-      pad(r.words, 8) +
-      pad(r.textType, 8) +
-      pad(r.readingUnit, 13),
+    String(r.id).padEnd(7) +
+      String(r.title).padEnd(26) +
+      String(r.level).padEnd(6) +
+      String(r.lueLix).padEnd(8) +
+      String(r.lix).padEnd(6) +
+      String(r.wk).padEnd(6) +
+      String(r.words).padEnd(8) +
+      String(r.textType).padEnd(8) +
+      String(r.readingUnit).padEnd(13),
   );
 }
 
 console.log('\nWK-Komponenten (Coverage in %)');
 console.log('-'.repeat(96));
 console.log(
-  pad('id', 7) +
-    pad('title', 26) +
-    pad('Drei+', 8) +
-    pad('Mehrgl.', 10) +
-    pad('Selten', 9) +
-    pad('Cluster', 9),
+  'id'.padEnd(7) +
+    'title'.padEnd(26) +
+    'Drei+'.padEnd(8) +
+    'Mehrgl.'.padEnd(10) +
+    'Selten'.padEnd(9) +
+    'Cluster'.padEnd(9),
 );
 for (const r of rows) {
   console.log(
-    pad(r.id, 7) + pad(r.title, 26) + pad(r.cs, 8) + pad(r.mg, 10) + pad(r.rg, 9) + pad(r.cc, 9),
+    String(r.id).padEnd(7) +
+      String(r.title).padEnd(26) +
+      String(r.cs).padEnd(8) +
+      String(r.mg).padEnd(10) +
+      String(r.rg).padEnd(9) +
+      String(r.cc).padEnd(9),
   );
 }
 

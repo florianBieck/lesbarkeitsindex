@@ -18,12 +18,12 @@ function countLongWords(words: readonly string[]): number {
     Formula: (Words / Sentences) + (Long Words * 100 / Words)
     Long words = words with more than 6 Buchstaben.
  */
-export function calculateLix(words: readonly string[], sentences: readonly string[]): number {
+export function calculateLix(words: readonly string[], sentenceCount: number): number {
   const wordCount = words.length;
   if (wordCount === 0) return 0;
-  const sentenceCount = Math.max(1, sentences.length);
+  const divisor = Math.max(1, sentenceCount);
   const longWordCount = countLongWords(words);
-  const lix = wordCount / sentenceCount + (longWordCount * 100) / wordCount;
+  const lix = wordCount / divisor + (longWordCount * 100) / wordCount;
   return Math.round(lix * 100) / 100;
 }
 
@@ -34,13 +34,11 @@ export function calculateLix(words: readonly string[], sentences: readonly strin
     Result approximates the reading age (in school grades) for which the text is suitable.
  */
 export function calculateGsmog(
-  words: readonly string[],
-  sentences: readonly string[],
+  sentenceCount: number,
   syllablesPerWord: readonly number[],
 ): number {
-  const sentenceCount = sentences.length;
   if (sentenceCount === 0) return 0;
-  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(words, syllablesPerWord);
+  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(syllablesPerWord);
   const gsmog = Math.sqrt((wordsWithThreeOrMoreSyllables * 30) / sentenceCount) - 2;
   return Math.round(gsmog * 100) / 100;
 }
@@ -53,11 +51,10 @@ export function calculateGsmog(
  */
 export function calculateFleschKincaid(
   words: readonly string[],
-  sentences: readonly string[],
+  sentenceCount: number,
   syllablesPerWord: readonly number[],
 ): number {
   const wordCount = words.length;
-  const sentenceCount = sentences.length;
   if (wordCount === 0 || sentenceCount === 0) return 0;
   let totalSyllables = 0;
   for (const count of syllablesPerWord) {
@@ -74,13 +71,12 @@ export function calculateFleschKincaid(
 */
 export function calculateWstf(
   words: readonly string[],
-  sentences: readonly string[],
+  sentenceCount: number,
   syllablesPerWord: readonly number[],
 ): number {
   const wordCount = words.length;
-  const sentenceCount = sentences.length;
   if (wordCount === 0 || sentenceCount === 0) return 0;
-  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(words, syllablesPerWord);
+  const wordsWithThreeOrMoreSyllables = countWordsWithComplexSyllables(syllablesPerWord);
   const wstf =
     0.2656 * (wordCount / sentenceCount) +
     0.2744 * (wordsWithThreeOrMoreSyllables / wordCount) * 100 -
@@ -99,13 +95,12 @@ export function calculateWstf(
  */
 export function calculateRix(
   words: readonly string[],
-  sentences: readonly string[],
+  sentenceCount: number,
   passiveCount: number,
   subordinateClauseRatio: number,
   nominalizationCount: number,
 ): number {
   const wordCount = words.length;
-  const sentenceCount = sentences.length;
   if (wordCount === 0 || sentenceCount === 0) return 0;
 
   const longWordCount = countLongWords(words);

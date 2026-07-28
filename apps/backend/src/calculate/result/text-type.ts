@@ -11,11 +11,11 @@ export type TextType = 'prose' | 'list';
 export type ReadingUnit = 'sentence' | 'line';
 
 /**
- * Eine Zeile, die mit '.', '!' oder '?' endet, gilt als Satz —
- * konsistent mit dem Titel-Guard. Unicode-Ellipse '…' und Doppelpunkt
- * disqualifizieren NICHT.
+ * Eine Zeile, die mit '.', '!' oder '?' endet, gilt als Satz — gemeinsame
+ * Konstante für Texttyp-Heuristik und Titel-Guard. Unicode-Ellipse '…' und
+ * Doppelpunkt disqualifizieren NICHT.
  */
-const TERMINAL_PUNCTUATION = /[.!?]$/;
+export const TERMINAL_PUNCTUATION = /[.!?]$/;
 
 function nonEmptyTrimmedLines(text: string): string[] {
   return text
@@ -50,9 +50,4 @@ export function detectTextType(text: string): TextType {
   }
 
   return withoutTerminal > withTerminal ? 'list' : 'prose';
-}
-
-/** Leseeinheit aus dem Texttyp: Fließtext → Satz, Liste → Zeile. */
-export function readingUnitForTextType(textType: TextType): ReadingUnit {
-  return textType === 'list' ? 'line' : 'sentence';
 }

@@ -95,23 +95,19 @@ const ACRONYMS = new Set([
   'BUND',
 ]);
 
-export function calculateAbbreviations(words: readonly string[]): {
-  count: number;
-  matches: string[];
-} {
-  if (words.length === 0) return { count: 0, matches: [] };
-  const matches: string[] = [];
+export function calculateAbbreviations(words: readonly string[]): number {
+  let count = 0;
   for (const word of words) {
     const lower = word.toLowerCase().replace(/[,;:!?]$/, '');
-    if (UNIT_ABBREVIATIONS.has(lower)) {
-      matches.push(word);
-    } else if (DOTTED_ABBREVIATIONS.has(lower)) {
-      matches.push(word);
-    } else if (ACRONYMS.has(word.replace(/[,;:!?]$/, ''))) {
-      matches.push(word);
+    if (
+      UNIT_ABBREVIATIONS.has(lower) ||
+      DOTTED_ABBREVIATIONS.has(lower) ||
+      ACRONYMS.has(word.replace(/[,;:!?]$/, ''))
+    ) {
+      count++;
     }
   }
-  return { count: matches.length, matches };
+  return count;
 }
 
 /*
@@ -123,53 +119,22 @@ export function calculateAbbreviations(words: readonly string[]): {
  */
 const SPECIAL_CHAR_REGEX = /[?!""„"»«'‚'()%&§#@–—/]/g;
 
-export function calculateSpecialCharacters(text: string): { count: number; matches: string[] } {
-  if (!text) return { count: 0, matches: [] };
-  const found = text.match(SPECIAL_CHAR_REGEX);
-  if (!found) return { count: 0, matches: [] };
-  return { count: found.length, matches: found };
+export function calculateSpecialCharacters(text: string): number {
+  return (text.match(SPECIAL_CHAR_REGEX) ?? []).length;
 }
 
 /*
-    Zahlen erkennen — categorized by digit count per PDF:
-    - 2-digit: difficult for beginning readers
-    - 3-digit: somewhat difficult
-    - 4-digit: more difficult
-    - 5+ digit: very difficult
-    Numbers with dot separators (e.g. 5.289) are treated as one number,
-    digits only counted (dots stripped).
+    Zahlen erkennen — per PDF parameter list.
+    Numbers with dot separators (e.g. 5.289) are treated as one number.
     Single-digit numbers are ignored (not difficult).
  */
-export type NumberResult = {
-  count: number;
-  twoDigit: number;
-  threeDigit: number;
-  fourDigit: number;
-  fivePlusDigit: number;
-};
-
-export function calculateNumbers(words: readonly string[]): NumberResult {
-  const result: NumberResult = {
-    count: 0,
-    twoDigit: 0,
-    threeDigit: 0,
-    fourDigit: 0,
-    fivePlusDigit: 0,
-  };
-  if (words.length === 0) return result;
+export function calculateNumbers(words: readonly string[]): number {
+  let count = 0;
   for (const word of words) {
-    // Match tokens that are purely numeric (with optional dot separators)
+    // Purely numeric tokens (with optional dot separators): the pattern requires
+    // a digit at both ends, so at least two digits remain after stripping dots.
     const cleaned = word.replace(/[,;:!?]$/, '');
-    if (!/^\d[\d.]*\d$|^\d{2,}$/.test(cleaned)) continue;
-    const digitsOnly = cleaned.replace(/\./g, '');
-    if (!/^\d+$/.test(digitsOnly)) continue;
-    const len = digitsOnly.length;
-    if (len < 2) continue;
-    result.count++;
-    if (len === 2) result.twoDigit++;
-    else if (len === 3) result.threeDigit++;
-    else if (len === 4) result.fourDigit++;
-    else result.fivePlusDigit++;
+    if (/^\d[\d.]*\d$|^\d{2,}$/.test(cleaned)) count++;
   }
-  return result;
+  return count;
 }

@@ -1,9 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import {
-  detectTextType,
-  countNonEmptyLines,
-  readingUnitForTextType,
-} from './text-type.js';
+import { detectTextType, countNonEmptyLines } from './text-type.js';
 
 describe('detectTextType — heuristische Texttyp-Erkennung (ADR 0002)', () => {
   test('einzelner Satz mit Punkt: Fließtext', () => {
@@ -101,15 +97,5 @@ describe('countNonEmptyLines — Zählung nicht-leerer Zeilen', () => {
 
   test('CRLF-Zeilenenden werden wie LF behandelt', () => {
     expect(countNonEmptyLines('Hund\r\nKatze\r\nVogel')).toBe(3);
-  });
-});
-
-describe('readingUnitForTextType', () => {
-  test('Fließtext → Satz', () => {
-    expect(readingUnitForTextType('prose')).toBe('sentence');
-  });
-
-  test('Liste → Zeile', () => {
-    expect(readingUnitForTextType('list')).toBe('line');
   });
 });

@@ -1,13 +1,8 @@
-import { ofetch, type $Fetch } from 'ofetch';
-import { z } from 'zod';
-
 /** Texttyp eines Textes (ADR 0002): Fließtext oder Liste. */
-export const textTypeSchema = z.enum(['prose', 'list']);
-export type TextType = z.infer<typeof textTypeSchema>;
+export type TextType = 'prose' | 'list';
 
 /** Leseeinheit (ADR 0002): Satz bei Fließtext, Zeile bei Liste. */
-export const readingUnitSchema = z.enum(['sentence', 'line']);
-export type ReadingUnit = z.infer<typeof readingUnitSchema>;
+export type ReadingUnit = 'sentence' | 'line';
 
 /**
  * Heuristische Texttyp-Erkennung (ADR 0002, Issue #30). Liefert „list", wenn
@@ -37,84 +32,75 @@ export function detectTextType(text: string): TextType {
 
 /**
  * Datenvertrag der API — einzige Quelle der Wahrheit für die Antwortform.
- * Das Backend liefert durchgängig Zahlen (kein Decimal-String mehr), daher sind
- * alle Kennzahlen `z.number()`. `z.infer` leitet die Typen ab; die Schemas
- * können bei Bedarf zur Laufzeit validieren.
+ * Das Backend liefert durchgängig Zahlen (kein Decimal-String mehr), daher
+ * sind alle Kennzahlen `number`.
  */
-export const configSchema = z.object({
-  id: z.string(),
-  createdAt: z.string(),
-  alpha: z.number(),
-  weightComplexSyllables: z.number(),
-  weightMultiMemberedGraphemes: z.number(),
-  weightRareGraphemes: z.number(),
-  weightConsonantClusters: z.number(),
-});
-export type Config = z.infer<typeof configSchema>;
+export interface Config {
+  id: string;
+  createdAt: string;
+  alpha: number;
+  weightComplexSyllables: number;
+  weightMultiMemberedGraphemes: number;
+  weightRareGraphemes: number;
+  weightConsonantClusters: number;
+}
 
-export const resultDataSchema = z.object({
-  id: z.string(),
-  createdAt: z.string(),
-  countWords: z.number(),
-  countPhrases: z.number(),
-  countSyllables: z.number(),
-  countWordsWithComplexSyllables: z.number(),
-  countWordsWithConsonantClusters: z.number(),
-  countWordsWithMultiMemberedGraphemes: z.number(),
-  countWordsWithRareGraphemes: z.number(),
-  countWordsWithOneSyllable: z.number(),
-  countWordsWithTwoSyllable: z.number(),
-  countWordsWithThreeSyllable: z.number(),
-  countWordsWithFourSyllable: z.number(),
-  countWordsWithFiveSyllable: z.number(),
-  averageWordLength: z.number(),
-  averagePhraseLength: z.number(),
-  averageCharsPerSyllable: z.number(),
-  averageSyllablesPerWord: z.number(),
-  averageSyllablesPerPhrase: z.number(),
-  proportionOfLongWords: z.number(),
-  proportionOfWordsWithComplexSyllables: z.number(),
-  proportionOfWordsWithConsonantClusters: z.number(),
-  proportionOfWordsWithMultiMemberedGraphemes: z.number(),
-  proportionOfWordsWithRareGraphemes: z.number(),
-  lix: z.number(),
-  ratte: z.number(),
-  gsmog: z.number(),
-  wst4: z.number(),
-  fleschKincaid: z.number(),
-  ttr: z.number(),
-  countAbbreviations: z.number(),
-  countNumbers: z.number(),
-  countNumbersTwoDigit: z.number(),
-  countNumbersThreeDigit: z.number(),
-  countNumbersFourDigit: z.number(),
-  countNumbersFivePlusDigit: z.number(),
-  countSpecialCharacters: z.number(),
-  proNIndex: z.number(),
-  subordinateClauseRatio: z.number(),
-  passiveCount: z.number(),
-  nominalizationCount: z.number(),
-  wordComplexity: z.number(),
-  lueLix: z.number(),
-  level: z.number(),
-  textType: textTypeSchema,
-  readingUnit: readingUnitSchema,
-  detectedTextType: textTypeSchema,
-  countReadingUnits: z.number(),
-  text: z.string(),
-  title: z.string(),
-  words: z.array(z.string()),
-  wordsWithOneSyllable: z.array(z.string()),
-  wordsWithTwoSyllables: z.array(z.string()),
-  wordsWithThreeSyllables: z.array(z.string()),
-  wordsWithFourSyllables: z.array(z.string()),
-  wordsWithFiveSyllables: z.array(z.string()),
-  phrases: z.array(z.string()),
-  hashText: z.string(),
-  config: configSchema,
-  configId: z.string(),
-});
-export type ResultData = z.infer<typeof resultDataSchema>;
+export interface ResultData {
+  id: string;
+  createdAt: string;
+  countWords: number;
+  countSyllables: number;
+  countWordsWithComplexSyllables: number;
+  countWordsWithConsonantClusters: number;
+  countWordsWithMultiMemberedGraphemes: number;
+  countWordsWithRareGraphemes: number;
+  countWordsWithOneSyllable: number;
+  countWordsWithTwoSyllable: number;
+  countWordsWithThreeSyllable: number;
+  countWordsWithFourSyllable: number;
+  countWordsWithFiveSyllable: number;
+  averageWordLength: number;
+  averagePhraseLength: number;
+  averageCharsPerSyllable: number;
+  averageSyllablesPerWord: number;
+  averageSyllablesPerPhrase: number;
+  proportionOfLongWords: number;
+  proportionOfWordsWithComplexSyllables: number;
+  proportionOfWordsWithConsonantClusters: number;
+  proportionOfWordsWithMultiMemberedGraphemes: number;
+  proportionOfWordsWithRareGraphemes: number;
+  lix: number;
+  ratte: number;
+  gsmog: number;
+  wst4: number;
+  fleschKincaid: number;
+  ttr: number;
+  countAbbreviations: number;
+  countNumbers: number;
+  countSpecialCharacters: number;
+  proNIndex: number;
+  subordinateClauseRatio: number;
+  passiveCount: number;
+  nominalizationCount: number;
+  wordComplexity: number;
+  lueLix: number;
+  level: number;
+  textType: TextType;
+  readingUnit: ReadingUnit;
+  detectedTextType: TextType;
+  countReadingUnits: number;
+  text: string;
+  title: string;
+  words: string[];
+  wordsWithOneSyllable: string[];
+  wordsWithTwoSyllables: string[];
+  wordsWithThreeSyllables: string[];
+  wordsWithFourSyllables: string[];
+  wordsWithFiveSyllables: string[];
+  phrases: string[];
+  config: Config;
+  configId: string;
+}
 
 export interface ResultsResponse {
   data: ResultData[];
@@ -126,7 +112,12 @@ export interface ResultsResponse {
   };
 }
 
-export interface CalculateRequest {
+/*
+ * Request-Typen als Typaliasse, nicht als `interface`: Nur Objektliteral-Typen
+ * tragen die implizite Indexsignatur, die sie dem `body`-Feld von {@link ApiFetch}
+ * (`Record<string, unknown>`) zuweisbar macht.
+ */
+export type CalculateRequest = {
   text: string;
   saveResult?: boolean;
   alpha?: number;
@@ -136,27 +127,39 @@ export interface CalculateRequest {
   weightConsonantClusters?: number;
   /** Manueller Texttyp-Override (ADR 0002); übersteuert die Heuristik. */
   textType?: TextType;
-}
+};
 
-export interface UpdateConfigRequest {
+export type UpdateConfigRequest = {
   alpha: number;
   weightComplexSyllables: number;
   weightMultiMemberedGraphemes: number;
   weightRareGraphemes: number;
   weightConsonantClusters: number;
-}
+};
 
-export function createApiClient(baseURL: string) {
-  const api: $Fetch = ofetch.create({
-    baseURL,
-    credentials: 'include',
-  });
+/**
+ * Minimaler Fetch-Vertrag des API-Clients. Nuxts globales `$fetch` (ofetch)
+ * erfüllt ihn direkt — Basis-URL und Credentials konfiguriert der Aufrufer,
+ * z. B. via `$fetch.create({ baseURL, credentials: 'include' })`. Der Client
+ * selbst bleibt abhängigkeitsfrei.
+ */
+export type ApiFetch = <T>(
+  path: string,
+  options?: {
+    method?: 'GET' | 'POST';
+    body?: Record<string, unknown>;
+    query?: Record<string, unknown>;
+  },
+) => Promise<T>;
 
+export function createApiClient(fetcher: ApiFetch) {
   return {
-    getConfig: () => api<Config>('/config'),
-    updateConfig: (body: UpdateConfigRequest) => api<Config>('/config', { method: 'POST', body }),
-    calculate: (body: CalculateRequest) => api<ResultData>('/calculate', { method: 'POST', body }),
+    getConfig: () => fetcher<Config>('/config'),
+    updateConfig: (body: UpdateConfigRequest) =>
+      fetcher<Config>('/config', { method: 'POST', body }),
+    calculate: (body: CalculateRequest) =>
+      fetcher<ResultData>('/calculate', { method: 'POST', body }),
     getResults: (query?: { page?: number; limit?: number }) =>
-      api<ResultsResponse>('/results', { query }),
+      fetcher<ResultsResponse>('/results', { query }),
   };
 }

@@ -18,14 +18,12 @@ Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`
 - **CSS**: Tailwind utility classes + PrimeVue Aura theme tokens
 - **Auth**: Better-Auth with email/password + admin plugin
 - **Schema validation**: Zod (backend DTOs validated with Zod schemas)
-- **API client**: `@lesbarkeitsindex/api-client` package using `ofetch` for typed frontend → backend calls
+- **API client**: `@lesbarkeitsindex/api-client` package (zero-dependency) — the frontend injects Nuxt's `$fetch` (ofetch) via `createApiClient(fetcher)` for typed frontend → backend calls
 - **Linting**: oxlint (via Vite+)
 - **Formatting**: oxfmt (via Vite+)
 - **Testing**: Vitest for all tests
 - **Build**: NestJS SWC compiler (`nest build --builder swc`)
 - **Charts**: Chart.js + `chartjs-plugin-annotation`
-- **Rich text**: Quill
-- **Dates**: Day.js
 
 ## Monorepo Structure
 
@@ -96,10 +94,9 @@ DATABASE_URL=postgresql://admin:admin@localhost:5432/lesbarkeitsindex?schema=pub
 R_SIDECAR_URL=http://localhost:8787
 BETTER_AUTH_SECRET=dev-secret
 BETTER_AUTH_URL=http://localhost:3000
-ADMIN_EMAILS=
 ```
 
-Single `.env` at the project root — used by both backend (via `ConfigModule.forRoot()`) and frontend (`NUXT_PUBLIC_API_BASE`, defaults to `http://localhost:3000`).
+Single `.env` at the project root — used by both backend (via `process.loadEnvFile` in `main.ts`) and frontend (`NUXT_PUBLIC_API_BASE`, defaults to `http://localhost:3000`).
 
 ## Testing
 
@@ -134,7 +131,7 @@ All tests use Vitest. Frontend E2E uses Playwright (Chromium only, single worker
 - TypeScript strict mode everywhere
 - Frontend: `<script setup lang="ts">` with Composition API
 - Backend: NestJS modules with controllers, services, and Zod DTOs
-- API client: `createApiClient(baseURL)` from `@lesbarkeitsindex/api-client`
+- API client: `createApiClient(fetcher)` from `@lesbarkeitsindex/api-client` — caller supplies a configured `$fetch`/ofetch instance (baseURL + credentials)
 - DB changes: edit `prisma/schema.prisma` → `vp exec prisma generate` → `vp exec prisma migrate dev`
 - Auth in frontend: `useAuthClient()` composable
 - Runtime config: `useRuntimeConfig().public.apiBase` for API base URL
@@ -159,12 +156,11 @@ vp check
 ## Gotchas
 
 - **`vp` in scripts/CI**: `vp` is a shell function loaded from your profile. In non-interactive shells (CI, Bash tool), use the full path `~/.vite-plus/bin/vp`. CI uses `pnpm` directly instead.
-- **Native build scripts**: Root `package.json` has `pnpm.onlyBuiltDependencies` — when adding deps with native code (e.g. `@swc/core`), add them to this list or `pnpm install` will skip their build scripts.
+- **Native build scripts**: `pnpm-workspace.yaml` has an `allowBuilds` map — when adding deps with native code (e.g. `@swc/core`), add them there or `pnpm install` will skip their build scripts.
 - **Prisma `generated/` inside `src/`**: The Prisma client generates to `apps/backend/src/generated/prisma/` so NestJS SWC compiles it alongside application code. Import via `../generated/prisma/client.js`.
 - **Prisma codegen required**: After any Prisma schema change, run `vp exec --filter backend prisma generate`
 - **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)
 - **Same-origin routing in prod**: Caddy reverse proxy routes `/api/auth/*`, `/calculate`, `/config`, `/results` to backend; everything else to frontend. No CORS needed in production
-- **ADMIN_EMAILS**: Comma-separated list in root `.env`. If empty, any logged-in user gets admin access
 - **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth/auth.service.ts` — update when adding new domains
 - **NestJS + Better-Auth**: Auth routes are handled by a wildcard Fastify controller that converts requests to Web API format
 

@@ -25,6 +25,8 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       r-sidecar: ${{ steps.filter.outputs.r-sidecar }}
+      # Built-in paths-filter output: JSON array of all matching filter names, e.g. ["backend","r-sidecar"]
+      services: ${{ steps.filter.outputs.changes }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -50,18 +52,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      BETTER_AUTH_SECRET: 'lesbarkeitsindex-produdction-secret'
-      BETTER_AUTH_URL: 'https://lix.florianbieck.com'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -74,73 +70,6 @@ jobs:
 
       - name: Run tests
         run: pnpm --filter backend run test
-
-  e2e-r-sidecar:
-    needs: [changes]
-    if: needs.changes.outputs.r-sidecar == 'true' || needs.changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build r-sidecar image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.r-sidecar
-          load: true
-          tags: r-sidecar:e2e
-          cache-from: type=gha,scope=r-sidecar
-
-      # Started before pnpm setup so the ~60s R startup overlaps with the install
-      - name: Start r-sidecar
-        run: docker run -d --name r-sidecar -p 8787:8787 r-sidecar:e2e
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Wait for r-sidecar health
-        run: |
-          for i in $(seq 1 60); do
-            if [ "$(docker inspect -f '{{.State.Running}}' r-sidecar)" != "true" ]; then
-              echo "r-sidecar container exited unexpectedly" >&2
-              docker logs r-sidecar >&2
-              exit 1
-            fi
-            if curl -fsS http://localhost:8787/health > /dev/null 2>&1; then
-              echo "r-sidecar healthy after ~$((i * 3))s"
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "r-sidecar did not become healthy within 180s" >&2
-          docker logs r-sidecar >&2
-          exit 1
-
-      - name: Run e2e tests
-        env:
-          R_SIDECAR_URL: http://localhost:8787
-        run: pnpm --filter backend run test:e2e
-
-      - name: Show r-sidecar logs on failure
-        if: failure()
-        run: docker logs r-sidecar
 
   e2e-frontend:
     needs: [changes]
@@ -170,7 +99,6 @@ jobs:
       R_SIDECAR_URL: http://localhost:8787
       BETTER_AUTH_SECRET: lesbarkeitsindex-e2e-secret
       BETTER_AUTH_URL: http://localhost:3000
-      ADMIN_EMAILS: ''
       NUXT_PUBLIC_API_BASE: http://localhost:3000
     steps:
       - name: Checkout
@@ -194,8 +122,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -222,24 +148,11 @@ jobs:
         run: pnpm --filter frontend exec playwright install --with-deps chromium
 
       - name: Wait for r-sidecar health
-        run: |
-          for i in $(seq 1 60); do
-            if [ "$(docker inspect -f '{{.State.Running}}' r-sidecar)" != "true" ]; then
-              echo "r-sidecar container exited unexpectedly" >&2
-              docker logs r-sidecar >&2
-              exit 1
-            fi
-            if curl -fsS http://localhost:8787/health > /dev/null 2>&1; then
-              echo "r-sidecar healthy after ~$((i * 3))s"
-              break
-            fi
-            if [ "$i" -eq 60 ]; then
-              echo "r-sidecar did not become healthy within 180s" >&2
-              docker logs r-sidecar >&2
-              exit 1
-            fi
-            sleep 3
-          done
+        run: curl -fsS --retry 60 --retry-delay 3 --retry-connrefused --retry-all-errors http://localhost:8787/health
+
+      # Backend e2e (Vitest): persistence is mocked; only the syllable spec talks to the sidecar.
+      - name: Run backend e2e tests
+        run: pnpm --filter backend run test:e2e
 
       # Backend self-seeds the default config (and test users) on boot.
       # Run from apps/backend to match the production Docker start command.
@@ -247,18 +160,7 @@ jobs:
         run: |
           cd apps/backend
           node dist/main.js > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:3000/ > /dev/null 2>&1; then
-              echo "backend up after ~$((i * 2))s"
-              break
-            fi
-            if [ "$i" -eq 30 ]; then
-              echo "backend did not start within 60s" >&2
-              cat "$GITHUB_WORKSPACE/backend.log" >&2
-              exit 1
-            fi
-            sleep 2
-          done
+          curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3000/
 
       - name: Start frontend
         env:
@@ -267,18 +169,7 @@ jobs:
         run: |
           cd apps/frontend
           node .output/server/index.mjs > "$GITHUB_WORKSPACE/frontend.log" 2>&1 &
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:3001/ > /dev/null 2>&1; then
-              echo "frontend up after ~$((i * 2))s"
-              break
-            fi
-            if [ "$i" -eq 30 ]; then
-              echo "frontend did not start within 60s" >&2
-              cat "$GITHUB_WORKSPACE/frontend.log" >&2
-              exit 1
-            fi
-            sleep 2
-          done
+          curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3001/
 
       # No-auth smoke only: homepage (incl. the #27 weighting assertion) + results.
       # Auth-dependent specs (login, navigation, auth-flow) stay local-only.
@@ -300,10 +191,16 @@ jobs:
           echo "::group::backend"; tail -80 backend.log 2>/dev/null || true; echo "::endgroup::"
           echo "::group::frontend"; tail -80 frontend.log 2>/dev/null || true; echo "::endgroup::"
 
-  build-backend:
+  build:
     needs: [test, changes]
-    if: needs.changes.outputs.backend == 'true'
+    # Empty matrix vectors fail the workflow — skip the job when nothing changed.
+    if: needs.changes.outputs.services != '[]'
     runs-on: ubuntu-latest
+    strategy:
+      # The old per-service jobs were independent; one failing build must not cancel the others.
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -325,109 +222,21 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}
           tags: |
             type=sha
             type=ref,event=branch
             type=ref,event=tag
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and push backend
+      - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.backend
+          file: ./Dockerfile.${{ matrix.service }}
           platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
-
-  build-frontend:
-    needs: [test, changes]
-    if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
-          tags: |
-            type=sha
-            type=ref,event=branch
-            type=ref,event=tag
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Build and push frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.frontend
-          platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend
-
-  build-r-sidecar:
-    needs: [test, changes]
-    if: needs.changes.outputs.r-sidecar == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/r-sidecar
-          tags: |
-            type=sha
-            type=ref,event=branch
-            type=ref,event=tag
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Build and push r-sidecar
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.r-sidecar
-          platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=r-sidecar
-          cache-to: type=gha,mode=max,scope=r-sidecar
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}

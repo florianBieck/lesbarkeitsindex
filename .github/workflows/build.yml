@@ -195,7 +195,9 @@ jobs:
     needs: [test, changes]
     # Empty matrix vectors fail the workflow — skip the job when nothing changed.
     if: needs.changes.outputs.services != '[]'
-    runs-on: ubuntu-latest
+    # Native arm64 — prod is a Hetzner CAX instance and nothing else pulls these
+    # images. Emulating arm64 on an amd64 runner took >6h and hit the job ceiling.
+    runs-on: ubuntu-24.04-arm
     strategy:
       # The old per-service jobs were independent; one failing build must not cancel the others.
       fail-fast: false
@@ -211,9 +213,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -234,7 +233,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.${{ matrix.service }}
-          platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          platforms: linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

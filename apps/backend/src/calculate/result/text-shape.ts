@@ -2,7 +2,7 @@ import { detectTextType, type ReadingUnit, type TextType } from './text-type.js'
 import { detectTitle } from './title-guard.js';
 
 /**
- * Textgestalt (CONTEXT.md): wie ein Text vor jeder Kennzahl in Leseeinheiten
+ * Textgestalt (GLOSSARY.md): wie ein Text vor jeder Kennzahl in Leseeinheiten
  * zerfällt — Texttyp (heuristisch erkannt und ggf. übersteuert), Leseeinheit,
  * Titel und der titelbereinigte Fließtext, auf dem die NLP-Analyse läuft.
  */

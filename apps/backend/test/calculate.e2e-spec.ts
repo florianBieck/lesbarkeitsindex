@@ -145,7 +145,9 @@ describe('POST /calculate — Integrationstest (R-Dienst & Persistenz gemockt, A
   });
 
   test('Validierungsfehler: negatives Gewicht → 422', async () => {
-    const { status } = await post({ text: TEXT, weightComplexSyllables: -1 });
+    const { status, body } = await post({ text: TEXT, weightComplexSyllables: -1 });
     expect(status).toBe(422);
+    expect(body.error.formErrors).toEqual([]);
+    expect(Object.keys(body.error.fieldErrors)).toEqual(['weightComplexSyllables']);
   });
 });

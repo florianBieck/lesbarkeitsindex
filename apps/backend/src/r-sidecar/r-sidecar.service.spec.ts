@@ -92,4 +92,22 @@ describe('RSidecarService.analyzeText', () => {
     const service = createService();
     await expect(service.analyzeText('Test.')).rejects.toThrow(/R sidecar/);
   });
+
+  test('reports the length-mismatch refinement at the root path', async () => {
+    const mismatched = {
+      sentences: ['Test.'],
+      words: ['Test', 'Satz'],
+      syllablesPerWord: [1],
+      posTags: ['NN', 'NN'],
+    };
+
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve(new Response(JSON.stringify(mismatched), { status: 200 })),
+    ) as typeof fetch;
+
+    const service = createService();
+    await expect(service.analyzeText('Test.')).rejects.toThrow(
+      'R sidecar response invalid: (root): words, syllablesPerWord and posTags must have equal length',
+    );
+  });
 });

@@ -156,6 +156,7 @@ pnpm run knip
 ## CI/CD
 
 - **`.github/workflows/build.yml`**: On push to `main` or tags — `pnpm install --frozen-lockfile`, runs tests, builds Docker images for backend/frontend/r-sidecar, pushes to `ghcr.io`
+- **`renovate.json`**: Renovate dependency updates — grouped PRs Monday mornings (Europe/Berlin), security fixes immediately. The Node.js major lives in `.node-version` (CI reads it via `node-version-file`) and both Dockerfiles, and moves as one PR; Postgres and `@types/node` majors wait for approval on the Dependency Dashboard issue
 
 ## Gotchas
 

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices", ":semanticCommits"],
+  "ignorePresets": [":pinDevDependencies"],
+  "timezone": "Europe/Berlin",
+  "schedule": ["before 9am on monday"],
+  "prHourlyLimit": 0,
+  "labels": ["dependencies"],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "addLabels": ["security"]
+  },
+  "postUpdateOptions": ["pnpmDedupe"],
+  "lockFileMaintenance": {
+    "schedule": ["before 9am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "description": "Private apps, not published libraries: move package.json ranges along with the lockfile",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies", "devDependencies"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "PrimeVue, its Nuxt module and the Aura theme package release in lockstep; the built-in monorepo preset misses their new repo",
+      "matchPackageNames": ["primevue", "@primevue/**", "@primeuix/**"],
+      "groupName": "PrimeVue"
+    },
+    {
+      "description": "One weekly PR for stable npm minor/patch updates. 0.x bumps (vite-plus, @swc/cli, ...) count as breaking and stay separate",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchIsBreaking": false,
+      "groupName": "npm non-major dependencies"
+    },
+    {
+      "description": "Workflow-only changes rebuild no image, so batch them separately from app updates",
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action", "github-runner"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Base-image digest refreshes (OS security patches) together, so one merge rebuilds all affected images at once",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["digest", "pinDigest"],
+      "groupName": "Docker image digests"
+    },
+    {
+      "description": "Move the Node.js runtime major everywhere at once: .node-version (local + CI) and both Dockerfiles",
+      "matchDepNames": ["node"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "Node.js"
+    },
+    {
+      "description": "@types/node has to match the runtime major: approve it on the Dependency Dashboard together with the Node.js major",
+      "matchPackageNames": ["@types/node"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "A Postgres major needs a pg_upgrade of the prod data volume: only on explicit request via the Dependency Dashboard",
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Our own images are built by CI and deployed as :latest; never pin or update them",
+      "matchPackageNames": ["ghcr.io/florianbieck/lesbarkeitsindex/**"],
+      "enabled": false
+    }
+  ]
+}

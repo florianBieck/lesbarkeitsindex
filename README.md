@@ -38,7 +38,7 @@ vp exec --filter frontend nuxt dev
 
 ```bash
 vp install          # Install all dependencies
-vp test             # Run all unit tests
+pnpm test           # Run all unit tests
 vp lint             # Lint with oxlint
 vp fmt              # Format with oxfmt
 vp check            # Lint + format check

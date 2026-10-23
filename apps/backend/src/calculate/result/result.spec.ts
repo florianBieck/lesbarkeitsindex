@@ -1,4 +1,4 @@
-import { test, expect, describe } from 'vitest';
+import { test, expect, describe } from 'vite-plus/test';
 import { computeReadability, type ConfigWeights } from './index.js';
 import {
   countWordsWithComplexSyllables,
@@ -407,7 +407,6 @@ describe('metric functions with pre-computed arrays', () => {
     test('returns 0 for empty string', () => {
       expect(calculateSpecialCharacters('')).toBe(0);
     });
-
   });
 
   describe('calculateProNIndex', () => {
@@ -434,9 +433,7 @@ describe('metric functions with pre-computed arrays', () => {
 
   describe('calculateSubordinateClauseRatio', () => {
     test('counts KOUS as subordinate clause', () => {
-      expect(
-        calculateSubordinateClauseRatio(['ART', 'NN', 'KOUS', 'PPER', 'VVFIN'], 2),
-      ).toBe(0.5);
+      expect(calculateSubordinateClauseRatio(['ART', 'NN', 'KOUS', 'PPER', 'VVFIN'], 2)).toBe(0.5);
     });
 
     test('counts KOUI as subordinate clause', () => {
@@ -717,8 +714,26 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
         'Hund Katze Vogel Maus Fisch Bär Löwe Wolf Tiger Adler Hase Igel Frosch Eule Rabe Elster Meise Spatz Reh Hirsch',
       ],
       words: [
-        'Hund', 'Katze', 'Vogel', 'Maus', 'Fisch', 'Bär', 'Löwe', 'Wolf', 'Tiger', 'Adler',
-        'Hase', 'Igel', 'Frosch', 'Eule', 'Rabe', 'Elster', 'Meise', 'Spatz', 'Reh', 'Hirsch',
+        'Hund',
+        'Katze',
+        'Vogel',
+        'Maus',
+        'Fisch',
+        'Bär',
+        'Löwe',
+        'Wolf',
+        'Tiger',
+        'Adler',
+        'Hase',
+        'Igel',
+        'Frosch',
+        'Eule',
+        'Rabe',
+        'Elster',
+        'Meise',
+        'Spatz',
+        'Reh',
+        'Hirsch',
       ],
       syllablesPerWord: [1, 2, 2, 1, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2],
       posTags: Array(20).fill('NN'),

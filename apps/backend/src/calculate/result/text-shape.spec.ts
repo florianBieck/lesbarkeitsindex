@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect } from 'vite-plus/test';
 import { resolveTextShape } from './text-shape.js';
 
 describe('resolveTextShape — Textgestalt-Auflösung (ADR 0002)', () => {

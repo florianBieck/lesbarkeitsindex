@@ -102,17 +102,17 @@ Single `.env` at the project root — used by both backend (via `process.loadEnv
 ## Testing
 
 ```sh
-# Backend unit tests (Vitest)
-vp exec --filter backend vitest run
+# Backend unit tests (Vitest 5 via `vp test`)
+pnpm --filter backend run test
 
-# Frontend unit tests (Vitest + @nuxt/test-utils)
+# Frontend unit tests (Vitest 4 + @nuxt/test-utils)
 pnpm --filter frontend run test:unit
 
 # Frontend E2E (Playwright, requires running stack)
 pnpm --filter frontend run test:e2e
 
-# Run all workspace tests from root
-vp test
+# Run all workspace tests from root (each package's own test script)
+pnpm test
 ```
 
 All tests use Vitest. Frontend E2E uses Playwright (Chromium only, single worker). Use `vp exec` for running binaries directly; use `pnpm --filter` for npm scripts defined in package.json.
@@ -161,6 +161,7 @@ pnpm run knip
 ## Gotchas
 
 - **`vp` in scripts/CI**: `vp` is a shell function loaded from your profile. In non-interactive shells (CI, Bash tool), use the full path `~/.vite-plus/bin/vp`. CI uses `pnpm` directly instead.
+- **Two Vitest majors**: Backend tests run on the Vitest bundled with vite-plus (import from `vite-plus/test`); the frontend keeps its own `vitest` 4, since `@nuxt/test-utils` 3 doesn't support Vitest 5. Don't keep the `vite@*`/`vitest@*` overrides that `vp migrate` writes to `pnpm-workspace.yaml` — they move Nuxt onto vite-plus-core and break `nuxt build` and the frontend tests
 - **Native build scripts**: `pnpm-workspace.yaml` has an `allowBuilds` map — when adding deps with native code (e.g. `@swc/core`), add them there or `pnpm install` will skip their build scripts.
 - **Prisma `generated/` inside `src/`**: The Prisma client generates to `apps/backend/src/generated/prisma/` so NestJS SWC compiles it alongside application code. Import via `../generated/prisma/client.js`.
 - **Prisma codegen required**: After any Prisma schema change, run `vp exec --filter backend prisma generate`

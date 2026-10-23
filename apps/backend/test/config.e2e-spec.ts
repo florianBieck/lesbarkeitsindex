@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppConfigController } from '../src/config/config.controller.js';
@@ -149,7 +149,12 @@ describe('POST /config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)'
 
   test('fehlendes Pflichtfeld (alpha) → 422', async () => {
     mocks.configCreate.mockClear();
-    const { weightComplexSyllables, weightMultiMemberedGraphemes, weightRareGraphemes, weightConsonantClusters } = VALID;
+    const {
+      weightComplexSyllables,
+      weightMultiMemberedGraphemes,
+      weightRareGraphemes,
+      weightConsonantClusters,
+    } = VALID;
     const { status } = await post({
       weightComplexSyllables,
       weightMultiMemberedGraphemes,

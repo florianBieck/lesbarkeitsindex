@@ -21,6 +21,7 @@ Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`
 - **API client**: `@lesbarkeitsindex/api-client` package (zero-dependency) — the frontend injects Nuxt's `$fetch` (ofetch) via `createApiClient(fetcher)` for typed frontend → backend calls
 - **Linting**: oxlint (via Vite+)
 - **Formatting**: oxfmt (via Vite+)
+- **Dead code**: knip (`knip.config.ts`) — unused files, exports, dependencies
 - **Testing**: Vitest for all tests
 - **Build**: NestJS SWC compiler (`nest build --builder swc`)
 - **Charts**: Chart.js + `chartjs-plugin-annotation`
@@ -147,6 +148,9 @@ vp fmt
 
 # Check both
 vp check
+
+# Unused files, exports, dependencies (knip, also runs in CI)
+pnpm run knip
 ```
 
 ## CI/CD
@@ -162,6 +166,7 @@ vp check
 - **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)
 - **Same-origin routing in prod**: Caddy reverse proxy routes `/api/auth/*`, `/calculate`, `/config`, `/results` to backend; everything else to frontend. No CORS needed in production
 - **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth/auth.service.ts` — update when adding new domains
+- **knip via the script only**: Run `pnpm run knip`, not bare `knip` — the script sets `KNIP_DISABLE_RAW_TRANSFER=1`, without which knip's oxc-parser panics (`raw_transfer.rs` assertion). Ignores in `knip.config.ts` carry a comment saying why; keep it that way
 - **NestJS + Better-Auth**: Auth routes are handled by a wildcard Fastify controller that converts requests to Web API format
 
 ## Key Domain Concepts

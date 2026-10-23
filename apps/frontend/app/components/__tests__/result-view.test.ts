@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import ResultView from '~/components/result-view.vue';
-import type { ResultData, Config } from '~/composables/useApiClient';
+import type { Config } from '@lesbarkeitsindex/api-client';
+import type { ResultData } from '~/composables/useApiClient';
 
 // The score chart loads chart.js lazily; happy-dom has no canvas support,
 // so the chart modules are replaced with inert stand-ins. `__esModule: true`

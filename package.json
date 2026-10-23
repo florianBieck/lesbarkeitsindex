@@ -11,10 +11,12 @@
     "lint": "vp lint",
     "fmt": "vp fmt",
     "check": "vp check",
+    "knip": "KNIP_DISABLE_RAW_TRANSFER=1 knip",
     "generate": "pnpm --filter backend run generate",
     "migrate": "pnpm --filter backend run migrate"
   },
   "devDependencies": {
+    "knip": "^6.42.1",
     "vite-plus": "^0.1.16"
   },
   "peerDependencies": {

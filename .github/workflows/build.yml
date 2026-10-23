@@ -71,6 +71,11 @@ jobs:
       - name: Run tests
         run: pnpm --filter backend run test
 
+      # Unused files, exports and dependencies. Relies on the postinstall
+      # codegen above (Prisma client, .nuxt types).
+      - name: Run knip
+        run: pnpm run knip
+
   e2e-frontend:
     needs: [changes]
     if: >-

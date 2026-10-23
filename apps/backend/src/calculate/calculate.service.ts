@@ -14,7 +14,7 @@ import {
 } from './result/index.js';
 
 /** Vom Nutzer übersteuerbare Gewichte/α einer einzelnen Anfrage (jeweils optional). */
-export interface ConfigOverrides {
+interface ConfigOverrides {
   readonly alpha?: number;
   readonly weightComplexSyllables?: number;
   readonly weightMultiMemberedGraphemes?: number;

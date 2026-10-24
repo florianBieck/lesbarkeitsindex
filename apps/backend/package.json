@@ -6,9 +6,9 @@
     "dev": "nest start --watch --builder swc",
     "start": "node dist/main.js",
     "build": "nest build --builder swc",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test": "vp test run",
+    "test:watch": "vp test",
+    "test:e2e": "vp test run --config vitest.e2e.config.ts",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "lint": "vp lint",
@@ -26,7 +26,7 @@
     "prisma": "^7.1.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "zod": "^3.25.0"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
@@ -36,7 +36,6 @@
     "@types/node": "^22.16.0",
     "@types/pg": "^8.15.6",
     "unplugin-swc": "^1.5.9",
-    "vite-plus": "^0.1.16",
-    "vitest": "^4.1.2"
+    "vite-plus": "^1.4.0"
   }
 }

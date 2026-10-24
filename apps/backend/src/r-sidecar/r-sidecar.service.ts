@@ -15,7 +15,7 @@ const TextAnalysisSchema = z
   })
   .refine(
     (d) => d.words.length === d.syllablesPerWord.length && d.words.length === d.posTags.length,
-    { message: 'words, syllablesPerWord and posTags must have equal length' },
+    { error: 'words, syllablesPerWord and posTags must have equal length' },
   );
 
 export type TextAnalysis = z.infer<typeof TextAnalysisSchema>;

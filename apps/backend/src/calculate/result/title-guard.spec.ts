@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect } from 'vite-plus/test';
 import { detectTitle, TITLE_MAX_LENGTH } from './title-guard.js';
 
 describe('TITLE_MAX_LENGTH', () => {

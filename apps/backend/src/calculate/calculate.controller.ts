@@ -24,7 +24,7 @@ export class CalculateController {
     const parsed = CalculateSchema.safeParse(body);
     if (!parsed.success) {
       return reply.status(HttpStatus.UNPROCESSABLE_ENTITY).send({
-        error: parsed.error.flatten(),
+        error: z.flattenError(parsed.error),
       });
     }
 

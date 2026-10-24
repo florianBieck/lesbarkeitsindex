@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect } from 'vite-plus/test';
 import { computeWordComplexity } from './word-complexity.js';
 
 /** BL-Startgewichte: Drei-/Mehrsilber 50, mehrgliedrige Grapheme 25, seltene 12,5, Cluster 12,5. */
@@ -74,7 +74,10 @@ describe('computeWordComplexity (Zähler → Anteile → WK, acht Komponentenfel
     const { components } = computeWordComplexity(['Strauß', 'Tag'], [1, 1], START_WEIGHTS);
     for (const [count, proportion] of [
       [components.countWordsWithComplexSyllables, components.proportionOfWordsWithComplexSyllables],
-      [components.countWordsWithConsonantClusters, components.proportionOfWordsWithConsonantClusters],
+      [
+        components.countWordsWithConsonantClusters,
+        components.proportionOfWordsWithConsonantClusters,
+      ],
       [
         components.countWordsWithMultiMemberedGraphemes,
         components.proportionOfWordsWithMultiMemberedGraphemes,

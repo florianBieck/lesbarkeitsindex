@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CalculateController } from '../src/calculate/calculate.controller.js';
@@ -145,7 +145,9 @@ describe('POST /calculate — Integrationstest (R-Dienst & Persistenz gemockt, A
   });
 
   test('Validierungsfehler: negatives Gewicht → 422', async () => {
-    const { status } = await post({ text: TEXT, weightComplexSyllables: -1 });
+    const { status, body } = await post({ text: TEXT, weightComplexSyllables: -1 });
     expect(status).toBe(422);
+    expect(body.error.formErrors).toEqual([]);
+    expect(Object.keys(body.error.fieldErrors)).toEqual(['weightComplexSyllables']);
   });
 });

@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect } from 'vite-plus/test';
 import { detectTextType, countNonEmptyLines } from './text-type.js';
 
 describe('detectTextType — heuristische Texttyp-Erkennung (ADR 0002)', () => {

@@ -26,7 +26,7 @@ const UpdateConfigSchema = z
       return Math.abs(sum - 100) <= WEIGHT_SUM_EPSILON;
     },
     {
-      message: 'Die Summe der vier WK-Gewichte muss 100 ergeben.',
+      error: 'Die Summe der vier WK-Gewichte muss 100 ergeben.',
       path: ['weightSum'],
     },
   );
@@ -53,7 +53,7 @@ export class AppConfigController {
     const parsed = UpdateConfigSchema.safeParse(body);
     if (!parsed.success) {
       return reply.status(HttpStatus.UNPROCESSABLE_ENTITY).send({
-        error: parsed.error.flatten(),
+        error: z.flattenError(parsed.error),
       });
     }
 

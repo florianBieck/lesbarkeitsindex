@@ -9,6 +9,9 @@ export default {
     'apps/backend': {
       // Referenced by nest-cli.json ("collection"), shipped with @nestjs/cli.
       ignoreDependencies: ['@nestjs/schematics'],
+      // vitest comes bundled with vite-plus here, so knip no longer auto-enables
+      // its plugin, and it does not parse `vp test --config` in scripts.
+      vitest: { config: ['vitest.config.ts', 'vitest.e2e.config.ts'] },
     },
     'apps/frontend': {
       // defineVitestConfig() boots Nuxt to resolve its config, which fails when

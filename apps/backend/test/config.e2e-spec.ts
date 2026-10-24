@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppConfigController } from '../src/config/config.controller.js';
@@ -96,7 +96,10 @@ describe('POST /config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)'
       weightConsonantClusters: 0, // 50+25+12.5+0 = 87.5
     });
     expect(status).toBe(422);
-    expect(body).toHaveProperty('error');
+    expect(body.error).toEqual({
+      formErrors: [],
+      fieldErrors: { weightSum: ['Die Summe der vier WK-Gewichte muss 100 ergeben.'] },
+    });
     expect(mocks.configCreate).not.toHaveBeenCalled();
   });
 
@@ -138,18 +141,25 @@ describe('POST /config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)'
 
   test('negatives Gewicht → 422', async () => {
     mocks.configCreate.mockClear();
-    const { status } = await post({
+    const { status, body } = await post({
       ...VALID,
       weightConsonantClusters: -1,
       weightRareGraphemes: 13.5, // dieser Hack ergäbe ohne neg-Check Summe 100
     });
     expect(status).toBe(422);
+    // Die Summenprüfung läuft auch bei verletzter Untergrenze (Summe hier 87,5).
+    expect(Object.keys(body.error.fieldErrors)).toEqual(['weightConsonantClusters', 'weightSum']);
     expect(mocks.configCreate).not.toHaveBeenCalled();
   });
 
   test('fehlendes Pflichtfeld (alpha) → 422', async () => {
     mocks.configCreate.mockClear();
-    const { weightComplexSyllables, weightMultiMemberedGraphemes, weightRareGraphemes, weightConsonantClusters } = VALID;
+    const {
+      weightComplexSyllables,
+      weightMultiMemberedGraphemes,
+      weightRareGraphemes,
+      weightConsonantClusters,
+    } = VALID;
     const { status } = await post({
       weightComplexSyllables,
       weightMultiMemberedGraphemes,

@@ -39,7 +39,7 @@ services:
     environment:
       - NODE_ENV=production
       # Use same-origin API via Caddy to avoid third-party cookies and CORS
-      # Base is the site origin; Better‑Auth appends /api/auth itself and app endpoints are at root
+      # Base is the site origin; Better‑Auth appends /api/auth and the API client appends /api
       - NUXT_PUBLIC_API_BASE=https://lix.florianbieck.com
     depends_on:
       - backend

@@ -106,6 +106,9 @@ Single `.env` at the project root — used by both backend (via `process.loadEnv
 # Backend unit tests (Vitest 5 via `vp test`)
 pnpm --filter backend run test
 
+# API client unit tests (Vitest 5 via `vp test`)
+pnpm --filter @lesbarkeitsindex/api-client run test
+
 # Frontend unit tests (Vitest 4 + @nuxt/test-utils)
 pnpm --filter frontend run test:unit
 

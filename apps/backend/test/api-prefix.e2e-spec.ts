@@ -57,26 +57,26 @@ describe('API prefix /api/ (ADR 0004)', () => {
     await app.close();
   });
 
-  async function get(url: string): Promise<number> {
+  async function statusOf(url: string): Promise<number> {
     const res = await app.inject({ method: 'GET', url });
     return res.statusCode;
   }
 
   test('app routes answer under /api/, not at the root', async () => {
-    expect(await get('/api/config')).toBe(200);
-    expect(await get('/config')).toBe(404);
+    expect(await statusOf('/api/config')).toBe(200);
+    expect(await statusOf('/config')).toBe(404);
   });
 
   test('the health check answers at /api/health and leaves / to the frontend', async () => {
-    expect(await get('/api/health')).toBe(200);
-    expect(await get('/')).toBe(404);
+    expect(await statusOf('/api/health')).toBe(200);
+    expect(await statusOf('/')).toBe(404);
   });
 
   test('Better-Auth answers at /api/auth/* and receives the full URL', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/auth/get-session' });
     expect(res.statusCode).toBe(200);
     expect(new URL(res.json<{ url: string }>().url).pathname).toBe('/api/auth/get-session');
-    expect(await get('/auth/get-session')).toBe(404);
+    expect(await statusOf('/auth/get-session')).toBe(404);
   });
 
   test('CORS lets the dev frontend send credentials', async () => {

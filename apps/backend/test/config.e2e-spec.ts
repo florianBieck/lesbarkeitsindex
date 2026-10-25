@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { configureApp } from '../src/configure-app.js';
 import { AppConfigController } from '../src/config/config.controller.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { AuthGuard } from '../src/auth/auth.guard.js';
@@ -40,7 +41,7 @@ function buildMocks() {
   };
 }
 
-describe('POST /config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)', () => {
+describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)', () => {
   let app: NestFastifyApplication;
   let mocks: ReturnType<typeof buildMocks>;
 
@@ -55,6 +56,7 @@ describe('POST /config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)'
       .compile();
 
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    configureApp(app);
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
@@ -66,7 +68,7 @@ describe('POST /config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)'
   async function post(payload: unknown): Promise<{ status: number; body: any }> {
     const res = await app.inject({
       method: 'POST',
-      url: '/config',
+      url: '/api/config',
       headers: { 'content-type': 'application/json' },
       payload: payload as object,
     });

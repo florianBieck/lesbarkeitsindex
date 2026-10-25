@@ -165,7 +165,7 @@ jobs:
         run: |
           cd apps/backend
           node dist/main.js > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
-          curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3000/
+          curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3000/api/health
 
       - name: Start frontend
         env:

@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module.js';
+import { configureApp } from './configure-app.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AuthService } from './auth/auth.service.js';
 import { APIError } from 'better-auth';
@@ -24,10 +25,7 @@ const logger = new Logger('Bootstrap');
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
+  configureApp(app);
 
   await app.listen(3000, '0.0.0.0');
 

@@ -69,7 +69,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: pnpm --filter backend run test
+        run: pnpm --filter backend --filter @lesbarkeitsindex/api-client run test
 
       # Unused files, exports and dependencies. Relies on the postinstall
       # codegen above (Prisma client, .nuxt types).

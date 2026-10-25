@@ -1,0 +1,50 @@
+/*
+ * PROTOTYPE (#56), throwaway. Never merge.
+ *
+ * Emulates, on today's Tailwind 3.4 build, what the app looks like once the
+ * dead `*-surface-*` / `text-primary` classes generate CSS (as tailwindcss-primeui
+ * would map them: `var(--p-surface-*)`, `var(--p-primary-color)`) and once
+ * utilities beat PrimeVue's styles (as PrimeVue `cssLayer` would allow).
+ *
+ * :root[data-proto-colors]   → B, C, D: colour classes generate CSS
+ * :root[data-proto-utils]    → B, C: utilities beat PrimeVue
+ * :root[data-proto-aa]       → C, D: the two AA failures fixed
+ * :root[data-proto-proposal] → D: deletions/replacements proposed for discussion
+ */
+
+/* ---- dead colour classes, revived ---- */
+:root[data-proto-colors] .text-surface-400 { color: var(--p-surface-400); }
+:root[data-proto-colors] .text-surface-500 { color: var(--p-surface-500); }
+:root[data-proto-colors] .text-surface-600 { color: var(--p-surface-600); }
+:root[data-proto-colors] .text-surface-700 { color: var(--p-surface-700); }
+:root[data-proto-colors] .text-surface-900 { color: var(--p-surface-900); }
+:root[data-proto-colors] .bg-surface-0 { background-color: var(--p-surface-0); }
+:root[data-proto-colors] .bg-surface-50 { background-color: var(--p-surface-50); }
+:root[data-proto-colors] .border-surface-100 { border-color: var(--p-surface-100); }
+:root[data-proto-colors] .outline-surface-0 { outline-color: var(--p-surface-0); }
+:root[data-proto-colors] .fill-surface-700 { fill: var(--p-surface-700); }
+:root[data-proto-colors] .text-primary { color: var(--p-primary-color); }
+
+/* ---- utilities on PrimeVue components, now winning (cssLayer emulation) ---- */
+:root[data-proto-utils] .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+:root[data-proto-utils] .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+:root[data-proto-utils] .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+:root[data-proto-utils] .rounded-lg { border-radius: 0.5rem; }
+:root[data-proto-utils] .shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+:root[data-proto-utils] .gap-2 { gap: 0.5rem; }
+
+/* `text-base! leading-normal!` is v4 syntax: dead in v3, live in v4 */
+:root[data-proto-utils] .text-base\! { font-size: 1rem !important; }
+:root[data-proto-utils] .leading-normal\! { line-height: 1.5 !important; }
+
+/* ---- variant C: the two AA failures fixed ---- */
+:root[data-proto-aa] .text-surface-400 { color: var(--p-surface-500); } /* 2.56:1 → 4.76:1 */
+:root[data-proto-aa] .text-primary { color: var(--p-primary-700); } /* 2.54:1 → 5.48:1 */
+
+/* ---- variant D: proposal ---- */
+/* AppLogo (PrimeBlocks placeholder) deleted from /login and /logout */
+:root[data-proto-proposal] div:has(> svg > .fill-surface-700) { display: none; }
+/* logout: grey band deleted */
+:root[data-proto-proposal] .bg-surface-50 { background-color: transparent; }
+/* separators: surface-100 (1.1:1, nearly invisible) → surface-200, ≈ today's gray-200 */
+:root[data-proto-proposal] .border-surface-100 { border-color: var(--p-surface-200); }

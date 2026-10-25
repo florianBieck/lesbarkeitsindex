@@ -24,6 +24,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000',
+      // PROTOTYPE (#56), throwaway: NUXT_PUBLIC_PROTOTYPE_SWITCHER=true shows the switcher in a prod build
+      prototypeSwitcher: false,
     },
   },
   devServer: {

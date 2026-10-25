@@ -75,10 +75,14 @@
         </div>
       </template>
     </Card>
+    <!-- PROTOTYPE (#56), throwaway: variant switcher, dev only -->
+    <PrototypeSwitcher v-if="isDev" />
   </div>
 </template>
 <script setup lang="ts">
 import 'primeicons/primeicons.css';
+
+const isDev = import.meta.dev || useRuntimeConfig().public.prototypeSwitcher;
 
 const client = useAuthClient();
 

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { configureApp } from '../src/configure-app.js';
 import { CalculateController } from '../src/calculate/calculate.controller.js';
 import { CalculateService } from '../src/calculate/calculate.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -59,7 +60,7 @@ function buildMocks() {
   };
 }
 
-describe('POST /calculate — Integrationstest (R-Dienst & Persistenz gemockt, AC6)', () => {
+describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemockt, AC6)', () => {
   let app: NestFastifyApplication;
   let mocks: ReturnType<typeof buildMocks>;
 
@@ -75,6 +76,7 @@ describe('POST /calculate — Integrationstest (R-Dienst & Persistenz gemockt, A
     }).compile();
 
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    configureApp(app);
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
@@ -86,7 +88,7 @@ describe('POST /calculate — Integrationstest (R-Dienst & Persistenz gemockt, A
   async function post(payload: unknown): Promise<{ status: number; body: any }> {
     const res = await app.inject({
       method: 'POST',
-      url: '/calculate',
+      url: '/api/calculate',
       headers: { 'content-type': 'application/json' },
       payload: payload as object,
     });

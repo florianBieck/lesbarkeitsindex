@@ -32,12 +32,13 @@ Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`
 apps/
   backend/            # NestJS/Fastify API (port 3000)
     src/
-      main.ts         # Bootstrap, CORS, Swagger, seed
+      main.ts         # Bootstrap, seed
+      configure-app.ts # /api prefix + CORS; e2e specs call it too
       app.module.ts   # Root module
       health.controller.ts
       prisma/         # PrismaModule + PrismaService
       auth/           # AuthModule, AuthService, AuthController, AuthGuard
-      config/         # ConfigController (GET/POST /config)
+      config/         # ConfigController (GET/POST /api/config)
       calculate/      # CalculateController, CalculateService
         result/       # Pure computation functions
           index.ts    # computeReadability() — barrel exports
@@ -47,7 +48,7 @@ apps/
           grapheme-analysis.ts
           text-features.ts
           heading-extraction.ts
-      results/        # ResultsController (GET /results)
+      results/        # ResultsController (GET /api/results)
       r-sidecar/      # RSidecarService (R service HTTP client)
       generated/      # Prisma client (gitignored, auto-generated)
     prisma/
@@ -105,6 +106,9 @@ Single `.env` at the project root — used by both backend (via `process.loadEnv
 # Backend unit tests (Vitest 5 via `vp test`)
 pnpm --filter backend run test
 
+# API client unit tests (Vitest 5 via `vp test`)
+pnpm --filter @lesbarkeitsindex/api-client run test
+
 # Frontend unit tests (Vitest 4 + @nuxt/test-utils)
 pnpm --filter frontend run test:unit
 
@@ -119,13 +123,14 @@ All tests use Vitest. Frontend E2E uses Playwright (Chromium only, single worker
 
 ## API Endpoints
 
-- `GET /` — health check
-- `GET /config` — current readability config
-- `POST /config` — update config (requires auth)
-- `POST /calculate` — analyze text readability
-- `GET /results?page=0&limit=10` — paginated results
+Every backend route lives under `/api/` (ADR 0004); every other path belongs to the frontend.
+
+- `GET /api/health` — health check
+- `GET /api/config` — current readability config
+- `POST /api/config` — update config (requires auth)
+- `POST /api/calculate` — analyze text readability
+- `GET /api/results?page=0&limit=10` — paginated results
 - `/api/auth/*` — Better-Auth endpoints
-- `GET /api` — Swagger UI (dev only)
 
 ## Code Conventions
 
@@ -166,7 +171,7 @@ pnpm run knip
 - **Prisma `generated/` inside `src/`**: The Prisma client generates to `apps/backend/src/generated/prisma/` so NestJS SWC compiles it alongside application code. Import via `../generated/prisma/client.js`.
 - **Prisma codegen required**: After any Prisma schema change, run `vp exec --filter backend prisma generate`
 - **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)
-- **Same-origin routing in prod**: Caddy reverse proxy routes `/api/auth/*`, `/calculate`, `/config`, `/results` to backend; everything else to frontend. No CORS needed in production
+- **Same-origin routing in prod**: Caddy routes `/api/*` to the backend and everything else to the frontend. No CORS needed in production
 - **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth/auth.service.ts` — update when adding new domains
 - **knip via the script only**: Run `pnpm run knip`, not bare `knip` — the script sets `KNIP_DISABLE_RAW_TRANSFER=1`, without which knip's oxc-parser panics (`raw_transfer.rs` assertion). Ignores in `knip.config.ts` carry a comment saying why; keep it that way
 - **NestJS + Better-Auth**: Auth routes are handled by a wildcard Fastify controller that converts requests to Web API format

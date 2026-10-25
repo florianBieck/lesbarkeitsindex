@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Calibration runner: posts each text to the live /calculate endpoint and prints
+// Calibration runner: posts each text to the live /api/calculate endpoint and prints
 // a compact table (Niveaustufe, LÜ-LIX, LIX, WK, Umfang, Texttyp, Leseeinheit).
 // Usage: node docs/calibration/run-calibration.mjs [http://localhost:3000]
 
@@ -62,7 +62,7 @@ function round(n, digits = 1) {
 
 const rows = [];
 for (const sample of TEXTS) {
-  const response = await fetch(`${baseUrl}/calculate`, {
+  const response = await fetch(`${baseUrl}/api/calculate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: sample.text, saveResult: false }),

@@ -140,8 +140,9 @@ export type UpdateConfigRequest = {
 /**
  * Minimaler Fetch-Vertrag des API-Clients. Nuxts globales `$fetch` (ofetch)
  * erfüllt ihn direkt — Basis-URL und Credentials konfiguriert der Aufrufer,
- * z. B. via `$fetch.create({ baseURL, credentials: 'include' })`. Der Client
- * selbst bleibt abhängigkeitsfrei.
+ * z. B. via `$fetch.create({ baseURL, credentials: 'include' })`. Die Basis-URL
+ * ist der reine Origin; das `/api`-Präfix setzt der Client selbst. Der Client
+ * bleibt abhängigkeitsfrei.
  */
 export type ApiFetch = <T>(
   path: string,
@@ -152,14 +153,17 @@ export type ApiFetch = <T>(
   },
 ) => Promise<T>;
 
+/** Pfad-Präfix der App-API (ADR 0004); alle übrigen Pfade gehören dem Frontend. */
+const API_PREFIX = '/api';
+
 export function createApiClient(fetcher: ApiFetch) {
   return {
-    getConfig: () => fetcher<Config>('/config'),
+    getConfig: () => fetcher<Config>(`${API_PREFIX}/config`),
     updateConfig: (body: UpdateConfigRequest) =>
-      fetcher<Config>('/config', { method: 'POST', body }),
+      fetcher<Config>(`${API_PREFIX}/config`, { method: 'POST', body }),
     calculate: (body: CalculateRequest) =>
-      fetcher<ResultData>('/calculate', { method: 'POST', body }),
+      fetcher<ResultData>(`${API_PREFIX}/calculate`, { method: 'POST', body }),
     getResults: (query?: { page?: number; limit?: number }) =>
-      fetcher<ResultsResponse>('/results', { query }),
+      fetcher<ResultsResponse>(`${API_PREFIX}/results`, { query }),
   };
 }

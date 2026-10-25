@@ -51,6 +51,10 @@
   </div>
 </template>
 <script setup lang="ts">
+import { onMounted } from 'vue';
+import InputNumber from 'primevue/inputnumber';
+import { useApiClient } from '@/composables/useApiClient';
+
 // Gemeinsame Eingabemaske für den Aufschlag α und die vier WK-Gewichte
 // (Startseite „Erweiterte Einstellungen" und Admin-Konfiguration).
 // Die Seiten besitzen den Zustand (v-model); die Maske lädt beim Mount die

@@ -1,0 +1,14 @@
+{
+  // PROTOTYPE (wayfinder #55): type-checks the ported spec at Nuxt's app
+  // strictness (strict + noUncheckedIndexedAccess). In PR 2 this is the
+  // `vue-tsc -b` run over tsconfig.app.json.
+  "extends": "./.nuxt/tsconfig.app.json",
+  "compilerOptions": { "noEmit": true },
+  "include": [
+    "./.nuxt/nuxt.d.ts",
+    "./app/components/__tests__/config-weights-form.test.ts",
+    "./app/components/config-weights-form.vue",
+    "./app/composables/**/*",
+    "./app/test-setup.prototype-vtu.ts"
+  ]
+}

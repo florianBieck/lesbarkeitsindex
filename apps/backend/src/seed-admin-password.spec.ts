@@ -18,6 +18,16 @@ describe('readSeedAdminPassword', () => {
     ).toThrow(/SEED_ADMIN_PASSWORD/);
   });
 
+  // createUser im Admin-Plugin prüft die Länge nicht, anders als die Registrierung.
+  test('bricht ab, wenn SEED_ADMIN_PASSWORD kürzer als 8 Zeichen ist', () => {
+    expect(() =>
+      readSeedAdminPassword({ NODE_ENV: 'production', SEED_ADMIN_PASSWORD: '1234567' }),
+    ).toThrow(/at least 8 characters/);
+    expect(readSeedAdminPassword({ NODE_ENV: 'production', SEED_ADMIN_PASSWORD: '12345678' })).toBe(
+      '12345678',
+    );
+  });
+
   // Dev, CI und die Playwright-Specs melden sich mit diesem Passwort an.
   test('fällt außerhalb von Produktion auf #Test1234 zurück', () => {
     expect(readSeedAdminPassword({ NODE_ENV: 'development' })).toBe('#Test1234');

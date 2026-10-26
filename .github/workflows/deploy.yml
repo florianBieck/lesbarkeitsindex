@@ -2,7 +2,8 @@ name: Deploy to production
 
 # Runs after every successful build of a push to main, and on demand. Every run
 # waits for approval in the production environment before it touches the
-# server. When several runs wait, approve the newest and reject the rest.
+# server. A run waiting for approval holds the queue, so after two quick merges
+# the older run asks first: reject it, and the newest asks next.
 on:
   workflow_run:
     workflows: [Build and push Docker image]
@@ -43,7 +44,21 @@ jobs:
     concurrency:
       group: deploy-production
       cancel-in-progress: false
+    env:
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
+      # An approved older run would ship its compose files and Caddyfile next to
+      # the newest :latest images.
+      - name: Check that main hasn't moved on
+        env:
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          main_sha=$(git ls-remote "$REPO_URL" refs/heads/main | cut -f 1)
+          if [ "$main_sha" != "$DEPLOY_SHA" ]; then
+            echo "::error::main is at $main_sha now, past $DEPLOY_SHA. Approve the newest deploy run instead"
+            exit 1
+          fi
+
       - name: Check the secrets
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -70,7 +85,7 @@ jobs:
       - name: Check out the built commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ env.DEPLOY_SHA }}
           persist-credentials: false
 
       # The runner's own OpenSSH: no third-party action gets the root key.

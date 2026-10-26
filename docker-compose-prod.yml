@@ -1,5 +1,7 @@
-# Production overlay — ALWAYS use together with the base file:
-#   docker compose -f docker-compose.yml -f docker-compose-prod.yml up -d
+# Production overlay — ALWAYS use together with the base file. The deploy
+# workflow (.github/workflows/deploy.yml) ships both and writes a .env next to
+# them that sets COMPOSE_FILE and the backend's secrets, so a plain
+# `docker compose ps` in the deploy directory sees the whole stack.
 # Requires Docker Compose v2.24.4+ (for the !reset merge tags).
 services:
   caddy:
@@ -24,7 +26,8 @@ services:
       - DATABASE_URL=postgresql://admin:admin@postgres:5432/lesbarkeitsindex
       # Public base URL used by Better-Auth (same-origin via Caddy)
       - BETTER_AUTH_URL=https://lix.florianbieck.com
-      - BETTER_AUTH_SECRET=change-to-secret
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?missing from .env}
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:?missing from .env}
       - NODE_ENV=production
       - R_SIDECAR_URL=http://r-sidecar:8787
     depends_on:

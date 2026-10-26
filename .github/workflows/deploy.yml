@@ -1,0 +1,175 @@
+name: Deploy to production
+
+# Runs after every successful build of a push to main, and on demand. Every run
+# waits for approval in the production environment before it touches the
+# server. When several runs wait, approve the newest and reject the rest.
+on:
+  workflow_run:
+    workflows: [Build and push Docker image]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+# Not secret, and a wrong directory or project name (like the deleted 2025
+# workflow's) starts a second stack, so they stay visible here.
+env:
+  DEPLOY_HOST: lix.florianbieck.com
+  DEPLOY_USER: root
+  DEPLOY_DIR: /root/app/lesbarkeitsindex
+  COMPOSE_PROJECT: lesbarkeitsindex
+
+jobs:
+  deploy:
+    # workflow_run also fires for pull-request and v* tag builds.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://lix.florianbieck.com
+    # On the job, not the workflow, so the skipped runs of pull-request builds
+    # never cancel a waiting deploy. Never cancels a running deploy.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Check the secrets
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+        run: |
+          for name in SSH_PRIVATE_KEY SSH_KNOWN_HOSTS BETTER_AUTH_SECRET SEED_ADMIN_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret $name is not set on the production environment"
+              exit 1
+            fi
+          done
+          # The .env keeps these in single quotes, so Compose takes $ and # literally.
+          for name in BETTER_AUTH_SECRET SEED_ADMIN_PASSWORD; do
+            case "${!name}" in
+              *"'"* | *\\* | *$'\n'*)
+                echo "::error::Secret $name must not contain a single quote, a backslash or a line break"
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Check out the built commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      # The runner's own OpenSSH: no third-party action gets the root key.
+      - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" | install -m 600 /dev/stdin ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host prod
+            HostName $DEPLOY_HOST
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            BatchMode yes
+          EOF
+
+      # Writes only its own files. COMPOSE_FILE and COMPOSE_PROJECT_NAME in the
+      # .env make a plain `docker compose` in DEPLOY_DIR see the whole stack.
+      - name: Upload the stack
+        env:
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+        run: |
+          # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
+          ssh prod "mkdir -p '$DEPLOY_DIR'"
+          scp docker-compose.yml docker-compose-prod.yml "prod:$DEPLOY_DIR/"
+          scp Caddyfile "prod:$DEPLOY_DIR/Caddyfile.new"
+          # shellcheck disable=SC2029
+          {
+            echo "COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT"
+            echo "COMPOSE_FILE=docker-compose.yml:docker-compose-prod.yml"
+            echo "BETTER_AUTH_SECRET='$BETTER_AUTH_SECRET'"
+            echo "SEED_ADMIN_PASSWORD='$SEED_ADMIN_PASSWORD'"
+          } | ssh prod "install -m 600 /dev/stdin '$DEPLOY_DIR/.env'"
+
+      # Caddy doesn't watch its config, and `caddy reload` would keep reading
+      # the replaced file through the old bind mount, so a changed Caddyfile
+      # means a restart. An unchanged one leaves Caddy alone.
+      - name: Deploy
+        run: |
+          # The braces make bash read the whole script before it runs any of
+          # it, so no command can swallow the rest of it from stdin.
+          ssh prod bash -s -- "$DEPLOY_DIR" <<'EOF'
+          {
+            set -euo pipefail
+            cd "$1"
+            docker compose pull --quiet
+            docker run --rm -v "$PWD/Caddyfile.new:/etc/caddy/Caddyfile:ro" caddy:2-alpine \
+              caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+            restart_caddy=false
+            if cmp -s Caddyfile.new Caddyfile; then
+              rm Caddyfile.new
+            else
+              mv Caddyfile.new Caddyfile
+              # A Caddy that `up` creates below starts on the new file already.
+              if [ -n "$(docker compose ps -q caddy)" ]; then
+                restart_caddy=true
+              fi
+            fi
+            docker compose up -d --remove-orphans
+            if [ "$restart_caddy" = true ]; then
+              docker compose restart caddy
+            fi
+          }
+          EOF
+
+      # /api/config reads the database; both answers must pass through the
+      # edge, which adds HSTS.
+      - name: Smoke check
+        run: |
+          check() {
+            local headers
+            headers=$(curl -sS --max-time 10 -o /dev/null -D - "https://$DEPLOY_HOST$1") || return 1
+            head -n 1 <<<"$headers" | grep -q ' 200' &&
+              grep -qi '^strict-transport-security:' <<<"$headers"
+          }
+          deadline=$((SECONDS + 120))
+          until check /api/health && check /api/config; do
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::https://$DEPLOY_HOST failed the smoke check for 2 minutes"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "Smoke check passed"
+
+      - name: Prune old images
+        run: ssh prod "docker image prune -f"
+
+      # Only the container states: the logs are public, and backend logs can
+      # hold email addresses. Read them on the server.
+      - name: Show the stack's state
+        if: failure()
+        run: |
+          # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
+          ssh prod "cd '$DEPLOY_DIR' && docker compose ps --all" || true

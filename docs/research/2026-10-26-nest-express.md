@@ -81,7 +81,7 @@ The same app was used for every column:
 - **Controllers:** `HealthController` at `/api/health`, and a config controller with `GET` (`@Res()`, a `Date` in the body) and `POST` behind a Better-Auth guard.
 - **Other routes:** `POST /api/calculate` and `GET /api/boom` (throws).
 - **Auth:** an `AuthController` bridge at `/api/auth/*path`.
-- **App-wide:** all under `setGlobalPrefix('api')`, with `enableCors` as today and the #62 helmet config first in `configureApp`.
+- **App-wide:** all under `setGlobalPrefix('api')`, with `enableCors` as today and the decided helmet config (see "The setup this has to fit") first in `configureApp`.
 - **Fake Vite `dist/`:** `index.html`, `assets/index-B7xQ2kLm.js` (60 KB), `assets/index-Cd9fR3aZ.css` (13 KB), `favicon.ico`, `robots.txt` and a dotfile `.secret` (the companion lab's layout).
 
 Columns:
@@ -269,7 +269,7 @@ Without a build, b logs one warning and every SPA path gets Nest's `Cannot GET /
   - Nest's helmet page says the same: helmet "must come before other calls to `app.use()` or setup functions that may call `app.use()`" ([security/helmet.md L5](https://github.com/nestjs/docs.nestjs.com/blob/bdefe854568c2f679c45d1d6cea0ac76797a3553/content/security/helmet.md?plain=1#L5)).
   - In `main.ts` and the specs, `configureApp` runs before `listen()`/`init()`, so helmet first in `configureApp` holds there.
   - A raw handler mounted on the Express instance has to be registered after helmet in the code.
-- **The #62 config works as written on helmet 8.3.0** **(lab)**:
+- **The config decided in [Which security headers does the site send, and where are they set?](https://github.com/florianBieck/lesbarkeitsindex/issues/62) works as written on helmet 8.3.0** **(lab)**:
   - `hsts: false` is the legacy alias of `strictTransportSecurity`, and passing both throws ([index.ts L187-L193](https://github.com/helmetjs/helmet/blob/v8.3.0/index.ts#L187-L193)).
   - `xFrameOptions` has the alias `frameguard`, which also throws if combined.
   - The CSP header comes out as `default-src 'self';script-src 'self';style-src 'self' 'unsafe-inline';img-src 'self' data:;font-src 'self';connect-src 'self';object-src 'none';base-uri 'none';form-action 'self';frame-ancestors 'none'`. helmet joins directives with `;` and no space.

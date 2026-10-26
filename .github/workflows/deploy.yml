@@ -37,7 +37,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: production
-      url: https://lix.florianbieck.com
+      url: https://${{ env.DEPLOY_HOST }}
     # On the job, not the workflow, so the skipped runs of pull-request builds
     # never cancel a waiting deploy. Never cancels a running deploy.
     concurrency:
@@ -93,8 +93,9 @@ jobs:
             BatchMode yes
           EOF
 
-      # Writes only its own files. COMPOSE_FILE and COMPOSE_PROJECT_NAME in the
-      # .env make a plain `docker compose` in DEPLOY_DIR see the whole stack.
+      # Owns these four files in DEPLOY_DIR and nothing else there. COMPOSE_FILE
+      # and COMPOSE_PROJECT_NAME in the .env make a plain `docker compose` in
+      # DEPLOY_DIR see the whole stack.
       - name: Upload the stack
         env:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
@@ -104,7 +105,7 @@ jobs:
           ssh prod "mkdir -p '$DEPLOY_DIR'"
           scp docker-compose.yml docker-compose-prod.yml "prod:$DEPLOY_DIR/"
           scp Caddyfile "prod:$DEPLOY_DIR/Caddyfile.new"
-          # shellcheck disable=SC2029
+          # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
           {
             echo "COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT"
             echo "COMPOSE_FILE=docker-compose.yml:docker-compose-prod.yml"
@@ -112,9 +113,12 @@ jobs:
             echo "SEED_ADMIN_PASSWORD='$SEED_ADMIN_PASSWORD'"
           } | ssh prod "install -m 600 /dev/stdin '$DEPLOY_DIR/.env'"
 
-      # Caddy doesn't watch its config, and `caddy reload` would keep reading
-      # the replaced file through the old bind mount, so a changed Caddyfile
-      # means a restart. An unchanged one leaves Caddy alone.
+      # Caddy doesn't watch its config, and its single-file bind mount keeps a
+      # running Caddy on the file it started with, even after the mv below.
+      # So the script compares what Caddy reads with the file on disk and
+      # restarts it only when they differ. That also catches a restart an
+      # earlier failed run never got to. `caddy reload` would reread the old
+      # file and was rejected for that.
       - name: Deploy
         run: |
           # The braces make bash read the whole script before it runs any of
@@ -126,18 +130,9 @@ jobs:
             docker compose pull --quiet
             docker run --rm -v "$PWD/Caddyfile.new:/etc/caddy/Caddyfile:ro" caddy:2-alpine \
               caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-            restart_caddy=false
-            if cmp -s Caddyfile.new Caddyfile; then
-              rm Caddyfile.new
-            else
-              mv Caddyfile.new Caddyfile
-              # A Caddy that `up` creates below starts on the new file already.
-              if [ -n "$(docker compose ps -q caddy)" ]; then
-                restart_caddy=true
-              fi
-            fi
+            mv Caddyfile.new Caddyfile
             docker compose up -d --remove-orphans
-            if [ "$restart_caddy" = true ]; then
+            if ! docker compose exec -T caddy cat /etc/caddy/Caddyfile | cmp -s - Caddyfile; then
               docker compose restart caddy
             fi
           }
@@ -146,6 +141,8 @@ jobs:
       # /api/config reads the database; both answers must pass through the
       # edge, which adds HSTS.
       - name: Smoke check
+        env:
+          SMOKE_TIMEOUT_SECONDS: 120
         run: |
           check() {
             local headers
@@ -153,10 +150,10 @@ jobs:
             head -n 1 <<<"$headers" | grep -q ' 200' &&
               grep -qi '^strict-transport-security:' <<<"$headers"
           }
-          deadline=$((SECONDS + 120))
+          deadline=$((SECONDS + SMOKE_TIMEOUT_SECONDS))
           until check /api/health && check /api/config; do
             if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "::error::https://$DEPLOY_HOST failed the smoke check for 2 minutes"
+              echo "::error::https://$DEPLOY_HOST failed the smoke check for $SMOKE_TIMEOUT_SECONDS seconds"
               exit 1
             fi
             sleep 5

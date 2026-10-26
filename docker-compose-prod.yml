@@ -1,7 +1,5 @@
 # Production overlay — ALWAYS use together with the base file. The deploy
-# workflow (.github/workflows/deploy.yml) ships both and writes a .env next to
-# them that sets COMPOSE_FILE and the backend's secrets, so a plain
-# `docker compose ps` in the deploy directory sees the whole stack.
+# workflow (.github/workflows/deploy.yml) ships both, plus the .env they read.
 # Requires Docker Compose v2.24.4+ (for the !reset merge tags).
 services:
   caddy:

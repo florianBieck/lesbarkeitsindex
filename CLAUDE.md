@@ -161,6 +161,7 @@ pnpm run knip
 ## CI/CD
 
 - **`.github/workflows/build.yml`**: On push to `main` or tags — `pnpm install --frozen-lockfile`, runs tests, builds Docker images for backend/frontend/r-sidecar, pushes to `ghcr.io`
+- **`.github/workflows/deploy.yml`**: the only deploy path: prod changes when someone approves a run. It starts after each successful build of a push to `main` (or by hand from `main`) and waits in the `production` environment, which holds its four secrets. Then it ships both compose files and the `Caddyfile` over SSH, writes the server's `.env`, runs `pull` + `up -d --remove-orphans`, and smoke-checks `/api/health` + `/api/config` through the edge. The server (`root@lix.florianbieck.com`, `/root/app/lesbarkeitsindex`, project `lesbarkeitsindex`) has no git; its `.env` sets `COMPOSE_FILE`, so a plain `docker compose logs backend` there sees the whole stack. Read logs there: Actions logs are public. The seed creates missing admin accounts with `SEED_ADMIN_PASSWORD` (default `#Test1234` outside prod) and never changes existing ones
 - **`renovate.json`**: Renovate dependency updates — grouped PRs Monday mornings (Europe/Berlin), security fixes immediately. The Node.js major lives in `.node-version` (CI reads it via `node-version-file`) and both Dockerfiles, and moves as one PR; Postgres and `@types/node` majors wait for approval on the Dependency Dashboard issue
 
 ## Gotchas

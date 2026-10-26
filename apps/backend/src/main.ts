@@ -8,6 +8,7 @@ import { AppModule } from './app.module.js';
 import { configureApp } from './configure-app.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AuthService } from './auth/auth.service.js';
+import { readSeedAdminPassword } from './seed-admin-password.js';
 import { APIError } from 'better-auth';
 
 // Root-.env laden (lokale Entwicklung). Im Docker-Runtime-Image existiert keine
@@ -23,18 +24,20 @@ if (existsSync(envFile)) {
 const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
+  // Vor dem Start lesen: fehlt das Passwort in Produktion, lauscht die App gar nicht erst.
+  const seedAdminPassword = readSeedAdminPassword(process.env);
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
   configureApp(app);
 
   await app.listen(3000, '0.0.0.0');
 
-  await seedData(app);
+  await seedData(app, seedAdminPassword);
 
   logger.log('Application running at http://localhost:3000');
 }
 
-async function seedData(app: NestFastifyApplication) {
+async function seedData(app: NestFastifyApplication, adminPassword: string) {
   const prisma = app.get(PrismaService);
   const authService = app.get(AuthService);
 
@@ -42,13 +45,13 @@ async function seedData(app: NestFastifyApplication) {
     {
       name: 'Florian Bieck',
       email: 'info@florianbieck.com',
-      password: '#Test1234',
+      password: adminPassword,
       role: 'admin' as const,
     },
     {
       name: 'Beate Lessmann',
       email: 'info@beate-lessmann.de',
-      password: '#Test1234',
+      password: adminPassword,
       role: 'admin' as const,
     },
   ];

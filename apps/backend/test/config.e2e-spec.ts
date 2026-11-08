@@ -43,6 +43,7 @@ function buildMocks() {
 
 describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)', () => {
   let app: NestFastifyApplication;
+  let baseUrl: string;
   let mocks: ReturnType<typeof buildMocks>;
 
   beforeAll(async () => {
@@ -57,8 +58,8 @@ describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, A
 
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     configureApp(app);
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
+    await app.listen(0, '127.0.0.1');
+    baseUrl = await app.getUrl();
   });
 
   afterAll(async () => {
@@ -66,13 +67,13 @@ describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, A
   });
 
   async function post(payload: unknown): Promise<{ status: number; body: any }> {
-    const res = await app.inject({
+    const res = await fetch(`${baseUrl}/api/config`, {
       method: 'POST',
-      url: '/api/config',
       headers: { 'content-type': 'application/json' },
-      payload: payload as object,
+      body: JSON.stringify(payload),
     });
-    return { status: res.statusCode, body: res.body ? JSON.parse(res.body) : undefined };
+    const text = await res.text();
+    return { status: res.status, body: text ? JSON.parse(text) : undefined };
   }
 
   const VALID = {

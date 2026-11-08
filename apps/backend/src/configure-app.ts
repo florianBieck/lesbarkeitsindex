@@ -4,9 +4,9 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 const API_PREFIX = 'api';
 
 /**
- * Obergrenze für JSON-Bodies, dieselbe wie zuvor unter Fastify (ADR 0005). Mit Express'
- * Vorgabe von 100 KB bekäme ein langer Text mit Umlauten (zwei Bytes in UTF-8) eine 413,
- * obwohl das Schema von `POST /api/calculate` ihn zulässt.
+ * Obergrenze für JSON-Bodies (ADR 0005). Das Schema von `POST /api/calculate` lässt
+ * 100.000 Zeichen zu, mit Umlauten (zwei Bytes in UTF-8) also mehr als Express' Vorgabe
+ * von 100 KB; 1 MiB fasst auch den längsten zulässigen Text.
  */
 const JSON_BODY_LIMIT = '1mb';
 
@@ -21,6 +21,6 @@ export function configureApp(app: NestExpressApplication): void {
     credentials: true,
   });
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
-  // Express meldet sich sonst mit `X-Powered-By: Express`; Fastify schickte keinen solchen Header.
+  // Ohne diese Zeile nennt jede Antwort das Framework: `X-Powered-By: Express`.
   app.disable('x-powered-by');
 }

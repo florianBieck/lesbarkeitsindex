@@ -31,17 +31,26 @@ const SIGN_OUT_COOKIES = [
   'better-auth.dont_remember=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax',
 ];
 
+/** Better-Auth's answer to a sign-in with a wrong password. */
+const SIGN_IN_REJECTED = {
+  status: 401,
+  body: { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' },
+};
+
 /**
- * Stands in for Better-Auth: sign-out answers like the real one, every other
- * path echoes the URL it receives, so a spec can check the base path.
+ * Stands in for Better-Auth: sign-out and a failed sign-in answer like the real
+ * one, every other path echoes the URL it receives, so a spec can check the base path.
  */
 async function fakeAuthHandler(request: Request): Promise<Response> {
-  if (new URL(request.url).pathname === '/api/auth/sign-out') {
-    const headers = new Headers();
-    for (const cookie of SIGN_OUT_COOKIES) {
-      headers.append('set-cookie', cookie);
-    }
+  const { pathname } = new URL(request.url);
+  if (pathname === '/api/auth/sign-out') {
+    const headers = new Headers(
+      SIGN_OUT_COOKIES.map((cookie): [string, string] => ['set-cookie', cookie]),
+    );
     return Response.json({ success: true }, { headers });
+  }
+  if (pathname === '/api/auth/sign-in/email') {
+    return Response.json(SIGN_IN_REJECTED.body, { status: SIGN_IN_REJECTED.status });
   }
   return Response.json({ url: request.url });
 }
@@ -115,6 +124,17 @@ describe('API prefix /api/ (ADR 0004)', () => {
     const received = authHandler.mock.lastCall?.[0];
     expect(received?.method).toBe('POST');
     expect(await received?.json()).toEqual({ reason: 'abmelden' });
+  });
+
+  test("a rejected sign-in passes Better-Auth's status and body through", async () => {
+    const res = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'lehrkraft@example.org', password: 'falsch' }),
+    });
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual(SIGN_IN_REJECTED.body);
   });
 
   test('CORS lets the dev frontend send credentials', async () => {

@@ -15,7 +15,8 @@ which kept Fastify because a switch put the login path at risk. On Express, Bett
 loses two of its three `Set-Cookie` headers if the bridge copies headers one by one:
 `res.header()` replaces. `AuthController` now sends every cookie from
 `response.headers.getSetCookie()` in a single `res.setHeader('set-cookie', …)`, and the
-`api-prefix` e2e spec checks that all three arrive.
+`api-prefix` e2e spec checks that all three arrive. The switch also deploys on its own, so a
+login problem after that deploy has one cause.
 
 ## Considered options
 
@@ -25,7 +26,8 @@ loses two of its three `Set-Cookie` headers if the bridge copies headers one by 
   reuses the `req.body` Nest has already parsed, which Better-Auth's docs warn against, and it
   behaves differently on Better-Auth 1.5 and 1.7.
 - **Mount Better-Auth's handler on the raw Express instance:** bypasses Nest's guards and
-  filters, and the e2e specs could no longer mock `AuthService`.
+  filters, and needs the Better-Auth instance in `configureApp`, so the `api-prefix` spec,
+  which mocks `AuthService` for a list of controllers, would have to change shape.
 
 ## Consequences
 

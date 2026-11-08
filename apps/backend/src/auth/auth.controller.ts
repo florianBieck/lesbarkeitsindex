@@ -1,5 +1,5 @@
 import { All, Controller, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import { AuthService } from './auth.service.js';
 
@@ -8,7 +8,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @All('*path')
-  async handleAuth(@Req() req: Request, @Res() res: Response) {
+  async handleAuth(@Req() req: ExpressRequest, @Res() res: ExpressResponse) {
     const url = new URL(req.url, `http://${req.hostname}`);
     const headers = fromNodeHeaders(req.headers);
 

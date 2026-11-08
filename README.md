@@ -24,14 +24,13 @@ docker compose up -d
 pnpm install
 
 # Copy and edit environment variables
-cp apps/backend/.env.example apps/backend/.env
+cp .env.example .env
 
 # Run database migrations
 pnpm --filter backend exec prisma migrate deploy
 
 # Start backend (port 3000) and frontend (port 3001)
-pnpm --filter backend exec nest start --watch
-pnpm --filter frontend exec nuxt dev
+pnpm dev
 ```
 
 ## Commands

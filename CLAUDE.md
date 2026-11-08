@@ -115,6 +115,10 @@ pnpm --filter frontend run test:unit
 # Frontend E2E (Playwright, requires running stack)
 pnpm --filter frontend run test:e2e
 
+# Smoke test against prod after a deploy (Playwright; login from the gitignored
+# apps/frontend/.env.smoke.local, see playwright.smoke.config.ts)
+pnpm --filter frontend run test:smoke
+
 # Run all workspace tests from root (each package's own test script)
 pnpm test
 ```

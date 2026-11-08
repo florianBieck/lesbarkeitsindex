@@ -1,6 +1,6 @@
 # Lesbarkeitsindex (LÜ-LIX)
 
-German text readability analysis tool for teachers and educators. pnpm monorepo with NestJS/Fastify backend, Nuxt 4 frontend, and R NLP sidecar. Managed by Vite+ (`vp` CLI).
+German text readability analysis tool for teachers and educators. pnpm monorepo with NestJS/Express backend, Nuxt 4 frontend, and R NLP sidecar. Managed by Vite+ (`vp` CLI).
 
 ## Vite+ / pnpm First
 
@@ -11,7 +11,7 @@ Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`
 - **Toolchain**: Vite+ (`vp` CLI) — install, dev, test, lint, fmt, build
 - **Package manager**: pnpm (managed by Vite+)
 - **Runtime**: Node.js (not Bun)
-- **Backend**: NestJS with Fastify adapter (`@nestjs/platform-fastify`)
+- **Backend**: NestJS with Express adapter (`@nestjs/platform-express`, Express 5)
 - **Database**: Prisma 7 with `@prisma/adapter-pg` + `pg`
 - **Frontend**: Nuxt 4 (Vue 3 Composition API)
 - **UI**: PrimeVue 4 with Aura theme — use PrimeVue components for all UI work
@@ -30,10 +30,10 @@ Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`
 
 ```
 apps/
-  backend/            # NestJS/Fastify API (port 3000)
+  backend/            # NestJS/Express API (port 3000)
     src/
       main.ts         # Bootstrap, seed
-      configure-app.ts # /api prefix + CORS; e2e specs call it too
+      configure-app.ts # /api prefix, CORS, JSON body limit; e2e specs call it too
       app.module.ts   # Root module
       health.controller.ts
       prisma/         # PrismaModule + PrismaService
@@ -175,7 +175,8 @@ pnpm run knip
 - **Same-origin routing in prod**: Caddy routes `/api/*` to the backend and everything else to the frontend. No CORS needed in production
 - **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth/auth.service.ts` — update when adding new domains
 - **knip via the script only**: Run `pnpm run knip`, not bare `knip` — the script sets `KNIP_DISABLE_RAW_TRANSFER=1`, without which knip's oxc-parser panics (`raw_transfer.rs` assertion). Ignores in `knip.config.ts` carry a comment saying why; keep it that way
-- **NestJS + Better-Auth**: Auth routes are handled by a wildcard Fastify controller that converts requests to Web API format
+- **NestJS + Better-Auth**: `AuthController`'s `@All('*path')` bridges Express requests to Better-Auth's Web `Request`/`Response`. Send `Set-Cookie` as one `res.setHeader('set-cookie', response.headers.getSetCookie())`: `res.header()`/`res.set()` replace, so copying cookies one by one keeps only the last, and sign-out leaves the session cookie in the browser
+- **`@nestjs/platform-express` stays on `^11`**: add or update it as `@nestjs/platform-express@^11`, matching `@nestjs/common`/`core`. Its `latest` dist-tag is Nest 12, which a bare `pnpm add` installs
 
 ## Key Domain Concepts
 

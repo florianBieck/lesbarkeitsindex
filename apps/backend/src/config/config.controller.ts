@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
-import { FastifyReply } from 'fastify';
+import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { toJsonNumbers } from '../serialize.js';
@@ -36,23 +36,23 @@ export class AppConfigController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
-  async getConfig(@Res() reply: FastifyReply) {
+  async getConfig(@Res() res: Response) {
     const config = await this.prisma.config.findFirst({
       orderBy: { createdAt: 'desc' },
     });
     if (!config) {
-      return reply.status(HttpStatus.NOT_FOUND).send();
+      return res.status(HttpStatus.NOT_FOUND).send();
     }
-    return reply.send(toJsonNumbers(config));
+    return res.send(toJsonNumbers(config));
   }
 
   @Post()
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
-  async updateConfig(@Body() body: unknown, @Res() reply: FastifyReply) {
+  async updateConfig(@Body() body: unknown, @Res() res: Response) {
     const parsed = UpdateConfigSchema.safeParse(body);
     if (!parsed.success) {
-      return reply.status(HttpStatus.UNPROCESSABLE_ENTITY).send({
+      return res.status(HttpStatus.UNPROCESSABLE_ENTITY).send({
         error: z.flattenError(parsed.error),
       });
     }
@@ -67,6 +67,6 @@ export class AppConfigController {
       },
     });
 
-    return reply.send(toJsonNumbers(config));
+    return res.send(toJsonNumbers(config));
   }
 }

@@ -4,7 +4,7 @@ German text readability analysis tool for teachers and educators. Computes reada
 
 ## Tech Stack
 
-- **Backend**: NestJS + Fastify, Prisma 7, PostgreSQL, Better-Auth
+- **Backend**: NestJS + Express, Prisma 7, PostgreSQL, Better-Auth
 - **Frontend**: Nuxt 4, PrimeVue 4, Tailwind CSS, Chart.js
 - **NLP**: R Plumber sidecar (sentence splitting, syllable counting, POS tagging)
 - **Toolchain**: [Vite+](https://viteplus.dev/) (`vp` CLI), pnpm, Vitest, oxlint
@@ -48,7 +48,7 @@ vp check            # Lint + format check
 
 ```
 apps/
-  backend/          # NestJS/Fastify API
+  backend/          # NestJS/Express API
   frontend/         # Nuxt 4 SPA
 packages/
   api-client/       # Typed API client (injected $fetch)

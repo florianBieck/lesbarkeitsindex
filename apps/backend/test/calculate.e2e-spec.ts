@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { CalculateController } from '../src/calculate/calculate.controller.js';
 import { CalculateService } from '../src/calculate/calculate.service.js';
@@ -61,7 +61,7 @@ function buildMocks() {
 }
 
 describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemockt, AC6)', () => {
-  let app: NestFastifyApplication;
+  let app: NestExpressApplication;
   let baseUrl: string;
   let mocks: ReturnType<typeof buildMocks>;
 
@@ -76,7 +76,7 @@ describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemock
       ],
     }).compile();
 
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.listen(0, '127.0.0.1');
     baseUrl = await app.getUrl();

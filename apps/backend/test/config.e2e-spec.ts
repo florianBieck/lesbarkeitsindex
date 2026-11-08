@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { AppConfigController } from '../src/config/config.controller.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -42,7 +42,7 @@ function buildMocks() {
 }
 
 describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)', () => {
-  let app: NestFastifyApplication;
+  let app: NestExpressApplication;
   let baseUrl: string;
   let mocks: ReturnType<typeof buildMocks>;
 
@@ -56,7 +56,7 @@ describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, A
       .useValue({ canActivate: () => true })
       .compile();
 
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.listen(0, '127.0.0.1');
     baseUrl = await app.getUrl();

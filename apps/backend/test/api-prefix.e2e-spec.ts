@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { HealthController } from '../src/health.controller.js';
 import { AppConfigController } from '../src/config/config.controller.js';
@@ -47,7 +47,7 @@ async function fakeAuthHandler(request: Request): Promise<Response> {
 }
 
 describe('API prefix /api/ (ADR 0004)', () => {
-  let app: NestFastifyApplication;
+  let app: NestExpressApplication;
   let baseUrl: string;
   const authHandler = vi.fn(fakeAuthHandler);
 
@@ -63,7 +63,7 @@ describe('API prefix /api/ (ADR 0004)', () => {
       ],
     }).compile();
 
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.listen(0, '127.0.0.1');
     baseUrl = await app.getUrl();

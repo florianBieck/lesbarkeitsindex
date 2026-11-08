@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module.js';
 import { configureApp } from './configure-app.js';
@@ -26,7 +26,7 @@ const logger = new Logger('Bootstrap');
 async function bootstrap() {
   // Vor dem Start lesen: fehlt das Passwort in Produktion, lauscht die App gar nicht erst.
   const seedAdminPassword = readSeedAdminPassword(process.env);
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   configureApp(app);
 
@@ -37,7 +37,7 @@ async function bootstrap() {
   logger.log('Application running at http://localhost:3000');
 }
 
-async function seedData(app: NestFastifyApplication, adminPassword: string) {
+async function seedData(app: NestExpressApplication, adminPassword: string) {
   const prisma = app.get(PrismaService);
   const authService = app.get(AuthService);
 

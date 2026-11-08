@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
-import { FastifyReply } from 'fastify';
+import type { Response } from 'express';
 import { CalculateService } from './calculate.service.js';
 import { z } from 'zod';
 
@@ -20,10 +20,10 @@ export class CalculateController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  async calculate(@Body() body: unknown, @Res() reply: FastifyReply) {
+  async calculate(@Body() body: unknown, @Res() res: Response) {
     const parsed = CalculateSchema.safeParse(body);
     if (!parsed.success) {
-      return reply.status(HttpStatus.UNPROCESSABLE_ENTITY).send({
+      return res.status(HttpStatus.UNPROCESSABLE_ENTITY).send({
         error: z.flattenError(parsed.error),
       });
     }
@@ -38,6 +38,6 @@ export class CalculateController {
       overrides,
       textTypeOverride: textType,
     });
-    return reply.send(result);
+    return res.send(result);
   }
 }

@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { HealthController } from '../src/health.controller.js';
 import { AppConfigController } from '../src/config/config.controller.js';
@@ -24,8 +24,41 @@ const SEED_CONFIG = {
   weightConsonantClusters: 12.5,
 };
 
+/** Better-Auth's sign-out clears three cookies in one response. */
+const SIGN_OUT_COOKIES = [
+  'better-auth.session_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax',
+  'better-auth.session_data=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax',
+  'better-auth.dont_remember=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax',
+];
+
+/** Better-Auth's answer to a sign-in with a wrong password. */
+const SIGN_IN_REJECTED = {
+  status: 401,
+  body: { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' },
+};
+
+/**
+ * Stands in for Better-Auth: sign-out and a failed sign-in answer like the real
+ * one, every other path echoes the URL it receives, so a spec can check the base path.
+ */
+async function fakeAuthHandler(request: Request): Promise<Response> {
+  const { pathname } = new URL(request.url);
+  if (pathname === '/api/auth/sign-out') {
+    const headers = new Headers(
+      SIGN_OUT_COOKIES.map((cookie): [string, string] => ['set-cookie', cookie]),
+    );
+    return Response.json({ success: true }, { headers });
+  }
+  if (pathname === '/api/auth/sign-in/email') {
+    return Response.json(SIGN_IN_REJECTED.body, { status: SIGN_IN_REJECTED.status });
+  }
+  return Response.json({ url: request.url });
+}
+
 describe('API prefix /api/ (ADR 0004)', () => {
-  let app: NestFastifyApplication;
+  let app: NestExpressApplication;
+  let baseUrl: string;
+  const authHandler = vi.fn(fakeAuthHandler);
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -35,31 +68,28 @@ describe('API prefix /api/ (ADR 0004)', () => {
           provide: PrismaService,
           useValue: { config: { findFirst: vi.fn(async () => SEED_CONFIG) } },
         },
-        // Echoes the URL Better-Auth receives, so a spec can check its base path.
-        {
-          provide: AuthService,
-          useValue: {
-            auth: {
-              handler: vi.fn(async (request: Request) => Response.json({ url: request.url })),
-            },
-          },
-        },
+        { provide: AuthService, useValue: { auth: { handler: authHandler } } },
       ],
     }).compile();
 
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
+    await app.listen(0, '127.0.0.1');
+    baseUrl = await app.getUrl();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  async function statusOf(url: string): Promise<number> {
-    const res = await app.inject({ method: 'GET', url });
-    return res.statusCode;
+  async function get(path: string, headers?: Record<string, string>): Promise<Response> {
+    return fetch(`${baseUrl}${path}`, { headers });
+  }
+
+  async function statusOf(path: string): Promise<number> {
+    const res = await get(path);
+    await res.body?.cancel();
+    return res.status;
   }
 
   test('app routes answer under /api/, not at the root', async () => {
@@ -73,19 +103,50 @@ describe('API prefix /api/ (ADR 0004)', () => {
   });
 
   test('Better-Auth answers at /api/auth/* and receives the full URL', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/auth/get-session' });
-    expect(res.statusCode).toBe(200);
-    expect(new URL(res.json<{ url: string }>().url).pathname).toBe('/api/auth/get-session');
+    const res = await get('/api/auth/get-session');
+    expect(res.status).toBe(200);
+    const { url } = (await res.json()) as { url: string };
+    expect(new URL(url).pathname).toBe('/api/auth/get-session');
     expect(await statusOf('/auth/get-session')).toBe(404);
   });
 
-  test('CORS lets the dev frontend send credentials', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/config',
-      headers: { origin: 'http://localhost:3001' },
+  test('sign-out passes every Set-Cookie, the status and the body through', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/sign-out`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ reason: 'abmelden' }),
     });
-    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3001');
-    expect(res.headers['access-control-allow-credentials']).toBe('true');
+
+    expect(res.status).toBe(200);
+    expect(res.headers.getSetCookie()).toEqual(SIGN_OUT_COOKIES);
+    expect(await res.json()).toEqual({ success: true });
+
+    const received = authHandler.mock.lastCall?.[0];
+    expect(received?.method).toBe('POST');
+    expect(await received?.json()).toEqual({ reason: 'abmelden' });
+  });
+
+  test("a rejected sign-in passes Better-Auth's status and body through", async () => {
+    const res = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'lehrkraft@example.org', password: 'falsch' }),
+    });
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual(SIGN_IN_REJECTED.body);
+  });
+
+  test('CORS lets the dev frontend send credentials', async () => {
+    const res = await get('/api/config', { origin: 'http://localhost:3001' });
+    await res.body?.cancel();
+    expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:3001');
+    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+  });
+
+  test('responses do not name the server framework', async () => {
+    const res = await get('/api/health');
+    await res.body?.cancel();
+    expect(res.headers.get('x-powered-by')).toBeNull();
   });
 });

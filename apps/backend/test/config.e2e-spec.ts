@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { AppConfigController } from '../src/config/config.controller.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -42,7 +42,8 @@ function buildMocks() {
 }
 
 describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, AC3)', () => {
-  let app: NestFastifyApplication;
+  let app: NestExpressApplication;
+  let baseUrl: string;
   let mocks: ReturnType<typeof buildMocks>;
 
   beforeAll(async () => {
@@ -55,10 +56,10 @@ describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, A
       .useValue({ canActivate: () => true })
       .compile();
 
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
+    await app.listen(0, '127.0.0.1');
+    baseUrl = await app.getUrl();
   });
 
   afterAll(async () => {
@@ -66,13 +67,13 @@ describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, A
   });
 
   async function post(payload: unknown): Promise<{ status: number; body: any }> {
-    const res = await app.inject({
+    const res = await fetch(`${baseUrl}/api/config`, {
       method: 'POST',
-      url: '/api/config',
       headers: { 'content-type': 'application/json' },
-      payload: payload as object,
+      body: JSON.stringify(payload),
     });
-    return { status: res.statusCode, body: res.body ? JSON.parse(res.body) : undefined };
+    const text = await res.text();
+    return { status: res.status, body: text ? JSON.parse(text) : undefined };
   }
 
   const VALID = {

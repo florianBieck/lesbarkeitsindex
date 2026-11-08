@@ -1,5 +1,5 @@
 import { All, Controller, Req, Res } from '@nestjs/common';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import { AuthService } from './auth.service.js';
 
@@ -7,11 +7,12 @@ import { AuthService } from './auth.service.js';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @All('*')
-  async handleAuth(@Req() req: FastifyRequest, @Res() reply: FastifyReply) {
+  @All('*path')
+  async handleAuth(@Req() req: ExpressRequest, @Res() res: ExpressResponse) {
     const url = new URL(req.url, `http://${req.hostname}`);
     const headers = fromNodeHeaders(req.headers);
 
+    // Nests globaler JSON-Parser hat den Body schon gelesen; Better-Auth bekommt ihn neu serialisiert.
     const webRequest = new Request(url.toString(), {
       method: req.method,
       headers,
@@ -20,13 +21,21 @@ export class AuthController {
 
     const response = await this.authService.auth.handler(webRequest);
 
-    reply.status(response.status);
+    res.status(response.status);
 
     response.headers.forEach((value, key) => {
-      reply.header(key, value);
+      if (key !== 'set-cookie') {
+        res.setHeader(key, value);
+      }
     });
 
-    const body = await response.text();
-    reply.send(body);
+    // Express' res.header()/res.set() ersetzen den Header: ein Aufruf je Cookie behielte nur
+    // das letzte, und nach dem Abmelden bliebe das Session-Cookie im Browser.
+    const cookies = response.headers.getSetCookie();
+    if (cookies.length > 0) {
+      res.setHeader('set-cookie', cookies);
+    }
+
+    res.send(await response.text());
   }
 }

@@ -3,7 +3,7 @@ import { Prisma } from './generated/prisma/client.js';
 /**
  * Wandelt Prisma-`Decimal`-Werte rekursiv in `number` um — inklusive
  * verschachtelter Objekte (etwa die `config`-Relation). Datumswerte, Strings und
- * Arrays bleiben unverändert (Fastify serialisiert `Date` zu ISO-Strings). So
+ * Arrays bleiben unverändert (`JSON.stringify` macht aus `Date` einen ISO-String). So
  * verlässt die API durchgängig Zahlen statt Decimal-Strings: ein einziger
  * Zahlenvertrag über das ganze Ergebnis (Architektur-Review, D+E).
  */

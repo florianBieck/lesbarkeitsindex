@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
 import { Test } from '@nestjs/testing';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { CalculateController } from '../src/calculate/calculate.controller.js';
 import { CalculateService } from '../src/calculate/calculate.service.js';
@@ -61,7 +61,8 @@ function buildMocks() {
 }
 
 describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemockt, AC6)', () => {
-  let app: NestFastifyApplication;
+  let app: NestExpressApplication;
+  let baseUrl: string;
   let mocks: ReturnType<typeof buildMocks>;
 
   beforeAll(async () => {
@@ -75,10 +76,10 @@ describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemock
       ],
     }).compile();
 
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
+    await app.listen(0, '127.0.0.1');
+    baseUrl = await app.getUrl();
   });
 
   afterAll(async () => {
@@ -86,13 +87,13 @@ describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemock
   });
 
   async function post(payload: unknown): Promise<{ status: number; body: any }> {
-    const res = await app.inject({
+    const res = await fetch(`${baseUrl}/api/calculate`, {
       method: 'POST',
-      url: '/api/calculate',
       headers: { 'content-type': 'application/json' },
-      payload: payload as object,
+      body: JSON.stringify(payload),
     });
-    return { status: res.statusCode, body: res.body ? JSON.parse(res.body) : undefined };
+    const text = await res.text();
+    return { status: res.status, body: text ? JSON.parse(text) : undefined };
   }
 
   test('Antwort enthält LIX, WK, LÜ-LIX, Niveaustufe und Umfang', async () => {
@@ -144,6 +145,13 @@ describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemock
   test('Validierungsfehler: fehlender Text → 422', async () => {
     const { status } = await post({});
     expect(status).toBe(422);
+  });
+
+  test('Text über der Höchstlänge, als JSON über 100 KB groß → 422 vom Schema, nicht 413', async () => {
+    // Umlaute belegen in UTF-8 zwei Bytes: 100.001 × „Ä" sind rund 200 KB.
+    const { status, body } = await post({ text: 'Ä'.repeat(100_001) });
+    expect(status).toBe(422);
+    expect(Object.keys(body.error.fieldErrors)).toEqual(['text']);
   });
 
   test('Validierungsfehler: negatives Gewicht → 422', async () => {

@@ -1,15 +1,14 @@
 # Lesbarkeitsindex (LÜ-LIX)
 
-German text readability analysis tool for teachers and educators. pnpm monorepo with NestJS/Express backend, Nuxt 4 frontend, and R NLP sidecar. Managed by Vite+ (`vp` CLI).
+German text readability analysis tool for teachers and educators. pnpm monorepo with NestJS/Express backend, Nuxt 4 frontend, and R NLP sidecar.
 
-## Vite+ / pnpm First
+## pnpm first
 
-Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`, or `node` directly. Use `vp exec` to run binaries in the managed environment. pnpm is the package manager (managed by Vite+).
+Use `pnpm` for installs and scripts (`pnpm --filter <package> run <script>`) and `pnpm --filter <package> exec <binary>` for a package's binaries; npm, yarn and bun stay out of this repo. Every tool runs directly from a package script (ADR 0006 records why vite-plus left).
 
 ## Tech Stack Rules
 
-- **Toolchain**: Vite+ (`vp` CLI) — install, dev, test, lint, fmt, build
-- **Package manager**: pnpm (managed by Vite+)
+- **Package manager**: pnpm
 - **Runtime**: Node.js (not Bun)
 - **Backend**: NestJS with Express adapter (`@nestjs/platform-express`, Express 5)
 - **Database**: Prisma 7 with `@prisma/adapter-pg` + `pg`
@@ -19,8 +18,8 @@ Use `vp` (Vite+ CLI) for all toolchain operations — never `npm`, `yarn`, `bun`
 - **Auth**: Better-Auth with email/password + admin plugin
 - **Schema validation**: Zod (backend DTOs validated with Zod schemas)
 - **API client**: `@lesbarkeitsindex/api-client` package (zero-dependency) — the frontend injects Nuxt's `$fetch` (ofetch) via `createApiClient(fetcher)` for typed frontend → backend calls
-- **Linting**: oxlint (via Vite+)
-- **Formatting**: oxfmt (via Vite+)
+- **Linting**: oxlint (`.oxlintrc.json`)
+- **Formatting**: oxfmt (`.oxfmtrc.json`)
 - **Dead code**: knip (`knip.config.ts`) — unused files, exports, dependencies
 - **Testing**: Vitest for all tests
 - **Build**: NestJS SWC compiler (`nest build --builder swc`)
@@ -72,19 +71,19 @@ r-sidecar/            # R Plumber API for NLP (port 8787, Docker only)
 docker compose up -d
 
 # 2. Install deps
-vp install
+pnpm install
 
 # 3. Generate Prisma client
-vp exec --filter backend prisma generate
+pnpm --filter backend exec prisma generate
 
 # 4. Run migrations
-vp exec --filter backend prisma migrate deploy
+pnpm --filter backend exec prisma migrate deploy
 
 # 5. Start backend (port 3000)
-vp exec --filter backend nest start --watch
+pnpm --filter backend exec nest start --watch
 
 # 6. Start frontend (port 3001)
-vp exec --filter frontend nuxt dev
+pnpm --filter frontend exec nuxt dev
 ```
 
 ### Environment
@@ -103,10 +102,10 @@ Single `.env` at the project root — used by both backend (via `process.loadEnv
 ## Testing
 
 ```sh
-# Backend unit tests (Vitest 5 via `vp test`)
+# Backend unit tests (Vitest 5)
 pnpm --filter backend run test
 
-# API client unit tests (Vitest 5 via `vp test`)
+# API client unit tests (Vitest 5)
 pnpm --filter @lesbarkeitsindex/api-client run test
 
 # Frontend unit tests (Vitest 4 + @nuxt/test-utils)
@@ -124,7 +123,7 @@ pnpm --filter frontend run test:smoke
 pnpm test
 ```
 
-All tests use Vitest. Frontend E2E uses Playwright (Chromium only, single worker). Use `vp exec` for running binaries directly; use `pnpm --filter` for npm scripts defined in package.json.
+All tests use Vitest. Frontend E2E uses Playwright (Chromium only, single worker).
 
 ## API Endpoints
 
@@ -143,21 +142,21 @@ Every backend route lives under `/api/` (ADR 0004); every other path belongs to 
 - Frontend: `<script setup lang="ts">` with Composition API
 - Backend: NestJS modules with controllers, services, and Zod DTOs
 - API client: `createApiClient(fetcher)` from `@lesbarkeitsindex/api-client` — caller supplies a configured `$fetch`/ofetch instance (baseURL + credentials)
-- DB changes: edit `prisma/schema.prisma` → `vp exec prisma generate` → `vp exec prisma migrate dev`
+- DB changes: edit `prisma/schema.prisma` → `pnpm --filter backend exec prisma generate` → `pnpm --filter backend exec prisma migrate dev`
 - Auth in frontend: `useAuthClient()` composable
 - Runtime config: `useRuntimeConfig().public.apiBase` for API base URL
 
 ## Linting & Formatting
 
 ```sh
-# Lint all workspaces (oxlint via Vite+)
-vp lint
+# Lint the whole repo (oxlint)
+pnpm run lint
 
-# Format all workspaces (oxfmt via Vite+)
-vp fmt
+# Format the whole repo in place (oxfmt)
+pnpm run fmt
 
-# Check both
-vp check
+# Check formatting, then lint
+pnpm run check
 
 # Unused files, exports, dependencies (knip, also runs in CI)
 pnpm run knip
@@ -171,11 +170,10 @@ pnpm run knip
 
 ## Gotchas
 
-- **`vp` in scripts/CI**: `vp` is a shell function loaded from your profile. In non-interactive shells (CI, Bash tool), use the full path `~/.vite-plus/bin/vp`. CI uses `pnpm` directly instead.
-- **Two Vitest majors**: Backend tests run on the Vitest bundled with vite-plus (import from `vite-plus/test`); the frontend keeps its own `vitest` 4, since `@nuxt/test-utils` 3 doesn't support Vitest 5. Don't keep the `vite@*`/`vitest@*` overrides that `vp migrate` writes to `pnpm-workspace.yaml` — they move Nuxt onto vite-plus-core and break `nuxt build` and the frontend tests
+- **Two Vitest majors**: The backend and the API client run Vitest 5 directly (import from `vitest`); the Nuxt frontend keeps its own `vitest` 4, since `@nuxt/test-utils` 3 doesn't support Vitest 5
 - **Native build scripts**: `pnpm-workspace.yaml` has an `allowBuilds` map — when adding deps with native code (e.g. `@swc/core`), add them there or `pnpm install` will skip their build scripts.
 - **Prisma `generated/` inside `src/`**: The Prisma client generates to `apps/backend/src/generated/prisma/` so NestJS SWC compiles it alongside application code. Import via `../generated/prisma/client.js`.
-- **Prisma codegen required**: After any Prisma schema change, run `vp exec --filter backend prisma generate`
+- **Prisma codegen required**: After any Prisma schema change, run `pnpm --filter backend exec prisma generate`
 - **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)
 - **Same-origin routing in prod**: Caddy routes `/api/*` to the backend and everything else to the frontend. No CORS needed in production
 - **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth/auth.service.ts` — update when adding new domains

@@ -6,9 +6,9 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vp test run"
+    "test": "vitest run"
   },
   "devDependencies": {
-    "vite-plus": "^1.4.0"
+    "vitest": "^5.0.5"
   }
 }

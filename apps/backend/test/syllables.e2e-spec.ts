@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from 'vite-plus/test';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 /**
  * Golden-syllable e2e spec for the R sidecar (issue #25).

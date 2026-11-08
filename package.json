@@ -3,21 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vp run -r dev",
+    "dev": "pnpm -r --parallel run dev",
     "dev:backend": "pnpm --filter backend run dev",
     "dev:frontend": "pnpm --filter frontend run dev",
     "build": "pnpm --filter backend run build",
-    "test": "vp run -r test",
-    "lint": "vp lint",
-    "fmt": "vp fmt",
-    "check": "vp check",
+    "test": "pnpm -r run test",
+    "lint": "oxlint",
+    "fmt": "oxfmt",
+    "check": "oxfmt --check && oxlint",
     "knip": "KNIP_DISABLE_RAW_TRANSFER=1 knip",
     "generate": "pnpm --filter backend run generate",
     "migrate": "pnpm --filter backend run migrate"
   },
   "devDependencies": {
     "knip": "^6.42.1",
-    "vite-plus": "^1.4.0"
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0"
   },
   "peerDependencies": {
     "typescript": "^5"

@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vite-plus/test';
+import { describe, test, expect } from 'vitest';
 import { computeWordComplexity } from './word-complexity.js';
 
 /** BL-Startgewichte: Drei-/Mehrsilber 50, mehrgliedrige Grapheme 25, seltene 12,5, Cluster 12,5. */

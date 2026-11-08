@@ -1,4 +1,4 @@
-import { test, expect, describe, vi, afterEach } from 'vite-plus/test';
+import { test, expect, describe, vi, afterEach } from 'vitest';
 import { RSidecarService } from './r-sidecar.service.js';
 
 describe('RSidecarService.analyzeText', () => {

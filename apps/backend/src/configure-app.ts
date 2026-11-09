@@ -2,7 +2,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 
 /** Pfad-Präfix aller Backend-Routen (ADR 0004); alle übrigen Pfade gehören dem Frontend. */
-const API_PREFIX = 'api';
+export const API_PREFIX = 'api';
 
 /**
  * Obergrenze für JSON-Bodies (ADR 0005). Das Schema von `POST /api/calculate` lässt

@@ -8,6 +8,11 @@ Vite and tested on the repo's one Vitest 5, and **the Nest backend serves the bu
 The stack goes from three app images to two (`backend`, `r-sidecar`), the SPA and the API
 always ship at the same commit, and the edge `Caddyfile` shrinks to one `reverse_proxy`.
 
+This contradicts two points of [ADR 0004](./0004-app-api-lives-under-api.md), which has a
+note: the edge no longer splits `/api/*` from the frontend, and callers no longer pass an
+origin. Its rule that the API lives under `/api/` and every other path is the frontend's
+stands; the backend now answers both.
+
 ## How the pieces fit
 
 - **The backend serves `apps/frontend/dist`** through `@nestjs/serve-static`
@@ -63,6 +68,6 @@ always ship at the same commit, and the edge `Caddyfile` shrinks to one `reverse
   elements at runtime. A nonce would make every `index.html` unique (no more 304s) and would
   block the `style="…"` attributes that PrimeVue and Vue's static template blocks set; the
   remaining risk, injected CSS, needs an HTML injection point, and the app has no `v-html`.
-  The images the header used to load from beate-lessmann.de are self-hosted, and every
-  Playwright test fails on a CSP violation.
+  The images the header used to load from beate-lessmann.de are self-hosted, and every e2e
+  test fails on a CSP violation when it runs against the backend (as in CI).
 - **Node 26 everywhere**, which no longer bundles corepack: the image installs it from npm.

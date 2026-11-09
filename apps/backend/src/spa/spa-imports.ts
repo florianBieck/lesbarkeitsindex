@@ -3,6 +3,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import type { Response } from 'express';
 import { existsSync } from 'node:fs';
 import { join, sep } from 'node:path';
+import { API_PREFIX } from '../configure-app.js';
 
 /** `vite build` hashes every file below `assets/`, so a name never changes its content. */
 const ASSETS_CACHE_CONTROL = 'public, max-age=31536000, immutable';
@@ -35,7 +36,7 @@ export function spaImports(root: string): DynamicModule[] {
       rootPath: root,
       // path-to-regexp v8: the braces make the wildcard optional, so `/api` itself is
       // excluded too. The v4/v6 spellings (`/api/*`, `/api*`) boot, then answer 500.
-      exclude: ['/api/{*any}', '/assets/{*any}'],
+      exclude: [`/${API_PREFIX}/{*any}`, '/assets/{*any}'],
       serveStaticOptions: {
         // Runs for files and for the index.html fallback, before `send` sets its own.
         setHeaders: (res: Response, path: string) =>

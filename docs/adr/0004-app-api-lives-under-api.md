@@ -16,6 +16,10 @@ other path belongs to the frontend.
 - No aliases for the old paths: the SPA is the API's only caller, and both move in the same
   deploy. No version segment (`/api/v1`) either.
 
+[ADR 0007](./0007-frontend-drops-nuxt-for-a-vue-spa.md) changed two of these points: the
+backend now serves the SPA too, so the edge proxies every path to it, and callers pass no
+origin at all, only paths relative to the page. The split of the path space stands.
+
 The health check first stayed at `GET /`, but the backend will serve the built SPA, and `/`
 then belongs to `index.html`. It moved to `/api/health` on 2026-10-25.
 

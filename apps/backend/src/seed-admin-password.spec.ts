@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vite-plus/test';
+import { describe, test, expect } from 'vitest';
 import { readSeedAdminPassword } from './seed-admin-password.js';
 
 describe('readSeedAdminPassword', () => {

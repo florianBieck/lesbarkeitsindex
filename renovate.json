@@ -27,7 +27,7 @@
       "groupName": "PrimeVue"
     },
     {
-      "description": "One weekly PR for stable npm minor/patch updates. 0.x bumps (vite-plus, @swc/cli, ...) count as breaking and stay separate",
+      "description": "One weekly PR for stable npm minor/patch updates. 0.x bumps (oxfmt, @swc/cli, ...) count as breaking and stay separate",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch"],
       "matchIsBreaking": false,

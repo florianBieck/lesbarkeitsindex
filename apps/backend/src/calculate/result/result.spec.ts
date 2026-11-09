@@ -1,4 +1,4 @@
-import { test, expect, describe } from 'vite-plus/test';
+import { test, expect, describe } from 'vitest';
 import { computeReadability, type ConfigWeights } from './index.js';
 import {
   countWordsWithComplexSyllables,

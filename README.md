@@ -7,11 +7,11 @@ German text readability analysis tool for teachers and educators. Computes reada
 - **Backend**: NestJS + Express, Prisma 7, PostgreSQL, Better-Auth
 - **Frontend**: Nuxt 4, PrimeVue 4, Tailwind CSS, Chart.js
 - **NLP**: R Plumber sidecar (sentence splitting, syllable counting, POS tagging)
-- **Toolchain**: [Vite+](https://viteplus.dev/) (`vp` CLI), pnpm, Vitest, oxlint
+- **Toolchain**: pnpm, Vitest, oxlint, oxfmt
 
 ## Prerequisites
 
-- [Vite+](https://viteplus.dev/) (`curl -fsSL https://vite.plus | bash`)
+- Node.js (major in `.node-version`) and pnpm (version in `package.json` → `packageManager`)
 - Docker (for PostgreSQL and R sidecar)
 
 ## Quick Start
@@ -21,27 +21,26 @@ German text readability analysis tool for teachers and educators. Computes reada
 docker compose up -d
 
 # Install dependencies (also generates Prisma client)
-vp install
+pnpm install
 
 # Copy and edit environment variables
-cp apps/backend/.env.example apps/backend/.env
+cp .env.example .env
 
 # Run database migrations
-vp exec --filter backend prisma migrate deploy
+pnpm --filter backend exec prisma migrate deploy
 
 # Start backend (port 3000) and frontend (port 3001)
-vp exec --filter backend nest start --watch
-vp exec --filter frontend nuxt dev
+pnpm dev
 ```
 
 ## Commands
 
 ```bash
-vp install          # Install all dependencies
+pnpm install        # Install all dependencies
 pnpm test           # Run all unit tests
-vp lint             # Lint with oxlint
-vp fmt              # Format with oxfmt
-vp check            # Lint + format check
+pnpm run lint       # Lint with oxlint
+pnpm run fmt        # Format with oxfmt
+pnpm run check      # Format check + lint
 ```
 
 ## Project Structure

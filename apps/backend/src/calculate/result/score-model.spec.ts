@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vite-plus/test';
+import { describe, test, expect } from 'vitest';
 import { calculateLueLix, calculateLevel } from './score-model.js';
 
 describe('calculateLueLix (Aufschlagsmodell: LIX + α·WK)', () => {

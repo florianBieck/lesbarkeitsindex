@@ -1,4 +1,4 @@
-import { describe, test, expect, vi } from 'vite-plus/test';
+import { describe, test, expect, vi } from 'vitest';
 import { InternalServerErrorException, ServiceUnavailableException } from '@nestjs/common';
 import { CalculateService } from './calculate.service.js';
 

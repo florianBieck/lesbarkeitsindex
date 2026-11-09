@@ -1,4 +1,4 @@
-import { expect, test, vi } from 'vite-plus/test';
+import { expect, test, vi } from 'vitest';
 import { createApiClient } from './index.ts';
 
 test('requests every endpoint under /api/ (ADR 0004)', async () => {

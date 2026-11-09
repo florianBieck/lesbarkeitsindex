@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vite-plus/test';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';

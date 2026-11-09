@@ -1,0 +1,186 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import type { Config } from '@lesbarkeitsindex/api-client';
+import type { ResultData, useApiClient } from '@/composables/useApiClient';
+import IndexPage from '@/pages/index.vue';
+
+/**
+ * Frontend-Unit-Test für die Texttyp-/Listen-Erkennung der Startseite
+ * (Issue #30, ADR 0002 — AC3).
+ *
+ * Prüft, dass der Schalter automatisch den heuristischen Texttyp anzeigt und
+ * ihn beim Absenden als Override an die API weitergibt.
+ */
+
+type ApiClient = ReturnType<typeof useApiClient>;
+
+const { calculateMock, getConfigMock } = vi.hoisted(() => ({
+  calculateMock: vi.fn<ApiClient['calculate']>(),
+  getConfigMock: vi.fn<ApiClient['getConfig']>(),
+}));
+
+// Die Seite importiert useApiClient explizit, daher wird das Modul gemockt.
+// `import()` statt Pfad-String: die Factory wird gegen die echten Exporte typgeprüft.
+vi.mock(import('@/composables/useApiClient'), () => ({
+  useApiClient: () => ({
+    getConfig: getConfigMock,
+    updateConfig: vi.fn(),
+    calculate: calculateMock,
+    getResults: vi.fn(),
+  }),
+}));
+
+const DB_CONFIG: Config = {
+  id: 'cfg-1',
+  createdAt: '2026-06-12T08:00:00.000Z',
+  alpha: 0.3,
+  weightComplexSyllables: 50,
+  weightMultiMemberedGraphemes: 25,
+  weightRareGraphemes: 12.5,
+  weightConsonantClusters: 12.5,
+};
+
+// Minimaler Stub für die ResultData-Felder, damit das Result-View nicht
+// während des Tests in eine Null-Dereferenzierung läuft. Die Werte selbst
+// sind für die Texttyp-Tests irrelevant.
+const STUB_RESULT: ResultData = {
+  id: 'r1',
+  createdAt: '2026-06-17T10:00:00.000Z',
+  countWords: 4,
+  countSyllables: 4,
+  countWordsWithComplexSyllables: 0,
+  countWordsWithConsonantClusters: 0,
+  countWordsWithMultiMemberedGraphemes: 0,
+  countWordsWithRareGraphemes: 0,
+  countWordsWithOneSyllable: 4,
+  countWordsWithTwoSyllable: 0,
+  countWordsWithThreeSyllable: 0,
+  countWordsWithFourSyllable: 0,
+  countWordsWithFiveSyllable: 0,
+  averageWordLength: 4,
+  averagePhraseLength: 4,
+  averageCharsPerSyllable: 4,
+  averageSyllablesPerWord: 1,
+  averageSyllablesPerPhrase: 4,
+  proportionOfLongWords: 0,
+  proportionOfWordsWithComplexSyllables: 0,
+  proportionOfWordsWithConsonantClusters: 0,
+  proportionOfWordsWithMultiMemberedGraphemes: 0,
+  proportionOfWordsWithRareGraphemes: 0,
+  lix: 4,
+  ratte: 0,
+  gsmog: 0,
+  wst4: 0,
+  fleschKincaid: 0,
+  ttr: 100,
+  countAbbreviations: 0,
+  countNumbers: 0,
+  countSpecialCharacters: 0,
+  proNIndex: 0,
+  subordinateClauseRatio: 0,
+  passiveCount: 0,
+  nominalizationCount: 0,
+  wordComplexity: 0,
+  lueLix: 4,
+  level: 1,
+  textType: 'list' as const,
+  readingUnit: 'line' as const,
+  detectedTextType: 'list' as const,
+  countReadingUnits: 4,
+  text: '',
+  title: '',
+  words: [],
+  wordsWithOneSyllable: [],
+  wordsWithTwoSyllables: [],
+  wordsWithThreeSyllables: [],
+  wordsWithFourSyllables: [],
+  wordsWithFiveSyllables: [],
+  phrases: [],
+  config: DB_CONFIG,
+  configId: 'cfg-1',
+};
+
+interface IndexVm {
+  text: string;
+  textType: 'prose' | 'list';
+  detectedTextType: 'prose' | 'list';
+  calculate: () => Promise<void>;
+}
+
+describe('IndexPage — Texttyp-Schalter (Issue #30, ADR 0002 AC3)', () => {
+  beforeEach(() => {
+    calculateMock.mockReset();
+    getConfigMock.mockReset();
+    getConfigMock.mockResolvedValue(DB_CONFIG);
+    calculateMock.mockResolvedValue(STUB_RESULT);
+  });
+
+  it('erkennt eine Wörterliste heuristisch als Liste', async () => {
+    const wrapper = mount(IndexPage);
+    await flushPromises();
+    const vm = wrapper.vm as unknown as IndexVm;
+
+    vm.text = 'Hund\nKatze\nVogel\nMaus';
+    await flushPromises();
+
+    expect(vm.detectedTextType).toBe('list');
+    expect(vm.textType).toBe('list');
+  });
+
+  it('erkennt Fließtext heuristisch als prose', async () => {
+    const wrapper = mount(IndexPage);
+    await flushPromises();
+    const vm = wrapper.vm as unknown as IndexVm;
+
+    vm.text = 'Der Hund läuft. Die Katze schläft.';
+    await flushPromises();
+
+    expect(vm.detectedTextType).toBe('prose');
+    expect(vm.textType).toBe('prose');
+  });
+
+  it('schickt den effektiven Texttyp als Override an die API mit', async () => {
+    const wrapper = mount(IndexPage);
+    await flushPromises();
+    const vm = wrapper.vm as unknown as IndexVm;
+
+    vm.text = 'Hund\nKatze\nVogel\nMaus';
+    await flushPromises();
+    await vm.calculate();
+
+    expect(calculateMock).toHaveBeenCalledTimes(1);
+    const body = calculateMock.mock.calls[0]![0];
+    expect(body.textType).toBe('list');
+  });
+
+  it('Override schlägt die Heuristik und wird an die API geschickt', async () => {
+    const wrapper = mount(IndexPage);
+    await flushPromises();
+    const vm = wrapper.vm as unknown as IndexVm;
+
+    vm.text = 'Hund\nKatze\nVogel\nMaus';
+    await flushPromises();
+    expect(vm.detectedTextType).toBe('list');
+
+    vm.textType = 'prose';
+    await flushPromises();
+    await vm.calculate();
+
+    const body = calculateMock.mock.calls[0]![0];
+    expect(body.textType).toBe('prose');
+    // Die heuristische Erkennung bleibt unverändert sichtbar.
+    expect(vm.detectedTextType).toBe('list');
+  });
+
+  it('bindet die Texteingabe als einfaches Textfeld (kein Rich-Text-Editor)', async () => {
+    const wrapper = mount(IndexPage);
+    await flushPromises();
+
+    const textarea = wrapper.find('textarea');
+    expect(textarea.exists()).toBe(true);
+
+    await textarea.setValue('Hund\nKatze\nVogel\nMaus');
+    const vm = wrapper.vm as unknown as IndexVm;
+    expect(vm.text).toBe('Hund\nKatze\nVogel\nMaus');
+  });
+});

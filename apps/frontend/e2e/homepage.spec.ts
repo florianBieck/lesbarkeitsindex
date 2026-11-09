@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 
 const SAMPLE_TEXT =
   'Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach. Ein Vogel fliegt am Himmel.';
@@ -63,8 +63,11 @@ test.describe('Homepage', () => {
     await expect(page.getByText('Noch kein Text analysiert')).toBeVisible();
   });
 
-  test('renders the website button in the header', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Zur Website' })).toBeVisible();
+  test('the website button in the header links to the website in a new tab', async ({ page }) => {
+    const link = page.getByRole('link', { name: 'Zur Website' });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', 'https://www.beate-lessmann.de');
+    await expect(link).toHaveAttribute('target', '_blank');
   });
 
   test('can type text into the editor', async ({ page }) => {

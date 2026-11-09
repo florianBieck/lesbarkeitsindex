@@ -1,0 +1,12 @@
+{
+  // Browser code and its unit tests: DOM globals, no Node types.
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "types": ["vite/client"],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue"]
+}

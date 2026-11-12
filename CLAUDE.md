@@ -15,7 +15,7 @@ Use `pnpm` for installs and scripts (`pnpm <script>` at the root, `pnpm --filter
 - **Database**: Prisma 7 with `@prisma/adapter-pg` + `pg`
 - **Frontend**: Vue 3 SPA (Composition API, vue-router 5), built by Vite; the backend serves the build (ADR 0007)
 - **UI**: PrimeVue 4 with Aura theme — use PrimeVue components for all UI work
-- **CSS**: Tailwind utility classes + PrimeVue Aura theme tokens
+- **CSS**: Tailwind 4 utility classes (`@tailwindcss/vite`). `surface-*` and `primary-*` are PrimeVue's Aura tokens, mapped by the `@theme inline` block in `src/assets/main.css`, not Tailwind's palette
 - **Auth**: Better-Auth with email/password + admin plugin
 - **Schema validation**: Zod (backend DTOs validated with Zod schemas)
 - **API client**: `@lesbarkeitsindex/api-client` package (zero-dependency) — the frontend injects its native-`fetch` wrapper via `createApiClient(fetcher)` for typed frontend → backend calls
@@ -59,7 +59,7 @@ apps/
       main.ts         # createApp, router, PrimeVue (Aura)
       router.ts       # Hand-written route table
       pages/          # index, login, logout, results, admin, not-found
-      components/     # result-view, config-weights-form, app-logo
+      components/     # result-view, config-weights-form
       composables/    # useApiClient + api-fetch (native fetch), useAuthClient
     e2e/              # Playwright specs; fixtures.ts fails any test on a CSP violation
     smoke/            # Playwright smoke test against prod
@@ -184,6 +184,7 @@ pnpm run knip
 - **A new external origin needs a CSP entry**: an image, font or API from another origin needs a change to `CONTENT_SECURITY_POLICY` in `configure-app.ts`, or the browser blocks it and every Playwright test against the backend fails
 - **SPA deep links 404 below a dot-directory**: serve-static refuses paths under a directory starting with `.`, so the backend serves no deep links from a worktree under `.claude/worktrees/`. Run Playwright there against `vite preview`
 - **Backend specs that need the SPA**: build the testing module with `spaTestingModule()` from `test/spa-fixture.ts`. A plain `Test.createTestingModule` with `spaImports` serves nothing, because serve-static picks its loader before the app has an HTTP adapter
+- **Utilities beat PrimeVue**: PrimeVue's `cssLayer` (in `main.ts`) puts Aura in a `primevue` layer below Tailwind's utilities, so a utility on a PrimeVue component overrides Aura (`py-3` makes a `Button` taller than every other control). Size and shape components through their props and Aura. A CSS layer of our own sorts above `primevue` unless it is `theme` or `base`, which is why `primeicons.css` is imported into `base`
 - **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth/auth.service.ts` — update when adding new domains
 - **knip via the script only**: Run `pnpm run knip`, not bare `knip` — the script sets `KNIP_DISABLE_RAW_TRANSFER=1`, without which knip's oxc-parser panics (`raw_transfer.rs` assertion). Ignores in `knip.config.ts` carry a comment saying why; keep it that way
 - **NestJS + Better-Auth**: `AuthController`'s `@All('*path')` bridges Express requests to Better-Auth's Web `Request`/`Response`. Send `Set-Cookie` as one `res.setHeader('set-cookie', response.headers.getSetCookie())`: `res.header()`/`res.set()` replace, so copying cookies one by one keeps only the last, and sign-out leaves the session cookie in the browser

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 
 /** Analyze a text on the homepage with the save-consent box checked so the
  *  result is persisted and shows up on the results page. */
@@ -42,6 +42,20 @@ test.describe('Results page', () => {
     // empty-state row while the lazy fetch is in flight.
     const rows = page.locator('tbody tr.p-datatable-selectable-row');
     await expect(rows.first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test('a reload keeps the page: the server answers /results with the app, not the API', async ({
+    page,
+  }) => {
+    await analyzeAndSave(page, 'Der Igel schläft am Tag. Nachts sucht er Käfer.');
+
+    await page.goto('/results');
+    await page.reload();
+
+    await expect(page.getByRole('columnheader', { name: 'Datum' })).toBeVisible();
+    await expect(page.locator('tbody tr.p-datatable-selectable-row').first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test('clicking a row shows its detailed result view', async ({ page }) => {

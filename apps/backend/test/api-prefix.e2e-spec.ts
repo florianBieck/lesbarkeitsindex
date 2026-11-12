@@ -1,6 +1,5 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { HealthController } from '../src/health.controller.js';
@@ -8,6 +7,12 @@ import { AppConfigController } from '../src/config/config.controller.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { AuthController } from '../src/auth/auth.controller.js';
 import { AuthService } from '../src/auth/auth.service.js';
+import {
+  createSpaFixture,
+  FIXTURE_INDEX_HTML,
+  spaTestingModule,
+  type SpaFixture,
+} from './spa-fixture.js';
 
 /**
  * Routing boundary (ADR 0004): every backend route lives under `/api/`; the
@@ -56,12 +61,14 @@ async function fakeAuthHandler(request: Request): Promise<Response> {
 }
 
 describe('API prefix /api/ (ADR 0004)', () => {
+  let fixture: SpaFixture;
   let app: NestExpressApplication;
   let baseUrl: string;
   const authHandler = vi.fn(fakeAuthHandler);
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
+    fixture = await createSpaFixture();
+    const moduleRef = await spaTestingModule(fixture.root, {
       controllers: [HealthController, AppConfigController, AuthController],
       providers: [
         {
@@ -80,6 +87,7 @@ describe('API prefix /api/ (ADR 0004)', () => {
 
   afterAll(async () => {
     await app.close();
+    await fixture.remove();
   });
 
   async function get(path: string, headers?: Record<string, string>): Promise<Response> {
@@ -92,14 +100,20 @@ describe('API prefix /api/ (ADR 0004)', () => {
     return res.status;
   }
 
+  /** The SPA's index.html, which the backend serves for every path it doesn't own. */
+  async function isSpa(path: string): Promise<boolean> {
+    const res = await get(path);
+    return res.status === 200 && (await res.text()) === FIXTURE_INDEX_HTML;
+  }
+
   test('app routes answer under /api/, not at the root', async () => {
     expect(await statusOf('/api/config')).toBe(200);
-    expect(await statusOf('/config')).toBe(404);
+    expect(await isSpa('/config')).toBe(true);
   });
 
   test('the health check answers at /api/health and leaves / to the frontend', async () => {
     expect(await statusOf('/api/health')).toBe(200);
-    expect(await statusOf('/')).toBe(404);
+    expect(await isSpa('/')).toBe(true);
   });
 
   test('Better-Auth answers at /api/auth/* and receives the full URL', async () => {
@@ -107,7 +121,7 @@ describe('API prefix /api/ (ADR 0004)', () => {
     expect(res.status).toBe(200);
     const { url } = (await res.json()) as { url: string };
     expect(new URL(url).pathname).toBe('/api/auth/get-session');
-    expect(await statusOf('/auth/get-session')).toBe(404);
+    expect(await isSpa('/auth/get-session')).toBe(true);
   });
 
   test('sign-out passes every Set-Cookie, the status and the body through', async () => {
@@ -137,11 +151,11 @@ describe('API prefix /api/ (ADR 0004)', () => {
     expect(await res.json()).toEqual(SIGN_IN_REJECTED.body);
   });
 
-  test('CORS lets the dev frontend send credentials', async () => {
+  test('the API sends no CORS headers: the browser only ever calls its own origin', async () => {
     const res = await get('/api/config', { origin: 'http://localhost:3001' });
     await res.body?.cancel();
-    expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:3001');
-    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+    expect(res.headers.get('access-control-allow-origin')).toBeNull();
+    expect(res.headers.get('access-control-allow-credentials')).toBeNull();
   });
 
   test('responses do not name the server framework', async () => {

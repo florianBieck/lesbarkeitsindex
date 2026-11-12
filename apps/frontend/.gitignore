@@ -1,10 +1,12 @@
-# Nuxt dev/build outputs
+# Build output
+dist
+
+# Left over from the Nuxt build in older checkouts
 .output
 .data
 .nuxt
 .nitro
 .cache
-dist
 
 # Node dependencies
 node_modules

@@ -23,7 +23,6 @@ jobs:
       contents: read
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
       r-sidecar: ${{ steps.filter.outputs.r-sidecar }}
       # Built-in paths-filter output: JSON array of all matching filter names, e.g. ["backend","r-sidecar"]
       services: ${{ steps.filter.outputs.changes }}
@@ -33,17 +32,16 @@ jobs:
         id: filter
         with:
           filters: |
+            # The backend image carries the built SPA (ADR 0007).
             backend:
               - 'Dockerfile.backend'
+              - '.dockerignore'
               - 'apps/backend/**'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-            frontend:
-              - 'Dockerfile.frontend'
               - 'apps/frontend/**'
               - 'packages/api-client/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
+              - 'tsconfig.json'
             r-sidecar:
               - 'Dockerfile.r-sidecar'
               - 'r-sidecar/**'
@@ -69,20 +67,25 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: pnpm --filter backend --filter @lesbarkeitsindex/api-client run test
+        run: pnpm --filter backend --filter @lesbarkeitsindex/api-client --filter frontend run test
+
+      - name: Type-check the frontend
+        run: pnpm --filter frontend run typecheck
 
       # Unused files, exports and dependencies. Relies on the postinstall
-      # codegen above (Prisma client, .nuxt types).
+      # codegen above (Prisma client).
       - name: Run knip
         run: pnpm run knip
 
   e2e-frontend:
     needs: [changes]
     if: >-
-      needs.changes.outputs.frontend == 'true' ||
       needs.changes.outputs.backend == 'true' ||
       needs.changes.outputs.r-sidecar == 'true'
     runs-on: ubuntu-latest
+    # A green run takes about 9 minutes; a hung step (as `playwright install` on
+    # Node 26 before Playwright 1.65) would otherwise hold the runner for 6 hours.
+    timeout-minutes: 30
     permissions:
       contents: read
     services:
@@ -104,7 +107,8 @@ jobs:
       R_SIDECAR_URL: http://localhost:8787
       BETTER_AUTH_SECRET: lesbarkeitsindex-e2e-secret
       BETTER_AUTH_URL: http://localhost:3000
-      NUXT_PUBLIC_API_BASE: http://localhost:3000
+      # Playwright runs against the backend, which serves the built SPA as in prod.
+      E2E_BASE_URL: http://localhost:3000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -159,7 +163,8 @@ jobs:
       - name: Run backend e2e tests
         run: pnpm --filter backend run test:e2e
 
-      # Backend self-seeds the default config (and test users) on boot.
+      # Backend self-seeds the default config (and test users) on boot, and
+      # serves the frontend build from apps/frontend/dist.
       # Run from apps/backend to match the production Docker start command.
       - name: Start backend
         run: |
@@ -167,19 +172,11 @@ jobs:
           node dist/main.js > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
           curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3000/api/health
 
-      - name: Start frontend
-        env:
-          NITRO_PORT: 3001
-          NITRO_HOST: 127.0.0.1
-        run: |
-          cd apps/frontend
-          node .output/server/index.mjs > "$GITHUB_WORKSPACE/frontend.log" 2>&1 &
-          curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3001/
-
-      # No-auth smoke only: homepage (incl. the #27 weighting assertion) + results.
-      # Auth-dependent specs (login, navigation, auth-flow) stay local-only.
+      # No-auth smoke only: homepage (incl. the #27 weighting assertion), results
+      # and the not-found page. Auth-dependent specs (login, navigation,
+      # auth-flow) stay local-only.
       - name: Run frontend e2e (no-auth smoke)
-        run: pnpm --filter frontend exec playwright test e2e/homepage.spec.ts e2e/results.spec.ts
+        run: pnpm --filter frontend exec playwright test e2e/homepage.spec.ts e2e/results.spec.ts e2e/not-found.spec.ts
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
@@ -194,7 +191,6 @@ jobs:
         run: |
           echo "::group::r-sidecar"; docker logs r-sidecar 2>&1 | tail -80 || true; echo "::endgroup::"
           echo "::group::backend"; tail -80 backend.log 2>/dev/null || true; echo "::endgroup::"
-          echo "::group::frontend"; tail -80 frontend.log 2>/dev/null || true; echo "::endgroup::"
 
   build:
     needs: [test, changes]

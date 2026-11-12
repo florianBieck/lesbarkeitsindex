@@ -138,11 +138,9 @@ export type UpdateConfigRequest = {
 };
 
 /**
- * Minimaler Fetch-Vertrag des API-Clients. Nuxts globales `$fetch` (ofetch)
- * erfüllt ihn direkt — Basis-URL und Credentials konfiguriert der Aufrufer,
- * z. B. via `$fetch.create({ baseURL, credentials: 'include' })`. Die Basis-URL
- * ist der reine Origin; das `/api`-Präfix setzt der Client selbst. Der Client
- * bleibt abhängigkeitsfrei.
+ * Minimaler Fetch-Vertrag des API-Clients. Der Aufrufer liefert die Umsetzung
+ * (im Frontend ein Wrapper um natives `fetch`) und damit jede I/O; der Client
+ * baut nur die Pfade samt `/api`-Präfix und bleibt abhängigkeitsfrei.
  */
 export type ApiFetch = <T>(
   path: string,

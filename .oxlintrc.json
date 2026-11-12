@@ -6,5 +6,15 @@
     "**/generated/**",
     "**/.nuxt/**",
     "**/.output/**"
+  ],
+  "overrides": [
+    {
+      // The SPA imports through `@/` whenever an import leaves the file's directory.
+      "files": ["apps/frontend/**"],
+      "plugins": ["import"],
+      "rules": {
+        "import/no-relative-parent-imports": "error"
+      }
+    }
   ]
 }

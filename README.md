@@ -5,13 +5,13 @@ German text readability analysis tool for teachers and educators. Computes reada
 ## Tech Stack
 
 - **Backend**: NestJS + Express, Prisma 7, PostgreSQL, Better-Auth
-- **Frontend**: Nuxt 4, PrimeVue 4, Tailwind CSS, Chart.js
+- **Frontend**: Vue 3 SPA (Vite, vue-router), PrimeVue 4, Tailwind CSS, Chart.js; served by the backend
 - **NLP**: R Plumber sidecar (sentence splitting, syllable counting, POS tagging)
-- **Toolchain**: pnpm, Vitest, oxlint, oxfmt
+- **Toolchain**: pnpm, Vite, Vitest, vue-tsc, oxlint, oxfmt
 
 ## Prerequisites
 
-- Node.js (major in `.node-version`) and pnpm (version in `package.json` → `packageManager`)
+- Node.js (major in `.node-version`) and pnpm (version in `package.json` → `packageManager`). Node 26 no longer ships corepack: `npm install -g corepack && corepack enable` sets up the pinned pnpm
 - Docker (for PostgreSQL and R sidecar)
 
 ## Quick Start
@@ -29,7 +29,7 @@ cp .env.example .env
 # Run database migrations
 pnpm --filter backend exec prisma migrate deploy
 
-# Start backend (port 3000) and frontend (port 3001)
+# Start backend (port 3000) and frontend (port 3001, proxies /api to the backend)
 pnpm dev
 ```
 
@@ -48,9 +48,9 @@ pnpm run check      # Format check + lint
 ```
 apps/
   backend/          # NestJS/Express API
-  frontend/         # Nuxt 4 SPA
+  frontend/         # Vue 3 SPA (Vite)
 packages/
-  api-client/       # Typed API client (injected $fetch)
+  api-client/       # Typed API client (injected fetcher)
 r-sidecar/          # R Plumber NLP service (Docker only)
 ```
 

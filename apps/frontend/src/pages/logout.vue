@@ -1,11 +1,11 @@
 <template>
   <div class="px-6 py-20 md:px-20 lg:px-80">
     <div
-      class="bg-surface-0 p-8 md:p-12 shadow-xs rounded-2xl w-full max-w-sm mx-auto flex flex-col gap-8"
+      class="mx-auto flex w-full max-w-sm flex-col gap-8 rounded-2xl bg-surface-0 p-8 shadow-xs md:p-12"
     >
       <div class="flex flex-col items-center gap-4">
-        <div class="flex flex-col items-center gap-2 w-full">
-          <h2 class="text-surface-900 text-2xl font-semibold leading-tight text-center w-full">
+        <div class="flex w-full flex-col items-center gap-2">
+          <h2 class="w-full text-center text-2xl leading-tight font-semibold text-surface-900">
             Warte auf Abmeldung...
           </h2>
         </div>

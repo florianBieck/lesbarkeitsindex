@@ -52,7 +52,11 @@ const SEVERITY_STYLES: Record<
   { readonly chartVar: string; readonly textClass: string; readonly icon: string }
 > = {
   success: { chartVar: '--p-green-500', textClass: 'text-green-600', icon: 'pi pi-check-circle' },
-  warn: { chartVar: '--p-amber-500', textClass: 'text-amber-700', icon: 'pi pi-exclamation-triangle' },
+  warn: {
+    chartVar: '--p-amber-500',
+    textClass: 'text-amber-700',
+    icon: 'pi pi-exclamation-triangle',
+  },
   error: { chartVar: '--p-red-500', textClass: 'text-red-600', icon: 'pi pi-times-circle' },
 };
 const severityStyle = computed(() => SEVERITY_STYLES[levelInfo.value.severity]);
@@ -277,7 +281,7 @@ onMounted(() => {
   <div class="flex flex-col">
     <!-- Hero: Schwierigkeit (LÜ-LIX + Niveaustufe) -->
     <div class="flex flex-col items-center gap-3 pb-6">
-      <h2 class="font-semibold text-lg">Ergebnis</h2>
+      <h2 class="text-lg font-semibold">Ergebnis</h2>
       <Chart
         v-if="chartOptions && chartData"
         type="doughnut"
@@ -288,7 +292,7 @@ onMounted(() => {
         role="img"
       />
       <p
-        class="text-lg font-medium text-center flex items-center justify-center gap-2"
+        class="flex items-center justify-center gap-2 text-center text-lg font-medium"
         :class="severityStyle.textClass"
       >
         <i :class="severityStyle.icon" aria-hidden="true" />
@@ -296,45 +300,44 @@ onMounted(() => {
       </p>
     </div>
 
-    <div v-if="result.title" class="text-center pb-5">
+    <div v-if="result.title" class="pb-5 text-center">
       <div class="text-lg font-medium text-surface-900">&bdquo;{{ result.title }}&ldquo;</div>
-      <div class="text-sm text-surface-500 mt-1">
+      <div class="mt-1 text-sm text-surface-500">
         Titel &mdash; flie&szlig;t in keine Kennzahl ein
       </div>
     </div>
 
     <!-- Zwei eigenständige Dimensionen: Schwierigkeit und Umfang -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 border-t border-b border-surface-200">
+    <div class="grid grid-cols-1 gap-4 border-t border-b border-surface-200 py-5 sm:grid-cols-2">
       <div class="text-center">
-        <div class="text-xs uppercase tracking-wide text-surface-500 mb-1">Schwierigkeit</div>
+        <div class="mb-1 text-xs tracking-wide text-surface-500 uppercase">Schwierigkeit</div>
         <div class="text-3xl font-semibold text-surface-900">{{ lueLix }}</div>
         <div class="text-sm text-surface-500">LÜ-LIX &middot; Niveaustufe {{ level }}</div>
-        <div class="text-sm text-surface-600 mt-1">
+        <div class="mt-1 text-sm text-surface-600">
           LIX {{ lix }} &middot; WK {{ wordComplexity }}
         </div>
       </div>
       <div class="text-center">
-        <div class="text-xs uppercase tracking-wide text-surface-500 mb-1">Umfang</div>
+        <div class="mb-1 text-xs tracking-wide text-surface-500 uppercase">Umfang</div>
         <div class="text-3xl font-semibold text-surface-900">{{ result.countWords }}</div>
         <div class="text-sm text-surface-500">Wörter</div>
-        <div class="text-sm text-surface-600 mt-1">
-          {{ readingUnitCount }} {{ readingUnitPlural }} &middot;
-          {{ result.countSyllables }} Silben
+        <div class="mt-1 text-sm text-surface-600">
+          {{ readingUnitCount }} {{ readingUnitPlural }} &middot; {{ result.countSyllables }} Silben
         </div>
-        <div class="text-xs text-surface-500 mt-1">
+        <div class="mt-1 text-xs text-surface-500">
           Texttyp {{ textTypeLabel }} &middot; Leseeinheit {{ readingUnitLabel }}
         </div>
       </div>
     </div>
 
     <!-- Detailed metrics — tighter spacing between collapsed fieldsets -->
-    <div class="flex flex-col gap-3 mt-8">
+    <div class="mt-8 flex flex-col gap-3">
       <Fieldset legend="Lesbarkeitsindizes" :toggleable="true" :collapsed="true">
         <div class="flex flex-col gap-3">
           <div
             v-for="item in readabilityIndices"
             :key="item.label"
-            class="flex justify-between items-center py-1"
+            class="flex items-center justify-between py-1"
           >
             <span class="text-surface-700">{{ item.label }}</span>
             <span class="font-medium text-surface-900">{{ item.value }}</span>
@@ -344,19 +347,19 @@ onMounted(() => {
 
       <Fieldset legend="Wortkomplexität" :toggleable="true" :collapsed="true">
         <div class="flex flex-col gap-3">
-          <div class="flex justify-between items-center py-1 border-b border-surface-200 pb-2">
-            <span class="text-surface-700 font-medium">Wortkomplexität (WK)</span>
+          <div class="flex items-center justify-between border-b border-surface-200 py-1 pb-2">
+            <span class="font-medium text-surface-700">Wortkomplexität (WK)</span>
             <span class="font-semibold text-surface-900">{{ wordComplexity }}</span>
           </div>
           <div
             v-for="item in complexityFactors"
             :key="item.label"
-            class="flex justify-between items-center py-1"
+            class="flex items-center justify-between py-1"
           >
             <span class="text-surface-700">{{ item.label }}</span>
             <span class="font-medium text-surface-900">
               {{ item.value }}
-              <span v-if="item.count !== null" class="text-surface-500 text-sm"
+              <span v-if="item.count !== null" class="text-sm text-surface-500"
                 >({{ item.count }})</span
               >
             </span>
@@ -369,7 +372,7 @@ onMounted(() => {
           <div
             v-for="item in sentenceComplexity"
             :key="item.label"
-            class="flex justify-between items-center py-1"
+            class="flex items-center justify-between py-1"
           >
             <span class="text-surface-700">{{ item.label }}</span>
             <span class="font-medium text-surface-900">{{ item.value }}</span>
@@ -382,7 +385,7 @@ onMounted(() => {
           <div
             v-for="item in textStats"
             :key="item.label"
-            class="flex justify-between items-center py-1"
+            class="flex items-center justify-between py-1"
           >
             <span class="text-surface-700">{{ item.label }}</span>
             <span class="font-medium text-surface-900">{{ item.value }}</span>
@@ -391,7 +394,7 @@ onMounted(() => {
       </Fieldset>
 
       <Fieldset legend="Verwendete Gewichtung" :toggleable="true" :collapsed="true">
-        <div class="flex justify-between items-center py-1 mb-3">
+        <div class="mb-3 flex items-center justify-between py-1">
           <span class="text-surface-700">Aufschlag &alpha; (LÜ-LIX = LIX + &alpha;&middot;WK)</span>
           <span class="font-medium text-surface-900">{{ alpha }}</span>
         </div>
@@ -400,15 +403,15 @@ onMounted(() => {
     </div>
 
     <!-- Text analysis — more separation from metrics above -->
-    <div class="flex flex-col gap-3 mt-6">
+    <div class="mt-6 flex flex-col gap-3">
       <Fieldset legend="Textanalyse" :toggleable="true" :collapsed="true">
         <div class="flex flex-col gap-4">
           <div>
-            <h3 class="font-medium text-surface-700 mb-2">Originaltext</h3>
-            <p class="text-surface-700 leading-relaxed">{{ result.text }}</p>
+            <h3 class="mb-2 font-medium text-surface-700">Originaltext</h3>
+            <p class="leading-relaxed text-surface-700">{{ result.text }}</p>
           </div>
           <div>
-            <h3 class="font-medium text-surface-700 mb-2">
+            <h3 class="mb-2 font-medium text-surface-700">
               {{ readingUnitPlural }} ({{ result.phrases?.length }})
             </h3>
             <div class="flex flex-wrap gap-1">
@@ -416,7 +419,7 @@ onMounted(() => {
             </div>
           </div>
           <div>
-            <h3 class="font-medium text-surface-700 mb-2">Wörter ({{ result.words?.length }})</h3>
+            <h3 class="mb-2 font-medium text-surface-700">Wörter ({{ result.words?.length }})</h3>
             <div class="flex flex-wrap gap-1">
               <Chip v-for="(word, index) in result.words" :key="index" :label="word" />
             </div>
@@ -428,7 +431,7 @@ onMounted(() => {
       <Fieldset legend="Wörter nach Silbenzahl" :toggleable="true" :collapsed="true">
         <div class="flex flex-col gap-4">
           <div v-for="group in syllableGroups" :key="group.label">
-            <h3 class="font-medium text-surface-700 mb-2">
+            <h3 class="mb-2 font-medium text-surface-700">
               {{ group.count }} Wörter mit {{ group.label }}
             </h3>
             <div class="flex flex-wrap gap-1">

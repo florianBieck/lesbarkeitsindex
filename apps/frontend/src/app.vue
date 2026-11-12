@@ -1,36 +1,36 @@
 <template>
-  <div class="max-w-4xl mx-auto pb-20 pt-4 md:pt-10 px-4 md:px-0">
+  <div class="mx-auto max-w-4xl px-4 pt-4 pb-20 md:px-0 md:pt-10">
     <Card>
       <template #content>
         <div class="flex flex-col gap-8">
           <header>
             <div
-              class="h-[140px] md:h-[210px] bg-no-repeat bg-cover bg-center bg-[url('@/assets/material.jpg')]"
+              class="h-[140px] bg-[url('@/assets/material.jpg')] bg-cover bg-center bg-no-repeat md:h-[210px]"
               role="img"
               aria-label="Dekoratives Headerbild"
             />
-            <div class="px-6 py-9 md:px-12 lg:px-[72px] bg-surface-0">
+            <div class="bg-surface-0 px-6 py-9 md:px-12 lg:px-[72px]">
               <div
-                class="flex flex-col lg:flex-row justify-between gap-4 relative -mt-8 -top-[70px] -mb-[70px]"
+                class="relative -top-[70px] -mt-8 -mb-[70px] flex flex-col justify-between gap-4 lg:flex-row"
               >
-                <div class="flex flex-col gap-4 flex-1">
+                <div class="flex flex-1 flex-col gap-4">
                   <div
-                    class="w-[100px] h-[100px] md:w-[132px] md:h-[132px] rounded-lg bg-surface-0 shadow-sm flex items-center justify-center p-4 md:p-6 overflow-hidden outline-solid outline-[3.5px] outline-surface-0"
+                    class="flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-lg bg-surface-0 p-4 shadow-sm outline-[3.5px] outline-surface-0 outline-solid md:h-[132px] md:w-[132px] md:p-6"
                   >
                     <img
                       :src="logoUrl"
                       alt="Beate Leßmann Logo"
                       loading="lazy"
-                      class="w-[64px] h-[64px] md:w-[84px] md:h-[84px]"
+                      class="h-[64px] w-[64px] md:h-[84px] md:w-[84px]"
                     />
                   </div>
-                  <div class="flex flex-col gap-2 w-full">
+                  <div class="flex w-full flex-col gap-2">
                     <h1
-                      class="text-surface-900 text-xl md:text-2xl leading-tight md:leading-snug font-bold w-full"
+                      class="w-full text-xl leading-tight font-bold text-surface-900 md:text-2xl md:leading-snug"
                     >
                       Lübecker Lesbarkeitsindex (LÜ-LIX)
                     </h1>
-                    <p class="text-surface-900 text-sm md:text-lg leading-normal w-full">
+                    <p class="w-full text-sm leading-normal text-surface-900 md:text-lg">
                       Entwickelt von Beate Leßmann
                     </p>
                   </div>

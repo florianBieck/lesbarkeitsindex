@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col gap-4">
-    <p class="text-surface-700 leading-normal">
+    <p class="leading-normal text-surface-700">
       Ihre bisherigen Analysen. Klicken Sie auf eine Zeile, um die Details zu sehen.
     </p>
-    <div v-if="errorMessage" class="text-red-600 text-sm font-medium" role="alert">
+    <div v-if="errorMessage" class="text-sm font-medium text-red-600" role="alert">
       {{ errorMessage }}
     </div>
     <div class="w-full">
@@ -23,9 +23,9 @@
         aria-label="Bisherige Textanalysen"
       >
         <template #empty>
-          <div class="text-center text-surface-500 py-8">
+          <div class="py-8 text-center text-surface-500">
             <p class="text-lg">Noch keine Analysen vorhanden</p>
-            <p class="text-sm mt-1">
+            <p class="mt-1 text-sm">
               Analysieren Sie einen Text auf der
               <RouterLink to="/" class="text-primary-700 hover:underline">Startseite</RouterLink>.
             </p>
@@ -40,7 +40,7 @@
         </Column>
         <Column field="text" header="Text">
           <template #body="slotProps">
-            <div class="truncate max-w-[200px] md:max-w-[400px]">{{ slotProps.data.text }}</div>
+            <div class="max-w-[200px] truncate md:max-w-[400px]">{{ slotProps.data.text }}</div>
           </template>
         </Column>
         <Column field="score" header="Ergebnis">

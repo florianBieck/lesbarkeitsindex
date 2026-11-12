@@ -1,5 +1,4 @@
 import '@/assets/main.css';
-import 'primeicons/primeicons.css';
 import Aura from '@primeuix/themes/aura';
 import PrimeVue from 'primevue/config';
 import { createApp } from 'vue';
@@ -14,5 +13,14 @@ window.addEventListener('vite:preloadError', () => {
 
 createApp(App)
   .use(router)
-  .use(PrimeVue, { theme: { preset: Aura, options: { darkModeSelector: false } } })
+  .use(PrimeVue, {
+    theme: {
+      preset: Aura,
+      options: {
+        darkModeSelector: false,
+        // Tailwind's utilities sort above PrimeVue, so a utility on a component wins.
+        cssLayer: { name: 'primevue', order: 'theme, base, primevue' },
+      },
+    },
+  })
   .mount('#app');

@@ -1,31 +1,21 @@
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex flex-col items-center gap-4">
-      <div class="flex items-center gap-4">
-        <AppLogo />
-      </div>
-      <div class="flex flex-col items-center gap-2 w-full">
-        <h2 class="text-surface-900 text-2xl font-semibold leading-tight text-center w-full">
+      <div class="flex w-full flex-col items-center gap-2">
+        <h2 class="w-full text-center text-2xl leading-tight font-semibold text-surface-900">
           Anmelden
         </h2>
       </div>
     </div>
-    <div class="flex flex-col gap-6 w-full">
-      <div class="flex flex-col gap-2 w-full">
-        <label for="email1" class="text-surface-900 font-medium leading-normal"
+    <div class="flex w-full flex-col gap-6">
+      <div class="flex w-full flex-col gap-2">
+        <label for="email1" class="leading-normal font-medium text-surface-900"
           >E-Mail Adresse</label
         >
-        <InputText
-          id="email1"
-          v-model="email"
-          fluid
-          type="text"
-          placeholder="E-Mail-Adresse"
-          class="px-3 py-2 shadow-sm rounded-lg"
-        />
+        <InputText id="email1" v-model="email" fluid type="text" placeholder="E-Mail-Adresse" />
       </div>
-      <div class="flex flex-col gap-2 w-full">
-        <label for="password1" class="text-surface-900 font-medium leading-normal">Passwort</label>
+      <div class="flex w-full flex-col gap-2">
+        <label for="password1" class="leading-normal font-medium text-surface-900">Passwort</label>
 
         <Password
           id="password1"
@@ -38,24 +28,13 @@
       </div>
       <div class="flex items-center gap-2">
         <Checkbox id="rememberme1" v-model="checked1" :binary="true" />
-        <label for="rememberme1" class="text-surface-900 leading-normal">Angemeldet bleiben</label>
+        <label for="rememberme1" class="leading-normal text-surface-900">Angemeldet bleiben</label>
       </div>
     </div>
-    <div v-if="errorMessage" class="text-red-600 text-sm font-medium" role="alert">
+    <div v-if="errorMessage" class="text-sm font-medium text-red-600" role="alert">
       {{ errorMessage }}
     </div>
-    <Button
-      @click="login"
-      :loading="isLoading"
-      label="Anmelden"
-      icon="pi pi-user"
-      fluid
-      class="w-full py-3 rounded-lg flex justify-center items-center gap-2"
-    >
-      <template #icon>
-        <i class="pi pi-user text-base! leading-normal!" />
-      </template>
-    </Button>
+    <Button @click="login" :loading="isLoading" label="Anmelden" icon="pi pi-user" fluid />
   </div>
 </template>
 <script lang="ts" setup>
@@ -64,7 +43,6 @@ import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import { ref } from 'vue';
-import AppLogo from '@/components/app-logo.vue';
 import { useAuthClient } from '@/composables/useAuthClient';
 
 const client = useAuthClient();

@@ -1,9 +1,7 @@
 <template>
   <div class="flex flex-col">
-    <h2 class="text-surface-900 text-2xl font-semibold leading-tight mb-3">
-      Admin: Konfiguration
-    </h2>
-    <p class="text-surface-700 leading-normal mb-6">
+    <h2 class="mb-3 text-2xl leading-tight font-semibold text-surface-900">Admin: Konfiguration</h2>
+    <p class="mb-6 leading-normal text-surface-700">
       Hier wird die Standardkonfiguration des LÜ-LIX gesetzt: der Aufschlag &alpha; und die vier
       WK-Gewichte. Änderungen wirken auf die nächste Analyse.
     </p>
@@ -16,24 +14,27 @@
       v-model:weight-consonant-clusters="weightConsonantClusters"
     />
 
-    <div class="mt-4 text-sm" :class="weightSumIsValid ? 'text-surface-500' : 'text-red-600 font-medium'" role="status">
+    <div
+      class="mt-4 text-sm"
+      :class="weightSumIsValid ? 'text-surface-500' : 'font-medium text-red-600'"
+      role="status"
+    >
       Aktuelle Summe der WK-Gewichte: {{ formattedWeightSum }} (Soll: 100)
     </div>
 
-    <div v-if="validationError" class="text-red-600 text-sm font-medium mt-2" role="alert">
+    <div v-if="validationError" class="mt-2 text-sm font-medium text-red-600" role="alert">
       {{ validationError }}
     </div>
-    <div v-if="successMessage" class="text-green-700 text-sm font-medium mt-2" role="status">
+    <div v-if="successMessage" class="mt-2 text-sm font-medium text-green-700" role="status">
       {{ successMessage }}
     </div>
 
-    <div class="flex items-center mt-4">
+    <div class="mt-4 flex items-center">
       <Button
         :loading="loading"
         :disabled="!weightSumIsValid"
         label="Konfiguration speichern"
         icon="pi pi-save"
-        class="py-3 rounded-lg"
         @click="saveConfig"
       />
     </div>
@@ -92,7 +93,8 @@ async function saveConfig() {
       weightRareGraphemes: Number(weightRareGraphemes.value),
       weightConsonantClusters: Number(weightConsonantClusters.value),
     });
-    successMessage.value = 'Konfiguration gespeichert. Die nächste Analyse verwendet die neuen Werte.';
+    successMessage.value =
+      'Konfiguration gespeichert. Die nächste Analyse verwendet die neuen Werte.';
   } catch (e) {
     console.error(e);
     validationError.value = 'Speichern fehlgeschlagen. Bitte versuchen Sie es erneut.';

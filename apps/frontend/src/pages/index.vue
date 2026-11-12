@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col">
-    <p class="text-surface-700 leading-normal mb-3">
+    <p class="mb-3 leading-normal text-surface-700">
       Fügen Sie einen Text ein, um seine Lesbarkeit zu analysieren. Der LÜ-LIX kombiniert den
       klassischen Lesbarkeitsindex (LIX) mit einem Aufschlag für die Wortkomplexität.
     </p>
@@ -12,7 +12,7 @@
     />
 
     <!-- Texttyp-Schalter (ADR 0002): heuristisch erkannt, manuell übersteuerbar -->
-    <div class="mt-4 flex items-center flex-wrap gap-3">
+    <div class="mt-4 flex flex-wrap items-center gap-3">
       <label class="text-sm font-medium text-surface-700">Texttyp</label>
       <SelectButton
         v-model="textType"
@@ -34,7 +34,7 @@
 
     <div class="mt-4">
       <Fieldset legend="Erweiterte Einstellungen" :toggleable="true" :collapsed="true">
-        <p class="text-sm text-surface-500 mb-4">
+        <p class="mb-4 text-sm text-surface-500">
           Der Aufschlag &alpha; steuert, wie stark die Wortkomplexität (WK) den LIX erhöht (LÜ-LIX =
           LIX + &alpha;&middot;WK). Die vier Gewichte verteilen die WK auf ihre Komponenten.
         </p>
@@ -48,21 +48,20 @@
       </Fieldset>
     </div>
 
-    <div v-if="validationError" class="text-red-600 text-sm font-medium mt-4" role="alert">
+    <div v-if="validationError" class="mt-4 text-sm font-medium text-red-600" role="alert">
       {{ validationError }}
     </div>
-    <div class="flex items-start gap-2 mt-4">
+    <div class="mt-4 flex items-start gap-2">
       <Checkbox v-model="saveResult" inputId="save-consent" :binary="true" />
-      <label for="save-consent" class="text-sm text-surface-600 cursor-pointer leading-tight">
+      <label for="save-consent" class="cursor-pointer text-sm leading-tight text-surface-600">
         Ich akzeptiere die Speicherung meiner Anfrage zur Verbesserung des Lübecker Lesbarkeitsindex
       </label>
     </div>
-    <div class="flex items-center mt-3">
+    <div class="mt-3 flex items-center">
       <Button
         :loading="loading"
         label="Text analysieren"
         icon="pi pi-calculator"
-        class="py-3 rounded-lg"
         @click="calculate"
       />
     </div>
@@ -70,9 +69,9 @@
     <!-- Results area — generous separation from input controls -->
     <div class="mt-10">
       <ResultView v-if="result" :result="result" />
-      <div v-else class="text-center text-surface-500 py-8 border-t border-surface-100">
-        <p class="text-lg mt-4">Noch kein Text analysiert</p>
-        <p class="text-sm mt-1">
+      <div v-else class="border-t border-surface-200 py-8 text-center text-surface-500">
+        <p class="mt-4 text-lg">Noch kein Text analysiert</p>
+        <p class="mt-1 text-sm">
           Fügen Sie oben einen Text ein und klicken Sie auf &bdquo;Text analysieren&ldquo;.
         </p>
       </div>

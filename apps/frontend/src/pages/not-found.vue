@@ -1,13 +1,13 @@
 <template>
   <div
-    class="bg-surface-0 p-8 md:p-12 shadow-sm rounded-2xl w-full max-w-sm mx-auto flex flex-col items-center gap-4 text-center"
+    class="mx-auto flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl bg-surface-0 p-8 text-center shadow-xs md:p-12"
   >
-    <h2 class="text-surface-900 text-2xl font-semibold leading-tight">Seite nicht gefunden</h2>
-    <p class="text-surface-700 leading-normal">
+    <h2 class="text-2xl leading-tight font-semibold text-surface-900">Seite nicht gefunden</h2>
+    <p class="leading-normal text-surface-700">
       Diese Adresse gibt es hier nicht. Vielleicht ist der Link veraltet oder enthält einen
       Tippfehler.
     </p>
-    <RouterLink to="/" class="text-primary hover:underline">Zur Startseite</RouterLink>
+    <RouterLink to="/" class="text-primary-700 hover:underline">Zur Startseite</RouterLink>
   </div>
 </template>
 <script setup lang="ts">

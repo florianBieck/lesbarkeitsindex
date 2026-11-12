@@ -1,9 +1,6 @@
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex flex-col items-center gap-4">
-      <div class="flex items-center gap-4">
-        <AppLogo />
-      </div>
       <div class="flex flex-col items-center gap-2 w-full">
         <h2 class="text-surface-900 text-2xl font-semibold leading-tight text-center w-full">
           Anmelden
@@ -21,7 +18,6 @@
           fluid
           type="text"
           placeholder="E-Mail-Adresse"
-          class="px-3 py-2 shadow-sm rounded-lg"
         />
       </div>
       <div class="flex flex-col gap-2 w-full">
@@ -50,12 +46,7 @@
       label="Anmelden"
       icon="pi pi-user"
       fluid
-      class="w-full py-3 rounded-lg flex justify-center items-center gap-2"
-    >
-      <template #icon>
-        <i class="pi pi-user text-base! leading-normal!" />
-      </template>
-    </Button>
+    />
   </div>
 </template>
 <script lang="ts" setup>
@@ -64,7 +55,6 @@ import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import { ref } from 'vue';
-import AppLogo from '@/components/app-logo.vue';
 import { useAuthClient } from '@/composables/useAuthClient';
 
 const client = useAuthClient();

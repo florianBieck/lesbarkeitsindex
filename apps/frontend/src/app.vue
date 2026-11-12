@@ -15,7 +15,7 @@
               >
                 <div class="flex flex-col gap-4 flex-1">
                   <div
-                    class="w-[100px] h-[100px] md:w-[132px] md:h-[132px] rounded-lg bg-surface-0 shadow flex items-center justify-center p-4 md:p-6 overflow-hidden outline outline-[3.5px] outline-surface-0"
+                    class="w-[100px] h-[100px] md:w-[132px] md:h-[132px] rounded-lg bg-surface-0 shadow-sm flex items-center justify-center p-4 md:p-6 overflow-hidden outline-solid outline-[3.5px] outline-surface-0"
                   >
                     <img
                       :src="logoUrl"

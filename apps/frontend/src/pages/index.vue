@@ -62,7 +62,6 @@
         :loading="loading"
         label="Text analysieren"
         icon="pi pi-calculator"
-        class="py-3 rounded-lg"
         @click="calculate"
       />
     </div>
@@ -70,7 +69,7 @@
     <!-- Results area — generous separation from input controls -->
     <div class="mt-10">
       <ResultView v-if="result" :result="result" />
-      <div v-else class="text-center text-surface-500 py-8 border-t border-surface-100">
+      <div v-else class="text-center text-surface-500 py-8 border-t border-surface-200">
         <p class="text-lg mt-4">Noch kein Text analysiert</p>
         <p class="text-sm mt-1">
           Fügen Sie oben einen Text ein und klicken Sie auf &bdquo;Text analysieren&ldquo;.

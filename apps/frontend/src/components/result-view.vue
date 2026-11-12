@@ -304,7 +304,7 @@ onMounted(() => {
     </div>
 
     <!-- Zwei eigenständige Dimensionen: Schwierigkeit und Umfang -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 border-t border-b border-surface-100">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 border-t border-b border-surface-200">
       <div class="text-center">
         <div class="text-xs uppercase tracking-wide text-surface-500 mb-1">Schwierigkeit</div>
         <div class="text-3xl font-semibold text-surface-900">{{ lueLix }}</div>
@@ -344,7 +344,7 @@ onMounted(() => {
 
       <Fieldset legend="Wortkomplexität" :toggleable="true" :collapsed="true">
         <div class="flex flex-col gap-3">
-          <div class="flex justify-between items-center py-1 border-b border-surface-100 pb-2">
+          <div class="flex justify-between items-center py-1 border-b border-surface-200 pb-2">
             <span class="text-surface-700 font-medium">Wortkomplexität (WK)</span>
             <span class="font-semibold text-surface-900">{{ wordComplexity }}</span>
           </div>

@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex flex-col gap-2 p-4 border rounded-md">
+    <div class="flex flex-col gap-2 p-4 border border-surface-200 rounded-md">
       <label for="param-alpha" class="text-sm font-medium"
         >Aufschlag &alpha;
-        <span class="text-surface-400 font-normal">(Stärke der Wortkomplexität)</span></label
+        <span class="text-surface-500 font-normal">(Stärke der Wortkomplexität)</span></label
       >
       <InputNumber
         id="param-alpha"
@@ -26,11 +26,11 @@
       <div
         v-for="field in weightFields"
         :key="field.id"
-        class="flex flex-col gap-2 p-4 border rounded-md"
+        class="flex flex-col gap-2 p-4 border border-surface-200 rounded-md"
       >
         <label :for="field.id" class="text-sm font-medium"
           >{{ field.label }}
-          <span class="text-surface-400 font-normal">{{ field.hint }}</span></label
+          <span class="text-surface-500 font-normal">{{ field.hint }}</span></label
         >
         <InputNumber
           :id="field.id"

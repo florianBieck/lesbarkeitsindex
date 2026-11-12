@@ -33,7 +33,6 @@
         :disabled="!weightSumIsValid"
         label="Konfiguration speichern"
         icon="pi pi-save"
-        class="py-3 rounded-lg"
         @click="saveConfig"
       />
     </div>

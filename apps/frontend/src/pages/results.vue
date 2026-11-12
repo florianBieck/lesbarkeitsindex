@@ -27,7 +27,7 @@
             <p class="text-lg">Noch keine Analysen vorhanden</p>
             <p class="text-sm mt-1">
               Analysieren Sie einen Text auf der
-              <RouterLink to="/" class="text-primary hover:underline">Startseite</RouterLink>.
+              <RouterLink to="/" class="text-primary-700 hover:underline">Startseite</RouterLink>.
             </p>
           </div>
         </template>

@@ -1,20 +1,20 @@
-# Leseeinheit Zeile für Listen
+# Leseeinheit is the line for a Liste
 
-Der LIX braucht den Satz als Bezugsgröße — Leselisten (Wörter, Formulierungen, teils ganze
-Sätze gemischt) haben aber keine durchgängige Satzstruktur. Ohne Sonderbehandlung liefern
-alle Werkzeuge Absurdes: Unsere Satzerkennung sieht eine ganze Liste als einen einzigen
-Riesensatz (LIX explodiert), RATTE zählt jedes Wort als Satz (LIX kollabiert).
+The LIX needs the sentence as its reference unit, but reading lists (words, phrases and sometimes
+whole sentences, mixed) have no consistent sentence structure. Without special handling, every
+tool produces nonsense: our sentence detection sees a whole list as one giant sentence (the LIX
+explodes), and RATTE counts every word as a sentence (the LIX collapses).
 
-Entscheidung (2026-06-11, nach BLs Vorschlag): Texte haben einen **Texttyp** (Fließtext
-oder Liste) mit zugehöriger **Leseeinheit** — Satz bei Fließtext, Zeile bei Listen, denn in
-einer Liste liest das Kind Zeile für Zeile. Der Texttyp wird heuristisch erkannt (viele
-Zeilen ohne Satzendzeichen → Liste), ist aber als sichtbarer Schalter vom Nutzer
-übersteuerbar. Bei Leseeinheit Zeile werden alle satzbezogenen Werte entsprechend
-gekennzeichnet; nur mit Leseeinheit Satz berechnete Werte heißen „LIX nach Bamberger".
+Decision (2026-06-11, following BL's proposal): texts have a **Texttyp** (Fließtext or Liste)
+with a matching **Leseeinheit**: the sentence for Fließtext, the line for a Liste, because a
+child reads a list line by line. The Texttyp is detected heuristically (many lines without
+sentence-ending punctuation → Liste), but the user can override it with a visible switch. When
+the Leseeinheit is the line, every sentence-based value is labelled accordingly; only values
+computed with the sentence as the Leseeinheit are called „LIX nach Bamberger".
 
-## Verworfene Alternativen
+## Considered options
 
-- **Kein LIX für Listen** (nur Einzelfaktoren anzeigen): ehrlich, aber Lehrkräfte verlieren
-  jede Gesamteinordnung, und Mischformen wie die Liste „Sommer" fallen ganz durchs Raster.
-- **Nur manueller Schalter ohne Erkennung**: wer ihn übersieht, bekommt weiter absurde
-  Werte — zu unverzeihend für die Zielgruppe.
+- **No LIX for a Liste** (show only the individual factors): honest, but teachers lose any
+  overall rating, and mixed forms such as the list „Sommer" fall through the cracks entirely.
+- **Only a manual switch, without detection**: whoever overlooks it keeps getting absurd
+  values, which is too unforgiving for the audience.

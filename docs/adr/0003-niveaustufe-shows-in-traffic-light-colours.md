@@ -1,35 +1,34 @@
-# Ampelfarben der Niveaustufe
+# Niveaustufe shows in traffic-light colours
 
-Die [[Niveaustufe]] (1–5, ADR 0001 Punkt 4) braucht für Lehrkräfte eine schnelle visuelle
-Einordnung. Die fünf Stufen werden dafür auf drei Ampelfarben gruppiert.
+Teachers need a quick visual read of the [[Niveaustufe]] (1–5, ADR 0001 point 4). For that, the
+five levels are grouped into three traffic-light colours.
 
-Entscheidung (2026-06-24): Stufe 1–2 → grün (PrimeVue-Severity `success`), Stufe 3 →
-amber (`warn`), Stufe 4–5 → rot (`error`). Die Gruppierung und die deutschen
-Stufen-Bezeichnungen leben in einem reinen Frontend-Modul (`utils/niveaustufe.ts`) als
-einzige Quelle; Gauge-, Text- und Icon-Farbe in der Ergebnisansicht leiten sich aus der
-einen `severity` ab.
+Decision (2026-06-24): levels 1–2 → green (PrimeVue severity `success`), level 3 → amber
+(`warn`), levels 4–5 → red (`error`). The grouping and the German level labels live in a pure
+frontend module (`utils/niveaustufe.ts`) as the single source; the gauge, text and icon colours
+in the result view all derive from that one `severity`.
 
-Stufe 3 ist **amber**, nicht reines Gelb: besserer Kontrast auf Weiß (WCAG AA, Markenvorgabe)
-und einheitlich über Gauge und Label. Zuvor widersprachen sich Gauge (`--p-yellow-500`) und
-Hero-Text (`text-amber-700`) für dieselbe Stufe.
+Level 3 is **amber**, not pure yellow: better contrast on white (WCAG AA, a brand requirement)
+and the same colour on gauge and label. Before, the gauge (`--p-yellow-500`) and the hero text
+(`text-amber-700`) disagreed for the same level.
 
-Stufen-Bezeichnungen: 1 „Sehr leicht lesbar", 2 „Leicht lesbar", 3 „Mittelschwer",
-4 „Eher schwer lesbar", 5 „Schwer lesbar". Werte außerhalb 1–5 fallen defensiv auf Stufe 5
-(rot) — das Backend liefert nur 1–5.
+Level labels: 1 „Sehr leicht lesbar", 2 „Leicht lesbar", 3 „Mittelschwer",
+4 „Eher schwer lesbar", 5 „Schwer lesbar". Values outside 1–5 fall back defensively to level 5
+(red); the backend only sends 1–5.
 
-## Verworfene Alternativen
+## Considered options
 
-- **Gelb für Stufe 3** (Ampel grün/gelb/rot wörtlich): schwächerer Kontrast auf Weiß, und
-  der Gauge/Label-Mismatch bliebe bestehen.
-- **Eigene Farbe je Stufe** (fünf Farben): überladen; die Drei-Farben-Ampel ist die
-  etablierte Lese-Heuristik und farbenblind-sicher gruppierbar.
-- **Severity im Backend / api-client ablegen**: `success/warn/error` ist PrimeVue-Vokabular,
-  die Bezeichnungen sind deutsche UI-Texte — beides gehört in die Oberfläche, nicht in den
-  Datenvertrag. Das Backend vergibt nur die Zahl.
+- **Yellow for level 3** (green/yellow/red taken literally): weaker contrast on white, and the
+  gauge/label mismatch would remain.
+- **A colour per level** (five colours): overloaded; the three-colour traffic light is the
+  established reading heuristic, and its groups can be made colourblind-safe.
+- **Keep the severity in the backend / api-client**: `success/warn/error` is PrimeVue
+  vocabulary and the labels are German UI text; both belong in the interface, not in the data
+  contract. The backend only assigns the number.
 
-## Konsequenzen
+## Consequences
 
-- Die Gruppierung ist eine fachliche Entscheidung; bei Bedarf mit der fachlichen Leitung (BL)
-  nachjustierbar — dann ändert sich nur die Tabelle in `utils/niveaustufe.ts`.
-- Die Gauge-Farbe für Stufe 3 wechselt sichtbar von Gelb zu Amber.
-- WCAG AA: Amber und Rot müssen auf weißem Grund den Kontrast erfüllen.
+- The grouping is a subject-matter decision; BL, the subject-matter lead, can adjust it if
+  needed, and then only the table in `utils/niveaustufe.ts` changes.
+- The gauge colour for level 3 visibly changes from yellow to amber.
+- WCAG AA: amber and red must meet the contrast requirement on a white background.

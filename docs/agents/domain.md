@@ -17,10 +17,7 @@ This repo is **single-context**: one `GLOSSARY.md` + `docs/adr/` at the root. Th
 ```
 /
 ├── GLOSSARY.md
-├── docs/adr/
-│   ├── 0001-aufschlagsmodell-fuer-den-lue-lix.md
-│   ├── 0002-leseeinheit-zeile-fuer-listen.md
-│   └── 0003-ampelfarben-der-niveaustufe.md
+├── docs/adr/        # NNNN-<slug>.md, one decision per file
 └── apps/, packages/, r-sidecar/
 ```
 

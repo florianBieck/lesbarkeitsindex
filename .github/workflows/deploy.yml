@@ -108,18 +108,19 @@ jobs:
             BatchMode yes
           EOF
 
-      # Owns these four files in DEPLOY_DIR and nothing else there. COMPOSE_FILE
-      # and COMPOSE_PROJECT_NAME in the .env make a plain `docker compose` in
-      # DEPLOY_DIR see the whole stack.
+      # Owns these four files in DEPLOY_DIR and nothing else there: both compose
+      # files, caddy/Caddyfile and the .env. COMPOSE_FILE and COMPOSE_PROJECT_NAME
+      # in the .env make a plain `docker compose` in DEPLOY_DIR see the whole
+      # stack.
       - name: Upload the stack
         env:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
         run: |
           # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
-          ssh prod "mkdir -p '$DEPLOY_DIR'"
+          ssh prod "mkdir -p '$DEPLOY_DIR/caddy'"
           scp docker-compose.yml docker-compose-prod.yml "prod:$DEPLOY_DIR/"
-          scp Caddyfile "prod:$DEPLOY_DIR/Caddyfile.new"
+          scp caddy/Caddyfile "prod:$DEPLOY_DIR/caddy/Caddyfile.new"
           # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
           {
             echo "COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT"
@@ -128,12 +129,12 @@ jobs:
             echo "SEED_ADMIN_PASSWORD='$SEED_ADMIN_PASSWORD'"
           } | ssh prod "install -m 600 /dev/stdin '$DEPLOY_DIR/.env'"
 
-      # Caddy doesn't watch its config, and its single-file bind mount keeps a
-      # running Caddy on the file it started with, even after the mv below.
-      # So the script compares what Caddy reads with the file on disk and
-      # restarts it only when they differ. That also catches a restart an
-      # earlier failed run never got to. `caddy reload` would reread the old
-      # file and was rejected for that.
+      # Caddy doesn't watch its config, so every run reloads it. A reload
+      # applies a changed Caddyfile without dropping connections, does nothing
+      # when nothing changed, and also applies a Caddyfile an earlier failed
+      # run never got to. Caddy sees the renamed file only because the overlay
+      # mounts caddy/ as a directory (#58). Right after `up -d` (re)creates the
+      # container, Caddy's admin API may not answer yet, hence the retries.
       - name: Deploy
         run: |
           # The braces make bash read the whole script before it runs any of
@@ -142,14 +143,20 @@ jobs:
           {
             set -euo pipefail
             cd "$1"
+            docker run --rm -v "$PWD/caddy:/etc/caddy:ro" caddy:2-alpine \
+              caddy validate --config /etc/caddy/Caddyfile.new --adapter caddyfile
+            mv caddy/Caddyfile.new caddy/Caddyfile
             docker compose pull --quiet
-            docker run --rm -v "$PWD/Caddyfile.new:/etc/caddy/Caddyfile:ro" caddy:2-alpine \
-              caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-            mv Caddyfile.new Caddyfile
             docker compose up -d --remove-orphans
-            if ! docker compose exec -T caddy cat /etc/caddy/Caddyfile | cmp -s - Caddyfile; then
-              docker compose restart caddy
-            fi
+            attempts=0
+            until docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; do
+              attempts=$((attempts + 1))
+              if [ "$attempts" -ge 10 ]; then
+                echo "::error::Caddy didn't reload caddy/Caddyfile"
+                exit 1
+              fi
+              sleep 3
+            done
           }
           EOF
 

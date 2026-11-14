@@ -12,15 +12,12 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 
 ## File structure
 
-This repo is **single-context**: one `GLOSSARY.md` + `docs/adr/` at the root. The glossary is written in German, matching the domain language agreed with the fachliche Leitung (BL).
+This repo is **single-context**: one `GLOSSARY.md` + `docs/adr/` at the root. The glossary is written in German, matching the domain language agreed with the fachliche Leitung (BL). ADRs are written in English, but a domain term inside one keeps its German glossary name (LÜ-LIX, Niveaustufe, Leseeinheit, …). An ADR's slug follows its English title, with glossary terms left in German and transliterated (`lue-lix`).
 
 ```
 /
 ├── GLOSSARY.md
-├── docs/adr/
-│   ├── 0001-aufschlagsmodell-fuer-den-lue-lix.md
-│   ├── 0002-leseeinheit-zeile-fuer-listen.md
-│   └── 0003-ampelfarben-der-niveaustufe.md
+├── docs/adr/        # NNNN-<slug>.md, one decision per file
 └── apps/, packages/, r-sidecar/
 ```
 
@@ -36,4 +33,4 @@ If the concept you need isn't in the glossary yet, that's a signal: either you'r
 
 If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
 
-> _Contradicts ADR-0003 (Ampelfarben der Niveaustufe), but worth reopening because…_
+> _Contradicts ADR-0003 (Niveaustufe shows in traffic-light colours), but worth reopening because…_

@@ -1,7 +1,8 @@
 # Niveaustufe shows in traffic-light colours
 
-Teachers need a quick visual read of the [[Niveaustufe]] (1–5, ADR 0001 point 4). For that, the
-five levels are grouped into three traffic-light colours.
+Teachers need a quick visual read of the [[Niveaustufe]] (1–5,
+[ADR 0001](./0001-lue-lix-adds-a-wk-surcharge-to-the-lix.md) point 4). For that, the five levels
+are grouped into three traffic-light colours.
 
 Decision (2026-06-24): levels 1–2 → green (PrimeVue severity `success`), level 3 → amber
 (`warn`), levels 4–5 → red (`error`). The grouping and the German level labels live in a pure
@@ -21,14 +22,14 @@ Level labels: 1 „Sehr leicht lesbar", 2 „Leicht lesbar", 3 „Mittelschwer",
 - **Yellow for level 3** (green/yellow/red taken literally): weaker contrast on white, and the
   gauge/label mismatch would remain.
 - **A colour per level** (five colours): overloaded; the three-colour traffic light is the
-  established reading heuristic, and its groups can be made colourblind-safe.
+  established reading heuristic, and it can be grouped in a colourblind-safe way.
 - **Keep the severity in the backend / api-client**: `success/warn/error` is PrimeVue
   vocabulary and the labels are German UI text; both belong in the interface, not in the data
   contract. The backend only assigns the number.
 
 ## Consequences
 
-- The grouping is a subject-matter decision; BL, the subject-matter lead, can adjust it if
-  needed, and then only the table in `utils/niveaustufe.ts` changes.
+- The grouping is a subject-matter decision; it can be adjusted together with BL, the
+  subject-matter lead, if needed, and then only the table in `utils/niveaustufe.ts` changes.
 - The gauge colour for level 3 visibly changes from yellow to amber.
 - WCAG AA: amber and red must meet the contrast requirement on a white background.

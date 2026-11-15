@@ -43,8 +43,14 @@ services:
     build: !reset null
     ports: !reset []
 
-  # postgres: fully inherited from docker-compose.yml (image, env, volume,
-  # healthcheck, published port, logging) — no overrides needed.
+  # The backend reaches Postgres over the compose network, so prod publishes no
+  # port: the base file's 5432 would put the database on the internet, because
+  # Docker's published ports bypass the host firewall (#72). Without a restart
+  # policy a crash or reboot would leave the database down behind a running
+  # backend. Image, env, volume, healthcheck and logging come from the base file.
+  postgres:
+    restart: unless-stopped
+    ports: !reset []
 
 volumes:
   caddy_data:

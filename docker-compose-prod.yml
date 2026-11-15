@@ -10,7 +10,10 @@ services:
       - '443:443'
       - '443:443/udp'
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      # The directory, not the file: a single-file bind mount keeps the running
+      # container on the old Caddyfile after the deploy renames a new one into
+      # place, so `caddy reload` would reread the old config (#58).
+      - ./caddy:/etc/caddy:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

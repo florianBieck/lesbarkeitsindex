@@ -43,9 +43,9 @@
             <div class="max-w-[200px] truncate md:max-w-[400px]">{{ slotProps.data.text }}</div>
           </template>
         </Column>
-        <Column field="score" header="Ergebnis">
+        <Column field="lueLix" header="LÜ-LIX">
           <template #body="slotProps">
-            <div>{{ Math.round(Number(slotProps.data.score) * 100) / 100 }}</div>
+            <div>{{ lueLixCell(slotProps.data) }}</div>
           </template>
         </Column>
       </DataTable>
@@ -85,6 +85,10 @@ const formatDate = (iso: string): string =>
     hour: '2-digit',
     minute: '2-digit',
   });
+
+// Gerundet wie die LÜ-LIX-Kopfzahl der Detailansicht. PrimeVues Slot-Props sind untypisiert;
+// erst der Parameter vom Typ ResultData lässt vue-tsc ein umbenanntes Feld melden (Issue #83).
+const lueLixCell = (result: ResultData): number => Math.round(result.lueLix * 100) / 100;
 
 async function loadResults(pageToLoad: number) {
   loading.value = true;

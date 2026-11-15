@@ -11,6 +11,15 @@ async function analyzeAndSave(page: Page, text: string) {
   await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible({ timeout: 15000 });
 }
 
+/** The LÜ-LIX the result view shows, read from its chart's accessible name
+ *  („LÜ-LIX: 37.46 — Niveaustufe 2"). */
+async function shownLueLix(page: Page): Promise<string> {
+  const label = await page.getByRole('img', { name: /^LÜ-LIX: / }).getAttribute('aria-label');
+  const value = label?.match(/^LÜ-LIX: (\S+)/)?.[1];
+  if (!value) throw new Error(`No LÜ-LIX in the result chart's label: ${label}`);
+  return value;
+}
+
 test.describe('Results page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/results');
@@ -27,7 +36,7 @@ test.describe('Results page', () => {
   test('renders data table with column headers', async ({ page }) => {
     await expect(page.getByRole('columnheader', { name: 'Datum' })).toBeVisible();
     await expect(page.getByRole('columnheader', { name: 'Text' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Ergebnis' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'LÜ-LIX' })).toBeVisible();
   });
 
   test('shows results after a calculation has been saved', async ({ page }) => {
@@ -35,6 +44,7 @@ test.describe('Results page', () => {
       page,
       'Der Hund läuft schnell über die Straße. Die Katze sitzt auf dem Dach.',
     );
+    const lueLix = await shownLueLix(page);
 
     await page.goto('/results');
 
@@ -42,6 +52,9 @@ test.describe('Results page', () => {
     // empty-state row while the lazy fetch is in flight.
     const rows = page.locator('tbody tr.p-datatable-selectable-row');
     await expect(rows.first()).toBeVisible({ timeout: 10000 });
+
+    // Newest first: the row just saved shows the LÜ-LIX its result view showed (#83: NaN).
+    await expect(rows.first().locator('td').nth(2)).toHaveText(lueLix);
   });
 
   test('a reload keeps the page: the server answers /results with the app, not the API', async ({

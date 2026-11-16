@@ -85,8 +85,8 @@ jobs:
           # The prod overlay puts POSTGRES_PASSWORD into the backend's
           # DATABASE_URL unencoded, so it takes only the characters a URL leaves
           # alone. `openssl rand -hex 32` makes one.
-          url_safe='^[A-Za-z0-9._~-]+$'
-          if [[ ! $POSTGRES_PASSWORD =~ $url_safe ]]; then
+          url_safe_pattern='^[A-Za-z0-9._~-]+$'
+          if [[ ! $POSTGRES_PASSWORD =~ $url_safe_pattern ]]; then
             echo "::error::Secret POSTGRES_PASSWORD may only contain letters, digits and - . _ ~"
             exit 1
           fi
@@ -159,13 +159,15 @@ jobs:
             mv caddy/Caddyfile.new caddy/Caddyfile
             docker compose pull --quiet
             # Postgres reads POSTGRES_PASSWORD only when it initialises an empty
-            # volume, so every run sets the role's password from the .env; a
-            # changed secret rotates it. The role changes before `up -d` gives
-            # the backend the new DATABASE_URL, so a backend still on the old
-            # one fails to connect for those few seconds at most; the smoke
-            # check proves the end state. In the container psql logs in over the
-            # socket without a password, and \getenv (psql 15+) keeps the
-            # password off every command line.
+            # volume, so every run sets the role's password from the .env, and
+            # a changed secret rotates it (#87). A new secret also restarts
+            # Postgres here. From the ALTER until `up -d` replaces it a few
+            # seconds later, the old backend can't log in with its old URL; the
+            # smoke check proves the end state. A run that stops before the
+            # ALTER leaves the .env with a password the role doesn't have yet:
+            # rerun the deploy rather than a bare `docker compose up`. psql logs
+            # in over the container's socket without a password, and \getenv
+            # (psql 15+) keeps the password off every command line.
             docker compose up -d --wait postgres
             printf '%s\n' '\getenv password POSTGRES_PASSWORD' "ALTER ROLE admin PASSWORD :'password';" |
               docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U admin -d lesbarkeitsindex

@@ -23,7 +23,9 @@ services:
     image: ghcr.io/florianbieck/lesbarkeitsindex/backend:latest
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://admin:admin@postgres:5432/lesbarkeitsindex
+      # The deploy only takes a POSTGRES_PASSWORD made of characters a URL
+      # leaves alone, so it goes into the URL unencoded.
+      - DATABASE_URL=postgresql://admin:${POSTGRES_PASSWORD:?missing from .env}@postgres:5432/lesbarkeitsindex
       # Public base URL used by Better-Auth (same-origin via Caddy)
       - BETTER_AUTH_URL=https://lix.florianbieck.com
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?missing from .env}
@@ -47,10 +49,15 @@ services:
   # port: the base file's 5432 would put the database on the internet, because
   # Docker's published ports bypass the host firewall (#72). Without a restart
   # policy a crash or reboot would leave the database down behind a running
-  # backend. Image, env, volume, healthcheck and logging come from the base file.
+  # backend. Image, volume, healthcheck and logging come from the base file.
   postgres:
     restart: unless-stopped
     ports: !reset []
+    # Replaces the base file's public dev password. Postgres reads it only when
+    # it initialises an empty volume, so every deploy also sets the existing
+    # role's password to it (deploy.yml).
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?missing from .env}
 
 volumes:
   caddy_data:

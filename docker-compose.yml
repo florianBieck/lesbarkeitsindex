@@ -24,7 +24,10 @@ services:
     volumes:
       - postgres_db:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U admin -d lesbarkeitsindex']
+      # Over TCP: on an empty volume the image first runs a temporary server
+      # on the socket alone, which a socket check would report ready, and the
+      # deploy's psql would then reach it as it shuts down (#87).
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U admin -d lesbarkeitsindex']
       interval: 5s
       timeout: 5s
       retries: 5

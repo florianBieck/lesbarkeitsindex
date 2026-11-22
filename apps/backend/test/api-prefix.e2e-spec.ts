@@ -1,13 +1,10 @@
 import 'reflect-metadata';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { HealthController } from '../src/health.controller.js';
 import { AppConfigController } from '../src/config/config.controller.js';
 import { DefaultConfigService } from '../src/config/default-config.service.js';
-import { PrismaService } from '../src/prisma/prisma.service.js';
-import { AuthController } from '../src/auth/auth.controller.js';
-import { AuthService } from '../src/auth/auth.service.js';
 import {
   createSpaFixture,
   FIXTURE_INDEX_HTML,
@@ -20,53 +17,16 @@ import {
  * frontend owns every other path.
  */
 
-/** Better-Auth's sign-out clears three cookies in one response. */
-const SIGN_OUT_COOKIES = [
-  'better-auth.session_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax',
-  'better-auth.session_data=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax',
-  'better-auth.dont_remember=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax',
-];
-
-/** Better-Auth's answer to a sign-in with a wrong password. */
-const SIGN_IN_REJECTED = {
-  status: 401,
-  body: { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' },
-};
-
-/**
- * Stands in for Better-Auth: sign-out and a failed sign-in answer like the real
- * one, every other path echoes the URL it receives, so a spec can check the base path.
- */
-async function fakeAuthHandler(request: Request): Promise<Response> {
-  const { pathname } = new URL(request.url);
-  if (pathname === '/api/auth/sign-out') {
-    const headers = new Headers(
-      SIGN_OUT_COOKIES.map((cookie): [string, string] => ['set-cookie', cookie]),
-    );
-    return Response.json({ success: true }, { headers });
-  }
-  if (pathname === '/api/auth/sign-in/email') {
-    return Response.json(SIGN_IN_REJECTED.body, { status: SIGN_IN_REJECTED.status });
-  }
-  return Response.json({ url: request.url });
-}
-
 describe('API prefix /api/ (ADR 0004)', () => {
   let fixture: SpaFixture;
   let app: NestExpressApplication;
   let baseUrl: string;
-  const authHandler = vi.fn(fakeAuthHandler);
 
   beforeAll(async () => {
     fixture = await createSpaFixture();
     const moduleRef = await spaTestingModule(fixture.root, {
-      controllers: [HealthController, AppConfigController, AuthController],
-      providers: [
-        DefaultConfigService,
-        // Only POST /api/config touches the database, and no spec here calls it.
-        { provide: PrismaService, useValue: {} },
-        { provide: AuthService, useValue: { auth: { handler: authHandler } } },
-      ],
+      controllers: [HealthController, AppConfigController],
+      providers: [DefaultConfigService],
     }).compile();
 
     app = moduleRef.createNestApplication<NestExpressApplication>();
@@ -106,39 +66,31 @@ describe('API prefix /api/ (ADR 0004)', () => {
     expect(await isSpa('/')).toBe(true);
   });
 
-  test('Better-Auth answers at /api/auth/* and receives the full URL', async () => {
-    const res = await get('/api/auth/get-session');
-    expect(res.status).toBe(200);
-    const { url } = (await res.json()) as { url: string };
-    expect(new URL(url).pathname).toBe('/api/auth/get-session');
-    expect(await isSpa('/auth/get-session')).toBe(true);
+  test('the app has no accounts: /api/auth/* answers 404, not the SPA (ADR 0008)', async () => {
+    for (const path of ['/api/auth/get-session', '/api/auth/sign-in/email', '/api/auth/sign-out']) {
+      for (const method of ['GET', 'POST']) {
+        const res = await fetch(`${baseUrl}${path}`, { method });
+        expect(res.status, `${method} ${path}`).toBe(404);
+        expect(await res.json()).toMatchObject({ statusCode: 404 });
+      }
+    }
   });
 
-  test('sign-out passes every Set-Cookie, the status and the body through', async () => {
-    const res = await fetch(`${baseUrl}/api/auth/sign-out`, {
+  test('the default configuration is read-only: POST /api/config answers 404', async () => {
+    const res = await fetch(`${baseUrl}/api/config`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ reason: 'abmelden' }),
+      body: JSON.stringify({
+        alpha: 0.3,
+        weightComplexSyllables: 50,
+        weightMultiMemberedGraphemes: 25,
+        weightRareGraphemes: 12.5,
+        weightConsonantClusters: 12.5,
+      }),
     });
 
-    expect(res.status).toBe(200);
-    expect(res.headers.getSetCookie()).toEqual(SIGN_OUT_COOKIES);
-    expect(await res.json()).toEqual({ success: true });
-
-    const received = authHandler.mock.lastCall?.[0];
-    expect(received?.method).toBe('POST');
-    expect(await received?.json()).toEqual({ reason: 'abmelden' });
-  });
-
-  test("a rejected sign-in passes Better-Auth's status and body through", async () => {
-    const res = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'lehrkraft@example.org', password: 'falsch' }),
-    });
-
-    expect(res.status).toBe(401);
-    expect(await res.json()).toEqual(SIGN_IN_REJECTED.body);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toMatchObject({ statusCode: 404 });
   });
 
   test('the API sends no CORS headers: the browser only ever calls its own origin', async () => {

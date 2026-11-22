@@ -11,8 +11,6 @@ import { AppConfigController } from '../src/config/config.controller.js';
 import { DefaultConfigService } from '../src/config/default-config.service.js';
 import { CalculateController } from '../src/calculate/calculate.controller.js';
 import { CalculateService } from '../src/calculate/calculate.service.js';
-import { PrismaService } from '../src/prisma/prisma.service.js';
-import { AuthGuard } from '../src/auth/auth.guard.js';
 import { RSidecarService } from '../src/r-sidecar/r-sidecar.service.js';
 
 /**
@@ -70,14 +68,9 @@ describe('Standardkonfiguration aus der config.json (Issue #94)', () => {
       providers: [
         DefaultConfigService,
         CalculateService,
-        // POST /api/config schreibt bis zu seinem Wegfall (#95) noch in die Datenbank.
-        { provide: PrismaService, useValue: {} },
         { provide: RSidecarService, useValue: { analyzeText } },
       ],
-    })
-      .overrideGuard(AuthGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
+    }).compile();
 
     app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
     configureApp(app);

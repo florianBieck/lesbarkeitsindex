@@ -1,21 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import AdminPage from '@/pages/admin.vue';
 import IndexPage from '@/pages/index.vue';
-import LoginPage from '@/pages/login.vue';
-import LogoutPage from '@/pages/logout.vue';
 import NotFoundPage from '@/pages/not-found.vue';
 
-/**
- * The app's routes, by hand (ADR 0007). No guards: the backend's `AuthGuard`
- * decides what a visitor may load.
- */
+/** The app's routes, by hand (ADR 0007): one page, open to every visitor (ADR 0008). */
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: IndexPage },
-    { path: '/login', component: LoginPage },
-    { path: '/logout', component: LogoutPage },
-    { path: '/admin', component: AdminPage },
     // The backend answers every unknown app path with index.html, so the router decides.
     { path: '/:pathMatch(.*)*', component: NotFoundPage },
   ],

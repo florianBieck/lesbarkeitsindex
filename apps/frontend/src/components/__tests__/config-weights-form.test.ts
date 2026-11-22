@@ -5,10 +5,10 @@ import type { useApiClient } from '@/composables/useApiClient';
 
 /**
  * Unit-Test für die gemeinsame Gewichtungs-Eingabemaske (Aufschlag α + vier
- * WK-Gewichte), die von Startseite und Admin-Seite verwendet wird.
+ * WK-Gewichte) der Startseite („Erweiterte Einstellungen“).
  *
- * Die Maske besitzt keinen eigenen Zustand und lädt nichts: Die Seiten binden
- * per v-model und holen die Standardwerte selbst.
+ * Die Maske besitzt keinen eigenen Zustand und lädt nichts: Die Seite bindet
+ * per v-model und holt die Standardwerte selbst.
  */
 
 type ApiClient = ReturnType<typeof useApiClient>;
@@ -23,7 +23,6 @@ const { getConfigMock } = vi.hoisted(() => ({
 vi.mock(import('@/composables/useApiClient'), () => ({
   useApiClient: () => ({
     getConfig: getConfigMock,
-    updateConfig: vi.fn(),
     calculate: vi.fn(),
   }),
 }));

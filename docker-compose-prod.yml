@@ -26,10 +26,6 @@ services:
       # The deploy only takes a POSTGRES_PASSWORD made of characters a URL
       # leaves alone, so it goes into the URL unencoded.
       - DATABASE_URL=postgresql://admin:${POSTGRES_PASSWORD:?missing from .env}@postgres:5432/lesbarkeitsindex
-      # Public base URL used by Better-Auth (same-origin via Caddy)
-      - BETTER_AUTH_URL=https://lix.florianbieck.com
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?missing from .env}
-      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:?missing from .env}
       - NODE_ENV=production
       - R_SIDECAR_URL=http://r-sidecar:8787
     depends_on:

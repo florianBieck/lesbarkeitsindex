@@ -1,9 +1,9 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 /**
  * Smoke test after a deploy (`pnpm --filter frontend run test:smoke`): the by-hand
- * checklist, run against the live site. It leaves nothing behind: the app stores no
- * analysis, the admin page is only opened, and signing out ends the session it opened.
+ * checklist, run against the live site. It leaves nothing behind: the app has no accounts
+ * and stores no analysis (ADR 0008).
  */
 
 const SENTENCE =
@@ -21,43 +21,15 @@ function longUmlautText(): string {
   return repeated.slice(0, LONG_TEXT_CHARS).replace(/[^.]*$/, '');
 }
 
-function credentials(): { email: string; password: string } {
-  const { SMOKE_EMAIL: email, SMOKE_PASSWORD: password } = process.env;
-  if (!email || !password) {
-    throw new Error('Set SMOKE_EMAIL and SMOKE_PASSWORD in apps/frontend/.env.smoke.local');
-  }
-  return { email, password };
-}
-
-/** The signed-in user's email, or null. Never the whole session: it holds the token. */
-async function sessionEmail(page: Page): Promise<string | null> {
-  const res = await page.request.get('/api/auth/get-session');
-  expect(res.status()).toBe(200);
-  const session = (await res.json()) as { user?: { email?: string } } | null;
-  return session?.user?.email ?? null;
-}
-
-test('a signed-in teacher can analyse a long text, open the configuration and sign out', async ({
-  page,
-}) => {
-  const { email, password } = credentials();
-
+test('a visitor can analyse a long text, and the site offers no accounts', async ({ page }) => {
   await test.step('the API names no framework', async () => {
     const res = await page.request.get('/api/health');
     expect(res.status()).toBe(200);
     expect(res.headers()['x-powered-by']).toBeUndefined();
   });
 
-  await test.step('sign in', async () => {
-    await page.goto('/login');
-    await page.getByRole('textbox', { name: 'E-Mail Adresse' }).fill(email);
-    await page.getByRole('textbox', { name: 'Passwort' }).fill(password);
-    await page.getByRole('button', { name: 'Anmelden' }).click();
-    await page.waitForURL('/');
-    expect(await sessionEmail(page)).toBe(email);
-  });
-
   await test.step('analyse a text over 100 KB', async () => {
+    await page.goto('/');
     await page.getByLabel('Text zur Lesbarkeitsanalyse eingeben').fill(longUmlautText());
 
     const calculated = page.waitForResponse((res) => res.url().endsWith('/api/calculate'), {
@@ -73,28 +45,15 @@ test('a signed-in teacher can analyse a long text, open the configuration and si
     await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible();
   });
 
-  await test.step('open "Konfiguration"', async () => {
-    const config = page.waitForResponse(
-      (res) => res.url().endsWith('/api/config') && res.request().method() === 'GET',
-    );
-    await page.goto('/admin');
-    expect((await config).status()).toBe(200);
-    await expect(page.getByRole('button', { name: 'Konfiguration speichern' })).toBeVisible();
+  await test.step('the API has no accounts', async () => {
+    const res = await page.request.get('/api/auth/get-session');
+    expect(res.status()).toBe(404);
   });
 
-  await test.step('sign out, and stay signed out after a reload', async () => {
-    await page.getByRole('button', { name: 'Menü' }).click();
-    await page.getByRole('menuitem', { name: 'Abmelden' }).click();
-    await page.waitForURL('/login');
-
-    const sessionCookies = (await page.context().cookies())
-      .map((cookie) => cookie.name)
-      .filter((name) => name.includes('session_token'));
-    expect(sessionCookies).toEqual([]);
-
-    await page.reload();
-    expect(await sessionEmail(page)).toBeNull();
-    await page.getByRole('button', { name: 'Menü' }).click();
-    await expect(page.getByRole('menuitem', { name: 'Anmelden' })).toBeVisible();
+  await test.step('the former account pages are unknown addresses', async () => {
+    for (const path of ['/login', '/admin']) {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { name: 'Seite nicht gefunden' })).toBeVisible();
+    }
   });
 });

@@ -125,14 +125,6 @@ export type CalculateRequest = {
   textType?: TextType;
 };
 
-export type UpdateConfigRequest = {
-  alpha: number;
-  weightComplexSyllables: number;
-  weightMultiMemberedGraphemes: number;
-  weightRareGraphemes: number;
-  weightConsonantClusters: number;
-};
-
 /**
  * Minimaler Fetch-Vertrag des API-Clients. Der Aufrufer liefert die Umsetzung
  * (im Frontend ein Wrapper um natives `fetch`) und damit jede I/O; der Client
@@ -153,8 +145,6 @@ const API_PREFIX = '/api';
 export function createApiClient(fetcher: ApiFetch) {
   return {
     getConfig: () => fetcher<Config>(`${API_PREFIX}/config`),
-    updateConfig: (body: UpdateConfigRequest) =>
-      fetcher<ConfigWeights>(`${API_PREFIX}/config`, { method: 'POST', body }),
     calculate: (body: CalculateRequest) =>
       fetcher<ResultData>(`${API_PREFIX}/calculate`, { method: 'POST', body }),
   };

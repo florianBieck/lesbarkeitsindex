@@ -35,7 +35,7 @@
                     </p>
                   </div>
                 </div>
-                <nav class="flex items-start gap-4 pt-4 lg:pt-24" aria-label="Hauptnavigation">
+                <div class="flex items-start pt-4 lg:pt-24">
                   <Button
                     as="a"
                     href="https://www.beate-lessmann.de"
@@ -47,26 +47,7 @@
                     outlined
                     aria-label="Zur Website von Beate Leßmann (öffnet in neuem Fenster)"
                   />
-                  <Button
-                    icon="pi pi-ellipsis-v"
-                    type="button"
-                    outlined
-                    rounded
-                    severity="secondary"
-                    @click="toggle"
-                    aria-haspopup="true"
-                    aria-controls="overlay_menu"
-                    aria-label="Menü"
-                  />
-                  <Menu ref="menu" id="overlay_menu" :model="items" :popup="true">
-                    <template #item="{ item, props }">
-                      <RouterLink :to="item.to" class="flex items-center" v-bind="props.action">
-                        <span :class="item.icon" />
-                        <span>{{ item.label }}</span>
-                      </RouterLink>
-                    </template>
-                  </Menu>
-                </nav>
+                </div>
               </div>
             </div>
           </header>
@@ -82,53 +63,7 @@
 <script setup lang="ts">
 import Button from 'primevue/button';
 import Card from 'primevue/card';
-import Menu from 'primevue/menu';
-import { computed, ref } from 'vue';
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterView } from 'vue-router';
 import logoUrl from '@/assets/logo-lessmann.png';
 import LegalLinks from '@/components/legal-links.vue';
-import { useAuthClient } from '@/composables/useAuthClient';
-
-const client = useAuthClient();
-
-const session = client.useSession();
-
-const menu = ref();
-const items = computed(() => {
-  if (session.value.data) {
-    return [
-      {
-        label: 'Startseite',
-        icon: 'pi pi-home',
-        to: '/',
-      },
-      {
-        label: 'Konfiguration',
-        icon: 'pi pi-cog',
-        to: '/admin',
-      },
-      {
-        label: 'Abmelden',
-        icon: 'pi pi-sign-out',
-        to: '/logout',
-      },
-    ];
-  }
-  return [
-    {
-      label: 'Startseite',
-      icon: 'pi pi-home',
-      to: '/',
-    },
-    {
-      label: 'Anmelden',
-      icon: 'pi pi-sign-in',
-      to: '/login',
-    },
-  ];
-});
-
-const toggle = (event: MouseEvent) => {
-  menu.value.toggle(event);
-};
 </script>

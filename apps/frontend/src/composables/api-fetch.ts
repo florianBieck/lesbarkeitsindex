@@ -44,7 +44,7 @@ async function errorCodeOf(response: Response): Promise<string | undefined> {
 
 /**
  * The API client's fetcher on native `fetch`. Paths stay relative: the browser
- * only ever talks to its own origin (ADR 0007), so cookies go along by default.
+ * only ever talks to its own origin (ADR 0007).
  */
 export const apiFetch: ApiFetch = async <T>(
   path: string,

@@ -69,7 +69,7 @@ describe('SPA serving (ADR 0007)', () => {
 
   test('deep links get index.html, so a reload shows the page', async () => {
     await expectIndex('/seite');
-    await expectIndex('/admin?tab=1');
+    await expectIndex('/seite?tab=1');
     await expectIndex('/gibtsnicht/tiefer');
   });
 

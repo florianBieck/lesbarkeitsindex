@@ -1,12 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": [
-    "**/node_modules/**",
-    "**/dist/**",
-    "**/generated/**",
-    "**/.nuxt/**",
-    "**/.output/**"
-  ],
+  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/.nuxt/**", "**/.output/**"],
   "overrides": [
     {
       // The SPA imports through `@/` whenever an import leaves the file's directory.

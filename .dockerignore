@@ -1,7 +1,6 @@
 # Installed and built inside the image, never copied in
 **/node_modules
 **/dist
-**/generated
 **/.nuxt
 **/.output
 **/*.tsbuildinfo

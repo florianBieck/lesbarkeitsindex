@@ -1,6 +1,6 @@
 # Lesbarkeitsindex (LÜ-LIX)
 
-German text readability analysis tool for teachers and educators. pnpm monorepo with a NestJS/Express backend that also serves the Vue SPA frontend, and an R NLP sidecar.
+German text readability analysis tool for teachers and educators. pnpm monorepo with a NestJS/Express backend that also serves the Vue SPA frontend, and an R NLP sidecar. The app has no database (ADR 0008).
 
 ## pnpm first
 
@@ -12,7 +12,6 @@ Use `pnpm` for installs and scripts (`pnpm <script>` at the root, `pnpm --filter
 - **Toolchain**: package scripts call Vite, Vitest, vue-tsc, oxlint, oxfmt and the Nest CLI directly (ADR 0006 records why vite-plus left)
 - **Runtime**: Node.js (not Bun)
 - **Backend**: NestJS with Express adapter (`@nestjs/platform-express`, Express 5)
-- **Database**: Prisma 7 with `@prisma/adapter-pg` + `pg`
 - **Frontend**: Vue 3 SPA (Composition API, vue-router 5), built by Vite; the backend serves the build (ADR 0007)
 - **UI**: PrimeVue 4 with Aura theme — use PrimeVue components for all UI work
 - **CSS**: Tailwind 4 utility classes (`@tailwindcss/vite`). `surface-*` and `primary-*` are PrimeVue's Aura tokens, mapped by the `@theme inline` block in `src/assets/main.css`, not Tailwind's palette
@@ -35,7 +34,6 @@ apps/
       configure-app.ts # helmet (CSP), /api prefix, JSON body limit; e2e specs call it too
       app.module.ts   # Root module
       health.controller.ts
-      prisma/         # PrismaModule + PrismaService
       config/         # ConfigController (GET /api/config), default-config.ts (config.json reader)
       calculate/      # CalculateController, CalculateService
         result/       # Pure computation functions
@@ -48,9 +46,6 @@ apps/
           heading-extraction.ts
       r-sidecar/      # RSidecarService (R service HTTP client)
       spa/            # spaImports(): serves apps/frontend/dist (ADR 0007)
-      generated/      # Prisma client (gitignored, auto-generated)
-    prisma/
-      schema.prisma   # Config, Result, User, Session models (unused; go with the database, #96)
   frontend/           # Vue 3 SPA (dev port 3001)
     src/
       main.ts         # createApp, router, PrimeVue (Aura)
@@ -69,19 +64,16 @@ r-sidecar/            # R Plumber API for NLP (port 8787, Docker only)
 ## Development
 
 ```sh
-# 1. Start Postgres + R sidecar
+# 1. Start the R sidecar
 docker compose up -d
 
-# 2. Install deps (the backend's postinstall generates the Prisma client)
+# 2. Install deps
 pnpm install
 
-# 3. Run migrations
-pnpm --filter backend exec prisma migrate deploy
-
-# 4. Start backend (port 3000)
+# 3. Start backend (port 3000)
 pnpm dev:backend
 
-# 5. Start frontend (port 3001; proxies /api to :3000)
+# 4. Start frontend (port 3001; proxies /api to :3000)
 pnpm dev:frontend
 ```
 
@@ -90,7 +82,6 @@ pnpm dev:frontend
 **`.env`** (project root, required):
 
 ```
-DATABASE_URL=postgresql://admin:admin@localhost:5432/lesbarkeitsindex?schema=public
 R_SIDECAR_URL=http://localhost:8787
 ```
 
@@ -142,7 +133,6 @@ Every backend route lives under `/api/` (ADR 0004); every other GET path gets th
 - Backend: NestJS modules with controllers, services, and Zod DTOs
 - API client: `useApiClient()` passes `apiFetch` (native `fetch`, relative URLs) to `createApiClient(fetcher)` from `@lesbarkeitsindex/api-client`
 - Frontend imports are explicit (Vue APIs, PrimeVue components, composables); `@/` is `src/`, and oxlint requires it for every import that leaves the file's directory
-- DB changes: edit `prisma/schema.prisma` → `pnpm generate` → `pnpm migrate`
 
 ## Linting & Formatting
 
@@ -163,14 +153,12 @@ pnpm run knip
 ## CI/CD
 
 - **`.github/workflows/build.yml`**: On push to `main` or tags — `pnpm install --frozen-lockfile`, runs tests, builds Docker images for the backend (with the SPA) and the r-sidecar, pushes to `ghcr.io`
-- **`.github/workflows/deploy.yml`**: the only deploy path: prod changes when someone approves a run. It starts after each successful build of a push to `main` (or by hand from `main`) and waits in the `production` environment, which holds its three secrets. Then it ships both compose files and `caddy/Caddyfile` over SSH, writes the server's `.env`, runs `pull`, sets the `admin` role's password from `POSTGRES_PASSWORD` (Postgres reads that variable only on an empty volume, so a changed secret rotates the password on the next deploy), then `up -d --remove-orphans` + `caddy reload`, and smoke-checks `/api/health` + `/api/config` through the edge. The server (`root@lix.florianbieck.com`, `/root/app/lesbarkeitsindex`, project `lesbarkeitsindex`) has no git; its `.env` sets `COMPOSE_FILE`, so a plain `docker compose logs backend` there sees the whole stack. Read logs there: Actions logs are public
-- **`renovate.json`**: Renovate dependency updates — grouped PRs Monday mornings (Europe/Berlin), security fixes immediately. The Node.js major lives in `.node-version` (CI reads it via `node-version-file`) and `Dockerfile.backend`, and moves as one PR; Postgres and `@types/node` majors wait for approval on the Dependency Dashboard issue
+- **`.github/workflows/deploy.yml`**: the only deploy path: prod changes when someone approves a run. It starts after each successful build of a push to `main` (or by hand from `main`) and waits in the `production` environment, which holds its two SSH secrets. Then it ships both compose files and `caddy/Caddyfile` over SSH, writes the server's `.env`, runs `pull`, then `up -d --remove-orphans` + `caddy reload`, and smoke-checks `/api/health` + `/api/config` through the edge. The server (`root@lix.florianbieck.com`, `/root/app/lesbarkeitsindex`, project `lesbarkeitsindex`) has no git; its `.env` sets `COMPOSE_FILE`, so a plain `docker compose logs backend` there sees the whole stack. Read logs there: Actions logs are public
+- **`renovate.json`**: Renovate dependency updates — grouped PRs Monday mornings (Europe/Berlin), security fixes immediately. The Node.js major lives in `.node-version` (CI reads it via `node-version-file`) and `Dockerfile.backend`, and moves as one PR; an `@types/node` major waits for approval on the Dependency Dashboard issue
 
 ## Gotchas
 
 - **Native build scripts**: `pnpm-workspace.yaml` has an `allowBuilds` map — when adding deps with native code (e.g. `@swc/core`), add them there or `pnpm install` will skip their build scripts.
-- **Prisma `generated/` inside `src/`**: The Prisma client generates to `apps/backend/src/generated/prisma/` so NestJS SWC compiles it alongside application code. Import via `../generated/prisma/client.js`.
-- **Prisma codegen required**: After any Prisma schema change, run `pnpm generate`
 - **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)
 - **Same-origin everywhere**: Caddy sends every path to the backend; the Vite dev and preview servers proxy `/api`. The backend sends no CORS headers
 - **A new external origin needs a CSP entry**: an image, font or API from another origin needs a change to `CONTENT_SECURITY_POLICY` in `configure-app.ts`, or the browser blocks it and every Playwright test against the backend fails
@@ -190,7 +178,7 @@ The app computes German readability indices:
 - **WSTF** (Wiener Sachtextformel variant)
 - **LÜ-LIX** (custom weighted composite score)
 
-The default parameters come from a `config.json` (`CONFIG_FILE`), read per request; a visitor can override them for one request in "Erweiterte Einstellungen", and the page sends only the values that differ from the default. The app has no accounts and no admin page (ADR 0008); the `Config` table is unused. Analysis results are not stored (ADR 0008; the `Result` table is empty and goes with the database).
+The default parameters come from a `config.json` (`CONFIG_FILE`), read per request; a visitor can override them for one request in "Erweiterte Einstellungen", and the page sends only the values that differ from the default. The app has no accounts, no admin page and no database, and analysis results are not stored (ADR 0008).
 
 ## Design Context
 

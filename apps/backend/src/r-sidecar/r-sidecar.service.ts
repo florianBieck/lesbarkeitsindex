@@ -27,9 +27,7 @@ export class RSidecarService {
   constructor() {
     const url = process.env['R_SIDECAR_URL'];
     if (!url) {
-      throw new Error(
-        'R_SIDECAR_URL environment variable is required. See apps/backend/.env.example',
-      );
+      throw new Error('R_SIDECAR_URL environment variable is required. See .env.example');
     }
     this.url = url;
   }

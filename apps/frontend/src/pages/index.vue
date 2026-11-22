@@ -51,13 +51,7 @@
     <div v-if="validationError" class="mt-4 text-sm font-medium text-red-600" role="alert">
       {{ validationError }}
     </div>
-    <div class="mt-4 flex items-start gap-2">
-      <Checkbox v-model="saveResult" inputId="save-consent" :binary="true" />
-      <label for="save-consent" class="cursor-pointer text-sm leading-tight text-surface-600">
-        Ich akzeptiere die Speicherung meiner Anfrage zur Verbesserung des Lübecker Lesbarkeitsindex
-      </label>
-    </div>
-    <div class="mt-3 flex items-center">
+    <div class="mt-4 flex items-center">
       <Button
         :loading="loading"
         label="Text analysieren"
@@ -81,7 +75,6 @@
 <script setup lang="ts">
 import { detectTextType, type TextType } from '@lesbarkeitsindex/api-client';
 import Button from 'primevue/button';
-import Checkbox from 'primevue/checkbox';
 import Fieldset from 'primevue/fieldset';
 import SelectButton from 'primevue/selectbutton';
 import Textarea from 'primevue/textarea';
@@ -96,7 +89,6 @@ const text = ref('');
 const loading = ref(false);
 const result = ref<ResultData | null>(null);
 const validationError = ref('');
-const saveResult = ref(false);
 
 // Texttyp-Erkennung (ADR 0002): die Heuristik aktualisiert sich beim Tippen,
 // der Nutzer kann den Wert übersteuern. Der Override geht mit der Anfrage mit.
@@ -141,7 +133,6 @@ async function calculate() {
   try {
     const data = await client.calculate({
       text: text.value,
-      saveResult: saveResult.value,
       alpha: alpha.value,
       weightComplexSyllables: weightComplexSyllables.value,
       weightMultiMemberedGraphemes: weightMultiMemberedGraphemes.value,

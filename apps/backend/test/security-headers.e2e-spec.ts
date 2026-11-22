@@ -67,7 +67,7 @@ describe('security headers (ADR 0007)', () => {
 
   test.each([
     ['the SPA at /', '/'],
-    ['a deep link', '/results'],
+    ['a deep link', '/seite'],
     ['a hashed asset', FIXTURE_ASSET_PATH],
     ['the API', '/api/health'],
     ['an unknown API path', '/api/nope'],

@@ -31,11 +31,8 @@ test.describe('Authentication flow', () => {
     await expect(page.getByText('Warte auf Abmeldung...')).toBeVisible();
   });
 
-  test('authenticated user can access home and results pages', async ({ page }) => {
+  test('authenticated user can access the home page', async ({ page }) => {
     await login(page);
-
-    await page.goto('/results');
-    await expect(page.getByRole('columnheader', { name: 'Datum' })).toBeVisible();
 
     await page.goto('/');
     await expect(page.getByRole('button', { name: 'Text analysieren' })).toBeVisible();

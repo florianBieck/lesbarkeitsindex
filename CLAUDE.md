@@ -48,7 +48,6 @@ apps/
           grapheme-analysis.ts
           text-features.ts
           heading-extraction.ts
-      results/        # ResultsController (GET /api/results)
       r-sidecar/      # RSidecarService (R service HTTP client)
       spa/            # spaImports(): serves apps/frontend/dist (ADR 0007)
       generated/      # Prisma client (gitignored, auto-generated)
@@ -58,7 +57,7 @@ apps/
     src/
       main.ts         # createApp, router, PrimeVue (Aura)
       router.ts       # Hand-written route table
-      pages/          # index, login, logout, results, admin, not-found
+      pages/          # index, login, logout, admin, not-found
       components/     # result-view, config-weights-form
       composables/    # useApiClient + api-fetch (native fetch), useAuthClient
     e2e/              # Playwright specs; fixtures.ts fails any test on a CSP violation
@@ -138,8 +137,7 @@ Every backend route lives under `/api/` (ADR 0004); every other GET path gets th
 - `GET /api/health` — health check
 - `GET /api/config` — current readability config
 - `POST /api/config` — update config (requires auth)
-- `POST /api/calculate` — analyze text readability
-- `GET /api/results?page=0&limit=10` — paginated results
+- `POST /api/calculate` — analyze text readability; nothing is stored or logged (ADR 0008)
 - `/api/auth/*` — Better-Auth endpoints
 
 ## Code Conventions
@@ -200,7 +198,7 @@ The app computes German readability indices:
 - **WSTF** (Wiener Sachtextformel variant)
 - **LÜ-LIX** (custom weighted composite score)
 
-Parameters are stored in a `Config` model; analysis results in a `Result` model. The weighting of indices is configurable via the admin page.
+Parameters are stored in a `Config` model; the admin page changes the default, and a visitor can override it for one request. Analysis results are not stored (ADR 0008; the `Result` table is empty and goes with the database).
 
 ## Design Context
 

@@ -39,17 +39,17 @@ describe('apiFetch', () => {
   it('hängt die Query an und lässt undefinierte Werte weg', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ data: [] }));
 
-    await apiFetch('/api/results', { query: { page: 2, limit: 10, filter: undefined } });
+    await apiFetch('/api/config', { query: { page: 2, limit: 10, filter: undefined } });
 
-    expect(fetchMock.mock.calls[0]![0]).toBe('/api/results?page=2&limit=10');
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/config?page=2&limit=10');
   });
 
   it('lässt den Query-String ganz weg, wenn nichts übrig bleibt', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ data: [] }));
 
-    await apiFetch('/api/results', { query: { page: undefined } });
+    await apiFetch('/api/config', { query: { page: undefined } });
 
-    expect(fetchMock.mock.calls[0]![0]).toBe('/api/results');
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/config');
   });
 
   it('schickt einen Body als JSON', async () => {

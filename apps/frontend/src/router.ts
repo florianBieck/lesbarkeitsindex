@@ -4,7 +4,6 @@ import IndexPage from '@/pages/index.vue';
 import LoginPage from '@/pages/login.vue';
 import LogoutPage from '@/pages/logout.vue';
 import NotFoundPage from '@/pages/not-found.vue';
-import ResultsPage from '@/pages/results.vue';
 
 /**
  * The app's routes, by hand (ADR 0007). No guards: the backend's `AuthGuard`
@@ -16,7 +15,6 @@ export const router = createRouter({
     { path: '/', component: IndexPage },
     { path: '/login', component: LoginPage },
     { path: '/logout', component: LogoutPage },
-    { path: '/results', component: ResultsPage },
     { path: '/admin', component: AdminPage },
     // The backend answers every unknown app path with index.html, so the router decides.
     { path: '/:pathMatch(.*)*', component: NotFoundPage },

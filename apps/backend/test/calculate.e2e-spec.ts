@@ -13,7 +13,7 @@ import { Prisma } from '../src/generated/prisma/client.js';
  * NestJS-Integrationstest für den Analyse-Endpunkt (Issue #28, AC6).
  *
  * Prüft den API-Vertrag (Antwortfelder, Validierungsfehler) des Aufschlagsmodells
- * mit gemocktem R-Dienst und gemockter Persistenz — ohne laufenden Stack.
+ * mit gemocktem R-Dienst und gemockter Konfiguration — ohne laufenden Stack.
  */
 
 const ANALYSIS = {
@@ -38,29 +38,15 @@ const TEXT = 'Die Kinder schreiben spannende Geschichten.';
 function buildMocks() {
   const analyzeText = vi.fn(async () => ANALYSIS);
   const configFindFirst = vi.fn(async () => SEED_CONFIG);
-  const configCreate = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
-    ...SEED_CONFIG,
-    ...data,
-    id: 'config-new',
-  }));
-  const resultCreate = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
-    ...data,
-    id: 'result-new',
-    config: SEED_CONFIG,
-  }));
   return {
     analyzeText,
-    resultCreate,
-    configCreate,
-    prisma: {
-      config: { findFirst: configFindFirst, create: configCreate },
-      result: { create: resultCreate },
-    },
+    // Nur Lesezugriff: Es gibt keine Persistenz mehr, ein Schreibversuch schlüge fehl.
+    prisma: { config: { findFirst: configFindFirst } },
     rSidecar: { analyzeText },
   };
 }
 
-describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemockt, AC6)', () => {
+describe('POST /api/calculate — Integrationstest (R-Dienst & Konfiguration gemockt, AC6)', () => {
   let app: NestExpressApplication;
   let baseUrl: string;
   let mocks: ReturnType<typeof buildMocks>;
@@ -121,19 +107,30 @@ describe('POST /api/calculate — Integrationstest (R-Dienst & Persistenz gemock
     expect(body).not.toHaveProperty('scoreLevel');
   });
 
-  test('ruft den (gemockten) R-Dienst genau einmal auf und persistiert ohne saveResult nicht', async () => {
+  test('ruft den (gemockten) R-Dienst genau einmal auf', async () => {
     mocks.analyzeText.mockClear();
-    mocks.resultCreate.mockClear();
     await post({ text: TEXT });
     expect(mocks.analyzeText).toHaveBeenCalledTimes(1);
-    expect(mocks.resultCreate).not.toHaveBeenCalled();
   });
 
-  test('saveResult=true persistiert über die gemockte Persistenz', async () => {
-    mocks.resultCreate.mockClear();
-    const { status } = await post({ text: TEXT, saveResult: true });
+  test('Antwort trägt die genutzte Konfiguration als fünf Zahlen, ohne Datenbankfelder', async () => {
+    const { body } = await post({ text: TEXT, alpha: 0.5 });
+    expect(body.config).toEqual({
+      alpha: 0.5,
+      weightComplexSyllables: 50,
+      weightMultiMemberedGraphemes: 25,
+      weightRareGraphemes: 12.5,
+      weightConsonantClusters: 12.5,
+    });
+    expect(body).not.toHaveProperty('id');
+    expect(body).not.toHaveProperty('createdAt');
+    expect(body).not.toHaveProperty('configId');
+  });
+
+  test('ein altes saveResult=true wird ignoriert: 200, nichts wird gespeichert', async () => {
+    const { status, body } = await post({ text: TEXT, saveResult: true });
     expect(status).toBe(200);
-    expect(mocks.resultCreate).toHaveBeenCalledTimes(1);
+    expect(body).not.toHaveProperty('id');
   });
 
   test('Validierungsfehler: leerer Text → 422 mit Fehlerobjekt', async () => {

@@ -49,7 +49,6 @@ export interface ConfigWeights {
   readonly weightMultiMemberedGraphemes: number;
   readonly weightRareGraphemes: number;
   readonly weightConsonantClusters: number;
-  readonly id: string;
 }
 
 /**
@@ -86,8 +85,7 @@ export function computeReadability(
   );
 
   // Nenner aller satzbezogenen Maße (ADR 0002): Zeilenzahl bei Liste, sonst Satzzahl.
-  const countReadingUnits =
-    textType === 'list' ? countNonEmptyLines(text) : sentences.length;
+  const countReadingUnits = textType === 'list' ? countNonEmptyLines(text) : sentences.length;
 
   const countWords = words.length;
   // Wortkomplexität (ADR 0001): die vier WK-Komponente-Zähler, ihre Coverage-Anteile
@@ -199,6 +197,5 @@ export function computeReadability(
     wordsWithFourSyllables,
     wordsWithFiveSyllables,
     phrases: [...sentences],
-    configId: config.id,
   };
 }

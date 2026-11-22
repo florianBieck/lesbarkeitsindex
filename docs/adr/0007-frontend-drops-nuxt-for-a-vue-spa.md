@@ -13,6 +13,10 @@ note: the edge no longer splits `/api/*` from the frontend, and callers no longe
 origin. Its rule that the API lives under `/api/` and every other path is the frontend's
 stands; the backend now answers both.
 
+[ADR 0008](./0008-app-keeps-no-accounts-texts-or-database.md) removes the logins, so the
+tool is no longer login-gated and no cookies travel with its requests. The decision here
+does not depend on either.
+
 ## How the pieces fit
 
 - **The backend serves `apps/frontend/dist`** through `@nestjs/serve-static`

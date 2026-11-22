@@ -35,9 +35,8 @@ export function detectTextType(text: string): TextType {
  * Das Backend liefert durchgängig Zahlen (kein Decimal-String mehr), daher
  * sind alle Kennzahlen `number`.
  */
-export interface Config {
-  id: string;
-  createdAt: string;
+/** Aufschlagskoeffizient α und die vier Gewichte der WK-Komponenten (ADR 0001). */
+export interface ConfigWeights {
   alpha: number;
   weightComplexSyllables: number;
   weightMultiMemberedGraphemes: number;
@@ -45,9 +44,14 @@ export interface Config {
   weightConsonantClusters: number;
 }
 
-export interface ResultData {
+/** Die gespeicherte Standardkonfiguration, wie `GET /api/config` sie liefert. */
+export interface Config extends ConfigWeights {
   id: string;
   createdAt: string;
+}
+
+/** Ergebnis einer Analyse. Es existiert nur in dieser Antwort: Die App speichert nichts (ADR 0008). */
+export interface ResultData {
   countWords: number;
   countSyllables: number;
   countWordsWithComplexSyllables: number;
@@ -98,18 +102,8 @@ export interface ResultData {
   wordsWithFourSyllables: string[];
   wordsWithFiveSyllables: string[];
   phrases: string[];
-  config: Config;
-  configId: string;
-}
-
-export interface ResultsResponse {
-  data: ResultData[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  /** Die für diese Analyse genutzten Werte: Standard, von der Anfrage überschrieben. */
+  config: ConfigWeights;
 }
 
 /*
@@ -119,7 +113,6 @@ export interface ResultsResponse {
  */
 export type CalculateRequest = {
   text: string;
-  saveResult?: boolean;
   alpha?: number;
   weightComplexSyllables?: number;
   weightMultiMemberedGraphemes?: number;
@@ -161,7 +154,5 @@ export function createApiClient(fetcher: ApiFetch) {
       fetcher<Config>(`${API_PREFIX}/config`, { method: 'POST', body }),
     calculate: (body: CalculateRequest) =>
       fetcher<ResultData>(`${API_PREFIX}/calculate`, { method: 'POST', body }),
-    getResults: (query?: { page?: number; limit?: number }) =>
-      fetcher<ResultsResponse>(`${API_PREFIX}/results`, { query }),
   };
 }

@@ -5,7 +5,6 @@ import { AuthModule } from './auth/auth.module.js';
 import { RSidecarModule } from './r-sidecar/r-sidecar.module.js';
 import { AppConfigModule } from './config/config.module.js';
 import { CalculateModule } from './calculate/calculate.module.js';
-import { ResultsModule } from './results/results.module.js';
 import { HealthController } from './health.controller.js';
 import { spaImports } from './spa/spa-imports.js';
 
@@ -19,7 +18,6 @@ const SPA_ROOT = join(__dirname, '..', '..', 'frontend', 'dist');
     RSidecarModule,
     AppConfigModule,
     CalculateModule,
-    ResultsModule,
     ...spaImports(SPA_ROOT),
   ],
   controllers: [HealthController],

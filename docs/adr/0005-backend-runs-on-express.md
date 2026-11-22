@@ -18,6 +18,10 @@ loses two of its three `Set-Cookie` headers if the bridge copies headers one by 
 `api-prefix` e2e spec checks that all three arrive. The switch also deploys on its own, so a
 login problem after that deploy has one cause.
 
+[ADR 0008](./0008-app-keeps-no-accounts-texts-or-database.md) removes the accounts, and with
+them `AuthController` and the cookie bridge described here. The choice of Express stands on
+its other reasons.
+
 ## Considered options
 
 - **Stay on Fastify and serve the SPA with `@fastify/static`:** works, but needs two

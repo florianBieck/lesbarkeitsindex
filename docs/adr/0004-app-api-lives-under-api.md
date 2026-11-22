@@ -20,6 +20,10 @@ other path belongs to the frontend.
 backend now serves the SPA too, so the edge proxies every path to it, and callers pass no
 origin at all, only paths relative to the page. The split of the path space stands.
 
+[ADR 0008](./0008-app-keeps-no-accounts-texts-or-database.md) shortens the route list:
+`/api/results` and the "Bisherige Analysen" page that motivated this ADR are gone, and
+`/api/auth/*` goes with the accounts.
+
 The health check first stayed at `GET /`, but the backend will serve the built SPA, and `/`
 then belongs to `index.html`. It moved to `/api/health` on 2026-10-25.
 

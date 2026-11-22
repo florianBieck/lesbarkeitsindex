@@ -2,8 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 /**
  * Smoke test after a deploy (`pnpm --filter frontend run test:smoke`): the by-hand
- * checklist, run against the live site. It leaves nothing behind: the analysis isn't
- * saved, the admin page is only opened, and signing out ends the session it opened.
+ * checklist, run against the live site. It leaves nothing behind: the app stores no
+ * analysis, the admin page is only opened, and signing out ends the session it opened.
  */
 
 const SENTENCE =
@@ -37,7 +37,9 @@ async function sessionEmail(page: Page): Promise<string | null> {
   return session?.user?.email ?? null;
 }
 
-test('a signed-in teacher can analyse a long text, browse and sign out', async ({ page }) => {
+test('a signed-in teacher can analyse a long text, open the configuration and sign out', async ({
+  page,
+}) => {
   const { email, password } = credentials();
 
   await test.step('the API names no framework', async () => {
@@ -55,9 +57,8 @@ test('a signed-in teacher can analyse a long text, browse and sign out', async (
     expect(await sessionEmail(page)).toBe(email);
   });
 
-  await test.step('analyse a text over 100 KB without saving it', async () => {
+  await test.step('analyse a text over 100 KB', async () => {
     await page.getByLabel('Text zur Lesbarkeitsanalyse eingeben').fill(longUmlautText());
-    await expect(page.getByLabel(/Ich akzeptiere die Speicherung/)).not.toBeChecked();
 
     const calculated = page.waitForResponse((res) => res.url().endsWith('/api/calculate'), {
       timeout: ANALYSIS_TIMEOUT_MS,
@@ -70,11 +71,6 @@ test('a signed-in teacher can analyse a long text, browse and sign out', async (
     );
     expect(response.status()).toBe(200);
     await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible();
-  });
-
-  await test.step('reload "Bisherige Analysen"', async () => {
-    await page.goto('/results');
-    await expect(page.getByRole('columnheader', { name: 'Datum' })).toBeVisible();
   });
 
   await test.step('open "Konfiguration"', async () => {

@@ -101,11 +101,6 @@ const items = computed(() => {
         to: '/',
       },
       {
-        label: 'Bisherige Analysen',
-        icon: 'pi pi-list',
-        to: '/results',
-      },
-      {
         label: 'Konfiguration',
         icon: 'pi pi-cog',
         to: '/admin',

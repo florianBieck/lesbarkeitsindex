@@ -65,7 +65,7 @@ for (const sample of TEXTS) {
   const response = await fetch(`${baseUrl}/api/calculate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: sample.text, saveResult: false }),
+    body: JSON.stringify({ text: sample.text }),
   });
   if (!response.ok) {
     console.error(`✗ ${sample.id} failed: ${response.status} ${await response.text()}`);

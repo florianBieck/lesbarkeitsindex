@@ -70,6 +70,11 @@ test.describe('Homepage', () => {
     await expect(link).toHaveAttribute('target', '_blank');
   });
 
+  test('the header has no menu: the app is a single page without accounts', async ({ page }) => {
+    await expect(page.getByRole('link', { name: 'Zur Website' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Menü' })).toHaveCount(0);
+  });
+
   test('can type text into the editor', async ({ page }) => {
     const editor = textInput(page);
     await editor.fill('Dies ist ein Testtext für die Lesbarkeitsanalyse.');

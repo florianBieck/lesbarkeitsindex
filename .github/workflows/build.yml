@@ -105,8 +105,6 @@ jobs:
     env:
       DATABASE_URL: postgresql://admin:admin@localhost:5432/lesbarkeitsindex?schema=public
       R_SIDECAR_URL: http://localhost:8787
-      BETTER_AUTH_SECRET: lesbarkeitsindex-e2e-secret
-      BETTER_AUTH_URL: http://localhost:3000
       # Playwright runs against the backend, which serves the built SPA as in prod.
       E2E_BASE_URL: http://localhost:3000
     steps:
@@ -163,8 +161,7 @@ jobs:
       - name: Run backend e2e tests
         run: pnpm --filter backend run test:e2e
 
-      # Backend self-seeds the default config (and test users) on boot, and
-      # serves the frontend build from apps/frontend/dist.
+      # The backend serves the frontend build from apps/frontend/dist.
       # Run from apps/backend to match the production Docker start command.
       - name: Start backend
         run: |
@@ -172,11 +169,8 @@ jobs:
           node dist/main.js > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
           curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3000/api/health
 
-      # No-auth smoke only: homepage (incl. the #27 weighting assertion) and the
-      # not-found page. Auth-dependent specs (login, navigation,
-      # auth-flow) stay local-only.
-      - name: Run frontend e2e (no-auth smoke)
-        run: pnpm --filter frontend exec playwright test e2e/homepage.spec.ts e2e/not-found.spec.ts
+      - name: Run frontend e2e
+        run: pnpm --filter frontend run test:e2e
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}

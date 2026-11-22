@@ -53,10 +53,9 @@
 <script setup lang="ts">
 import InputNumber from 'primevue/inputnumber';
 
-// Gemeinsame Eingabemaske für den Aufschlag α und die vier WK-Gewichte
-// (Startseite „Erweiterte Einstellungen" und Admin-Konfiguration).
-// Die Seiten besitzen den Zustand (v-model) und laden die Standardwerte selbst;
-// die Maske zeigt und ändert nur.
+// Eingabemaske für den Aufschlag α und die vier WK-Gewichte (Startseite,
+// „Erweiterte Einstellungen"). Die Seite besitzt den Zustand (v-model) und lädt
+// die Standardwerte selbst; die Maske zeigt und ändert nur.
 const alpha = defineModel<number>('alpha', { required: true });
 const weightComplexSyllables = defineModel<number>('weightComplexSyllables', { required: true });
 const weightMultiMemberedGraphemes = defineModel<number>('weightMultiMemberedGraphemes', {

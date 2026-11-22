@@ -64,11 +64,11 @@ describe('apiFetch', () => {
   });
 
   it('wirft bei einer Nicht-2xx-Antwort einen Fehler mit Methode, Pfad und Status', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ message: 'Unauthorized' }, 401));
+    fetchMock.mockResolvedValue(jsonResponse({ message: 'Bad Request' }, 400));
 
-    await expect(apiFetch('/api/config', { method: 'POST', body: { alpha: 0.3 } })).rejects.toThrow(
-      'POST /api/config failed with status 401',
-    );
+    await expect(
+      apiFetch('/api/calculate', { method: 'POST', body: { text: '' } }),
+    ).rejects.toThrow('POST /api/calculate failed with status 400');
   });
 
   it('der Fehler trägt Status und Fehlerkennung der Antwort', async () => {

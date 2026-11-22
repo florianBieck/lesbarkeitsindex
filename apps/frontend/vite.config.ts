@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vitest/config';
 
-/** Fixed, so Better-Auth's `trustedOrigins` (`http://localhost:3001`) always matches. */
+/** Fixed: Playwright's default `baseURL` and the docs name this port. */
 const PORT = 3001;
 
 /**

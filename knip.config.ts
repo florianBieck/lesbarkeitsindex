@@ -8,7 +8,9 @@ export default {
     },
     'apps/backend': {
       // Referenced by nest-cli.json ("collection"), shipped with @nestjs/cli.
-      ignoreDependencies: ['@nestjs/schematics'],
+      // @prisma/client: the generated Prisma client imports it at runtime, but it is
+      // gitignored, so knip never sees the import. Goes with the database (#96).
+      ignoreDependencies: ['@nestjs/schematics', '@prisma/client'],
     },
   },
 } satisfies KnipConfig;

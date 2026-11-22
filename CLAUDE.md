@@ -16,7 +16,6 @@ Use `pnpm` for installs and scripts (`pnpm <script>` at the root, `pnpm --filter
 - **Frontend**: Vue 3 SPA (Composition API, vue-router 5), built by Vite; the backend serves the build (ADR 0007)
 - **UI**: PrimeVue 4 with Aura theme — use PrimeVue components for all UI work
 - **CSS**: Tailwind 4 utility classes (`@tailwindcss/vite`). `surface-*` and `primary-*` are PrimeVue's Aura tokens, mapped by the `@theme inline` block in `src/assets/main.css`, not Tailwind's palette
-- **Auth**: Better-Auth with email/password + admin plugin
 - **Schema validation**: Zod (backend DTOs validated with Zod schemas)
 - **API client**: `@lesbarkeitsindex/api-client` package (zero-dependency) — the frontend injects its native-`fetch` wrapper via `createApiClient(fetcher)` for typed frontend → backend calls
 - **Linting**: oxlint (`.oxlintrc.json`)
@@ -32,13 +31,12 @@ Use `pnpm` for installs and scripts (`pnpm <script>` at the root, `pnpm --filter
 apps/
   backend/            # NestJS/Express API (port 3000)
     src/
-      main.ts         # Bootstrap, seed
+      main.ts         # Bootstrap
       configure-app.ts # helmet (CSP), /api prefix, JSON body limit; e2e specs call it too
       app.module.ts   # Root module
       health.controller.ts
       prisma/         # PrismaModule + PrismaService
-      auth/           # AuthModule, AuthService, AuthController, AuthGuard
-      config/         # ConfigController (GET/POST /api/config), default-config.ts (config.json reader)
+      config/         # ConfigController (GET /api/config), default-config.ts (config.json reader)
       calculate/      # CalculateController, CalculateService
         result/       # Pure computation functions
           index.ts    # computeReadability() — barrel exports
@@ -52,14 +50,14 @@ apps/
       spa/            # spaImports(): serves apps/frontend/dist (ADR 0007)
       generated/      # Prisma client (gitignored, auto-generated)
     prisma/
-      schema.prisma   # Config, Result, User, Session models
+      schema.prisma   # Config, Result, User, Session models (unused; go with the database, #96)
   frontend/           # Vue 3 SPA (dev port 3001)
     src/
       main.ts         # createApp, router, PrimeVue (Aura)
       router.ts       # Hand-written route table
-      pages/          # index, login, logout, admin, not-found
+      pages/          # index, not-found
       components/     # result-view, config-weights-form, legal-links
-      composables/    # useApiClient + api-fetch (native fetch), useAuthClient
+      composables/    # useApiClient + api-fetch (native fetch)
     e2e/              # Playwright specs; fixtures.ts fails any test on a CSP violation
     smoke/            # Playwright smoke test against prod
 packages/
@@ -94,8 +92,6 @@ pnpm dev:frontend
 ```
 DATABASE_URL=postgresql://admin:admin@localhost:5432/lesbarkeitsindex?schema=public
 R_SIDECAR_URL=http://localhost:8787
-BETTER_AUTH_SECRET=dev-secret
-BETTER_AUTH_URL=http://localhost:3000
 ```
 
 Optional: `CONFIG_FILE`, the path of a `config.json` with the default configuration (`alpha`, the four `weight*` values, optional `impressumUrl` / `datenschutzUrl`). The backend reads it on every request; a relative path resolves against the backend's working directory (`apps/backend` in dev). Unset or no file: built-in defaults. An invalid file makes `GET /api/config` and `POST /api/calculate` answer 500 with `error: "CONFIG_INVALID"`.
@@ -121,9 +117,8 @@ pnpm --filter frontend run typecheck
 # E2E_BASE_URL=http://localhost:3000 against the backend serving the build (as CI does)
 pnpm --filter frontend run test:e2e
 
-# Smoke test against prod after a deploy (Playwright; login from the gitignored
-# apps/frontend/.env.smoke.local, see playwright.smoke.config.ts). The user writes that
-# file by hand: an agent that creates it sees the password once the user fills it in
+# Smoke test against prod after a deploy (Playwright, no login; SMOKE_BASE_URL in the
+# gitignored apps/frontend/.env.smoke.local points it elsewhere, see playwright.smoke.config.ts)
 pnpm --filter frontend run test:smoke
 
 # Run all workspace tests from root (each package's own test script)
@@ -138,9 +133,7 @@ Every backend route lives under `/api/` (ADR 0004); every other GET path gets th
 
 - `GET /api/health` — health check
 - `GET /api/config` — default configuration from `config.json` (or the built-in defaults), plus the optional footer link URLs
-- `POST /api/config` — writes a `Config` row that nothing reads any more (requires auth; goes with the accounts, #95)
 - `POST /api/calculate` — analyze text readability; nothing is stored or logged (ADR 0008)
-- `/api/auth/*` — Better-Auth endpoints
 
 ## Code Conventions
 
@@ -150,7 +143,6 @@ Every backend route lives under `/api/` (ADR 0004); every other GET path gets th
 - API client: `useApiClient()` passes `apiFetch` (native `fetch`, relative URLs) to `createApiClient(fetcher)` from `@lesbarkeitsindex/api-client`
 - Frontend imports are explicit (Vue APIs, PrimeVue components, composables); `@/` is `src/`, and oxlint requires it for every import that leaves the file's directory
 - DB changes: edit `prisma/schema.prisma` → `pnpm generate` → `pnpm migrate`
-- Auth in frontend: `useAuthClient()` composable
 
 ## Linting & Formatting
 
@@ -171,7 +163,7 @@ pnpm run knip
 ## CI/CD
 
 - **`.github/workflows/build.yml`**: On push to `main` or tags — `pnpm install --frozen-lockfile`, runs tests, builds Docker images for the backend (with the SPA) and the r-sidecar, pushes to `ghcr.io`
-- **`.github/workflows/deploy.yml`**: the only deploy path: prod changes when someone approves a run. It starts after each successful build of a push to `main` (or by hand from `main`) and waits in the `production` environment, which holds its five secrets. Then it ships both compose files and `caddy/Caddyfile` over SSH, writes the server's `.env`, runs `pull`, sets the `admin` role's password from `POSTGRES_PASSWORD` (Postgres reads that variable only on an empty volume, so a changed secret rotates the password on the next deploy), then `up -d --remove-orphans` + `caddy reload`, and smoke-checks `/api/health` + `/api/config` through the edge. The server (`root@lix.florianbieck.com`, `/root/app/lesbarkeitsindex`, project `lesbarkeitsindex`) has no git; its `.env` sets `COMPOSE_FILE`, so a plain `docker compose logs backend` there sees the whole stack. Read logs there: Actions logs are public. The seed creates missing admin accounts with `SEED_ADMIN_PASSWORD` (default `#Test1234` outside prod) and never changes existing ones
+- **`.github/workflows/deploy.yml`**: the only deploy path: prod changes when someone approves a run. It starts after each successful build of a push to `main` (or by hand from `main`) and waits in the `production` environment, which holds its three secrets. Then it ships both compose files and `caddy/Caddyfile` over SSH, writes the server's `.env`, runs `pull`, sets the `admin` role's password from `POSTGRES_PASSWORD` (Postgres reads that variable only on an empty volume, so a changed secret rotates the password on the next deploy), then `up -d --remove-orphans` + `caddy reload`, and smoke-checks `/api/health` + `/api/config` through the edge. The server (`root@lix.florianbieck.com`, `/root/app/lesbarkeitsindex`, project `lesbarkeitsindex`) has no git; its `.env` sets `COMPOSE_FILE`, so a plain `docker compose logs backend` there sees the whole stack. Read logs there: Actions logs are public
 - **`renovate.json`**: Renovate dependency updates — grouped PRs Monday mornings (Europe/Berlin), security fixes immediately. The Node.js major lives in `.node-version` (CI reads it via `node-version-file`) and `Dockerfile.backend`, and moves as one PR; Postgres and `@types/node` majors wait for approval on the Dependency Dashboard issue
 
 ## Gotchas
@@ -185,9 +177,7 @@ pnpm run knip
 - **SPA deep links 404 below a dot-directory**: serve-static refuses paths under a directory starting with `.`, so the backend serves no deep links from a worktree under `.claude/worktrees/`. Run Playwright there against `vite preview`
 - **Backend specs that need the SPA**: build the testing module with `spaTestingModule()` from `test/spa-fixture.ts`. A plain `Test.createTestingModule` with `spaImports` serves nothing, because serve-static picks its loader before the app has an HTTP adapter
 - **Utilities beat PrimeVue**: PrimeVue's `cssLayer` (in `main.ts`) puts Aura in a `primevue` layer below Tailwind's utilities, so a utility on a PrimeVue component overrides Aura (`py-3` makes a `Button` taller than every other control). Size and shape components through their props and Aura. A CSS layer of our own sorts above `primevue` unless it is `theme` or `base`, which is why `primeicons.css` is imported into `base`
-- **Better-Auth trustedOrigins**: Configured in `apps/backend/src/auth/auth.service.ts` — update when adding new domains
 - **knip via the script only**: Run `pnpm run knip`, not bare `knip` — the script sets `KNIP_DISABLE_RAW_TRANSFER=1`, without which knip's oxc-parser panics (`raw_transfer.rs` assertion). Ignores in `knip.config.ts` carry a comment saying why; keep it that way
-- **NestJS + Better-Auth**: `AuthController`'s `@All('*path')` bridges Express requests to Better-Auth's Web `Request`/`Response`. Send `Set-Cookie` as one `res.setHeader('set-cookie', response.headers.getSetCookie())`: `res.header()`/`res.set()` replace, so copying cookies one by one keeps only the last, and sign-out leaves the session cookie in the browser
 - **`@nestjs/platform-express` stays on `^11`**: add or update it as `@nestjs/platform-express@^11`, matching `@nestjs/common`/`core`. Its `latest` dist-tag is Nest 12, which a bare `pnpm add` installs
 
 ## Key Domain Concepts
@@ -200,7 +190,7 @@ The app computes German readability indices:
 - **WSTF** (Wiener Sachtextformel variant)
 - **LÜ-LIX** (custom weighted composite score)
 
-The default parameters come from a `config.json` (`CONFIG_FILE`), read per request; a visitor can override them for one request in "Erweiterte Einstellungen", and the page sends only the values that differ from the default. The `Config` table and the admin page no longer change the default. Analysis results are not stored (ADR 0008; the `Result` table is empty and goes with the database).
+The default parameters come from a `config.json` (`CONFIG_FILE`), read per request; a visitor can override them for one request in "Erweiterte Einstellungen", and the page sends only the values that differ from the default. The app has no accounts and no admin page (ADR 0008); the `Config` table is unused. Analysis results are not stored (ADR 0008; the `Result` table is empty and goes with the database).
 
 ## Design Context
 

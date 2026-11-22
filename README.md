@@ -4,7 +4,7 @@ German text readability analysis tool for teachers and educators. Computes reada
 
 ## Tech Stack
 
-- **Backend**: NestJS + Express, Prisma 7, PostgreSQL, Better-Auth
+- **Backend**: NestJS + Express, Prisma 7, PostgreSQL
 - **Frontend**: Vue 3 SPA (Vite, vue-router), PrimeVue 4, Tailwind CSS, Chart.js; served by the backend
 - **NLP**: R Plumber sidecar (sentence splitting, syllable counting, POS tagging)
 - **Toolchain**: pnpm, Vite, Vitest, vue-tsc, oxlint, oxfmt

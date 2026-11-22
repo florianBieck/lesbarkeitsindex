@@ -26,7 +26,6 @@ const { calculateMock, getConfigMock } = vi.hoisted(() => ({
 vi.mock(import('@/composables/useApiClient'), () => ({
   useApiClient: () => ({
     getConfig: getConfigMock,
-    updateConfig: vi.fn(),
     calculate: calculateMock,
   }),
 }));

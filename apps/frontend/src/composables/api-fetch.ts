@@ -10,6 +10,38 @@ function toQueryString(query: Record<string, unknown> = {}): string {
   return search ? `?${search}` : '';
 }
 
+/** Fehlerkennung des Backends für eine vorhandene, aber fehlerhafte `config.json` (ADR 0008). */
+const CONFIG_INVALID_CODE = 'CONFIG_INVALID';
+
+/** A non-2xx answer: the status, and the `error` code of the JSON body when it has one. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code: string | undefined,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+/** True when the backend refused because its `config.json` is invalid. */
+export const isConfigInvalid = (error: unknown): boolean =>
+  error instanceof ApiError && error.code === CONFIG_INVALID_CODE;
+
+async function errorCodeOf(response: Response): Promise<string | undefined> {
+  try {
+    const body: unknown = await response.json();
+    if (typeof body === 'object' && body !== null && 'error' in body) {
+      return typeof body.error === 'string' ? body.error : undefined;
+    }
+    return undefined;
+  } catch {
+    // Kein JSON (etwa eine Fehlerseite der Edge): Der Status allein muss reichen.
+    return undefined;
+  }
+}
+
 /**
  * The API client's fetcher on native `fetch`. Paths stay relative: the browser
  * only ever talks to its own origin (ADR 0007), so cookies go along by default.
@@ -24,7 +56,11 @@ export const apiFetch: ApiFetch = async <T>(
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error(`${method} ${path} failed with status ${response.status}`);
+    throw new ApiError(
+      `${method} ${path} failed with status ${response.status}`,
+      response.status,
+      await errorCodeOf(response),
+    );
   }
   return (await response.json()) as T;
 };

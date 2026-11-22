@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import type { Config } from '@lesbarkeitsindex/api-client';
 import ConfigWeightsForm from '@/components/config-weights-form.vue';
 import type { useApiClient } from '@/composables/useApiClient';
 
@@ -8,8 +7,8 @@ import type { useApiClient } from '@/composables/useApiClient';
  * Unit-Test für die gemeinsame Gewichtungs-Eingabemaske (Aufschlag α + vier
  * WK-Gewichte), die von Startseite und Admin-Seite verwendet wird.
  *
- * Die Maske besitzt keinen eigenen Zustand: die Seiten binden per v-model.
- * Beim Mount hydriert sie die Modelle aus der gespeicherten Konfiguration.
+ * Die Maske besitzt keinen eigenen Zustand und lädt nichts: Die Seiten binden
+ * per v-model und holen die Standardwerte selbst.
  */
 
 type ApiClient = ReturnType<typeof useApiClient>;
@@ -29,16 +28,6 @@ vi.mock(import('@/composables/useApiClient'), () => ({
   }),
 }));
 
-const DB_CONFIG: Config = {
-  id: 'cfg-1',
-  createdAt: '2026-06-12T08:00:00.000Z',
-  alpha: 0.45,
-  weightComplexSyllables: 40,
-  weightMultiMemberedGraphemes: 30,
-  weightRareGraphemes: 20,
-  weightConsonantClusters: 10,
-};
-
 const MODEL_PROPS = {
   alpha: 0.3,
   weightComplexSyllables: 50,
@@ -50,7 +39,6 @@ const MODEL_PROPS = {
 describe('ConfigWeightsForm', () => {
   beforeEach(() => {
     getConfigMock.mockReset();
-    getConfigMock.mockResolvedValue(DB_CONFIG);
   });
 
   it('rendert die fünf Eingabefelder mit den bekannten Ids und deutschen Labels', async () => {
@@ -75,30 +63,14 @@ describe('ConfigWeightsForm', () => {
     expect(text).toContain('Konsonantenlauthäufung');
   });
 
-  it('hydriert die Modelle beim Mount aus der gespeicherten Konfiguration', async () => {
-    const onAlpha = vi.fn();
-    const onComplex = vi.fn();
-    const onMulti = vi.fn();
-    const onRare = vi.fn();
-    const onClusters = vi.fn();
-
-    mount(ConfigWeightsForm, {
-      props: {
-        ...MODEL_PROPS,
-        'onUpdate:alpha': onAlpha,
-        'onUpdate:weightComplexSyllables': onComplex,
-        'onUpdate:weightMultiMemberedGraphemes': onMulti,
-        'onUpdate:weightRareGraphemes': onRare,
-        'onUpdate:weightConsonantClusters': onClusters,
-      },
+  it('zeigt die gebundenen Werte und lädt selbst keine Konfiguration', async () => {
+    const wrapper = mount(ConfigWeightsForm, {
+      props: { ...MODEL_PROPS, alpha: 0.45, weightRareGraphemes: 20 },
     });
     await flushPromises();
 
-    expect(getConfigMock).toHaveBeenCalledTimes(1);
-    expect(onAlpha).toHaveBeenCalledWith(0.45);
-    expect(onComplex).toHaveBeenCalledWith(40);
-    expect(onMulti).toHaveBeenCalledWith(30);
-    expect(onRare).toHaveBeenCalledWith(20);
-    expect(onClusters).toHaveBeenCalledWith(10);
+    expect(wrapper.find<HTMLInputElement>('#param-alpha input').element.value).toBe('0.45');
+    expect(wrapper.find<HTMLInputElement>('#weight-rare-graphemes input').element.value).toBe('20');
+    expect(getConfigMock).not.toHaveBeenCalled();
   });
 });

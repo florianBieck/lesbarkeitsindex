@@ -5,15 +5,15 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { CalculateController } from '../src/calculate/calculate.controller.js';
 import { CalculateService } from '../src/calculate/calculate.service.js';
-import { PrismaService } from '../src/prisma/prisma.service.js';
+import { DefaultConfigService } from '../src/config/default-config.service.js';
 import { RSidecarService } from '../src/r-sidecar/r-sidecar.service.js';
-import { Prisma } from '../src/generated/prisma/client.js';
 
 /**
  * NestJS-Integrationstest für den Analyse-Endpunkt (Issue #28, AC6).
  *
  * Prüft den API-Vertrag (Antwortfelder, Validierungsfehler) des Aufschlagsmodells
- * mit gemocktem R-Dienst und gemockter Konfiguration — ohne laufenden Stack.
+ * mit gemocktem R-Dienst und den eingebauten Standardwerten (keine config.json) —
+ * ohne laufenden Stack.
  */
 
 const ANALYSIS = {
@@ -23,41 +23,30 @@ const ANALYSIS = {
   posTags: ['ART', 'NN', 'VVFIN', 'ADJA', 'NN'],
 };
 
-const SEED_CONFIG = {
-  id: 'config-seed',
-  createdAt: new Date('2026-01-01T00:00:00Z'),
-  alpha: new Prisma.Decimal(0.3),
-  weightComplexSyllables: new Prisma.Decimal(50),
-  weightMultiMemberedGraphemes: new Prisma.Decimal(25),
-  weightRareGraphemes: new Prisma.Decimal(12.5),
-  weightConsonantClusters: new Prisma.Decimal(12.5),
-};
-
 const TEXT = 'Die Kinder schreiben spannende Geschichten.';
 
 function buildMocks() {
   const analyzeText = vi.fn(async () => ANALYSIS);
-  const configFindFirst = vi.fn(async () => SEED_CONFIG);
   return {
     analyzeText,
-    // Nur Lesezugriff: Es gibt keine Persistenz mehr, ein Schreibversuch schlüge fehl.
-    prisma: { config: { findFirst: configFindFirst } },
     rSidecar: { analyzeText },
   };
 }
 
-describe('POST /api/calculate — Integrationstest (R-Dienst & Konfiguration gemockt, AC6)', () => {
+describe('POST /api/calculate — Integrationstest (R-Dienst gemockt, AC6)', () => {
   let app: NestExpressApplication;
   let baseUrl: string;
   let mocks: ReturnType<typeof buildMocks>;
 
   beforeAll(async () => {
+    // Eine CONFIG_FILE aus der Umgebung des Entwicklers darf die Erwartungen nicht verschieben.
+    vi.stubEnv('CONFIG_FILE', '');
     mocks = buildMocks();
     const moduleRef = await Test.createTestingModule({
       controllers: [CalculateController],
       providers: [
         CalculateService,
-        { provide: PrismaService, useValue: mocks.prisma },
+        DefaultConfigService,
         { provide: RSidecarService, useValue: mocks.rSidecar },
       ],
     }).compile();
@@ -69,6 +58,7 @@ describe('POST /api/calculate — Integrationstest (R-Dienst & Konfiguration gem
   });
 
   afterAll(async () => {
+    vi.unstubAllEnvs();
     await app.close();
   });
 

@@ -2,7 +2,7 @@ import { describe, test, expect, vi } from 'vitest';
 import { InternalServerErrorException, ServiceUnavailableException } from '@nestjs/common';
 import { CalculateService } from './calculate.service.js';
 
-type PrismaParam = ConstructorParameters<typeof CalculateService>[0];
+type DefaultConfigParam = ConstructorParameters<typeof CalculateService>[0];
 type SidecarParam = ConstructorParameters<typeof CalculateService>[1];
 
 const BODY_ANALYSIS = {
@@ -12,29 +12,26 @@ const BODY_ANALYSIS = {
   posTags: ['NN', 'VAFIN', 'ADJA', 'NN'],
 };
 
-/** Gespeicherte Standardkonfiguration, wie sie prisma.config.findFirst liefert (Decimal-Doubles). */
-const DB_CONFIG = {
-  id: 'config-1',
-  createdAt: new Date('2026-06-24T00:00:00.000Z'),
-  alpha: { toNumber: () => 0.3 },
-  weightComplexSyllables: { toNumber: () => 50 },
-  weightMultiMemberedGraphemes: { toNumber: () => 25 },
-  weightRareGraphemes: { toNumber: () => 12.5 },
-  weightConsonantClusters: { toNumber: () => 12.5 },
+/** Standardkonfiguration, wie DefaultConfigService.read sie aus der config.json liefert. */
+const DEFAULT_CONFIG = {
+  alpha: 0.3,
+  weightComplexSyllables: 50,
+  weightMultiMemberedGraphemes: 25,
+  weightRareGraphemes: 12.5,
+  weightConsonantClusters: 12.5,
+  impressumUrl: 'https://example.org/impressum',
 };
 
 function makeService() {
-  const configFindFirstMock = vi.fn(async () => DB_CONFIG);
+  const readDefaultConfigMock = vi.fn(async () => DEFAULT_CONFIG);
   const analyzeTextMock = vi.fn(async () => BODY_ANALYSIS);
-  // Nur Lesezugriff auf die Konfiguration: ein Schreibversuch (config.create,
-  // result.create) schlüge mit einem TypeError fehl.
-  const prismaMock = { config: { findFirst: configFindFirstMock } };
+  const defaultConfigMock = { read: readDefaultConfigMock };
   const rSidecarMock = { analyzeText: analyzeTextMock };
   const service = new CalculateService(
-    prismaMock as unknown as PrismaParam,
+    defaultConfigMock as unknown as DefaultConfigParam,
     rSidecarMock as unknown as SidecarParam,
   );
-  return { service, analyzeTextMock };
+  return { service, analyzeTextMock, readDefaultConfigMock };
 }
 
 describe('CalculateService', () => {
@@ -112,6 +109,17 @@ describe('CalculateService', () => {
       weightRareGraphemes: 40,
       weightConsonantClusters: 12.5,
     });
+  });
+
+  test('eine fehlerhafte Konfiguration bricht ab, bevor der R-Sidecar gerufen wird', async () => {
+    const { service, analyzeTextMock, readDefaultConfigMock } = makeService();
+    const configError = new InternalServerErrorException('Konfiguration fehlerhaft');
+    readDefaultConfigMock.mockRejectedValueOnce(configError);
+
+    await expect(
+      service.calculate({ text: 'Igel sind nachtaktive Tiere.', overrides: {} }),
+    ).rejects.toBe(configError);
+    expect(analyzeTextMock).not.toHaveBeenCalled();
   });
 
   test('die Antwort trägt keine Datenbankfelder', async () => {

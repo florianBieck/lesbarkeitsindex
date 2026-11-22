@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiFetch } from '@/composables/api-fetch';
+import { ApiError, apiFetch, isConfigInvalid } from '@/composables/api-fetch';
 
 /**
  * Der `ApiFetch` des API-Clients auf nativem `fetch`: relative URLs zum eigenen
@@ -69,5 +69,30 @@ describe('apiFetch', () => {
     await expect(apiFetch('/api/config', { method: 'POST', body: { alpha: 0.3 } })).rejects.toThrow(
       'POST /api/config failed with status 401',
     );
+  });
+
+  it('der Fehler trägt Status und Fehlerkennung der Antwort', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ statusCode: 500, error: 'CONFIG_INVALID', message: 'fehlerhaft' }, 500),
+    );
+
+    const error = await apiFetch('/api/config').catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 500, code: 'CONFIG_INVALID' });
+    expect(isConfigInvalid(error)).toBe(true);
+  });
+
+  it('eine Fehlerantwort ohne JSON-Body ergibt einen Fehler ohne Kennung', async () => {
+    fetchMock.mockResolvedValue(new Response('Bad Gateway', { status: 502 }));
+
+    const error = await apiFetch('/api/config').catch((e: unknown) => e);
+
+    expect(error).toMatchObject({ status: 502, code: undefined });
+    expect(isConfigInvalid(error)).toBe(false);
+  });
+
+  it('ein Netzwerkfehler ist keine fehlerhafte Konfiguration', () => {
+    expect(isConfigInvalid(new TypeError('Failed to fetch'))).toBe(false);
   });
 });

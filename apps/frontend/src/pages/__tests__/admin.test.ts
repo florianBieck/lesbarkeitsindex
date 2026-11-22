@@ -31,8 +31,6 @@ vi.mock(import('@/composables/useApiClient'), () => ({
 }));
 
 const DB_CONFIG: Config = {
-  id: 'cfg-1',
-  createdAt: '2026-06-12T08:00:00.000Z',
   alpha: 0.3,
   weightComplexSyllables: 50,
   weightMultiMemberedGraphemes: 25,
@@ -45,7 +43,7 @@ describe('AdminPage — Summe-100-Validierung (Issue #29, AC2)', () => {
     updateConfigMock.mockReset();
     getConfigMock.mockReset();
     getConfigMock.mockResolvedValue(DB_CONFIG);
-    updateConfigMock.mockResolvedValue({ ...DB_CONFIG, id: 'cfg-2' });
+    updateConfigMock.mockResolvedValue(DB_CONFIG);
   });
 
   it('lädt die aktuelle Konfiguration beim Mount und schreibt sie beim Speichern unverändert zurück', async () => {

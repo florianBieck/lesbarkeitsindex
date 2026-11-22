@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { toJsonNumbers } from '../serialize.js';
+import { DefaultConfigService } from './default-config.service.js';
 import { z } from 'zod';
 
 // Toleranz für die Summenprüfung der WK-Gewichte (Gleitkomma-Eingaben).
@@ -33,17 +34,15 @@ const UpdateConfigSchema = z
 
 @Controller('config')
 export class AppConfigController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly defaultConfig: DefaultConfigService,
+  ) {}
 
+  /** Die Standardkonfiguration aus der `config.json` (ADR 0008), samt der optionalen Links. */
   @Get()
-  async getConfig(@Res() res: Response) {
-    const config = await this.prisma.config.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-    if (!config) {
-      return res.status(HttpStatus.NOT_FOUND).send();
-    }
-    return res.send(toJsonNumbers(config));
+  getConfig() {
+    return this.defaultConfig.read();
   }
 
   @Post()

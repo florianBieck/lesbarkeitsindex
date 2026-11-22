@@ -73,6 +73,7 @@
           <main>
             <RouterView />
           </main>
+          <LegalLinks />
         </div>
       </template>
     </Card>
@@ -85,6 +86,7 @@ import Menu from 'primevue/menu';
 import { computed, ref } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
 import logoUrl from '@/assets/logo-lessmann.png';
+import LegalLinks from '@/components/legal-links.vue';
 import { useAuthClient } from '@/composables/useAuthClient';
 
 const client = useAuthClient();

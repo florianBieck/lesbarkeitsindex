@@ -184,8 +184,9 @@ jobs:
           }
           EOF
 
-      # /api/config reads the database; both answers must pass through the
-      # edge, which adds HSTS.
+      # /api/config reads the default configuration (config.json or the
+      # built-in defaults) and fails on an invalid file; both answers must pass
+      # through the edge, which adds HSTS.
       - name: Smoke check
         env:
           SMOKE_TIMEOUT_SECONDS: 120

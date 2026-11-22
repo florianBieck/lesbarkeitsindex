@@ -38,7 +38,7 @@ apps/
       health.controller.ts
       prisma/         # PrismaModule + PrismaService
       auth/           # AuthModule, AuthService, AuthController, AuthGuard
-      config/         # ConfigController (GET/POST /api/config)
+      config/         # ConfigController (GET/POST /api/config), default-config.ts (config.json reader)
       calculate/      # CalculateController, CalculateService
         result/       # Pure computation functions
           index.ts    # computeReadability() — barrel exports
@@ -58,7 +58,7 @@ apps/
       main.ts         # createApp, router, PrimeVue (Aura)
       router.ts       # Hand-written route table
       pages/          # index, login, logout, admin, not-found
-      components/     # result-view, config-weights-form
+      components/     # result-view, config-weights-form, legal-links
       composables/    # useApiClient + api-fetch (native fetch), useAuthClient
     e2e/              # Playwright specs; fixtures.ts fails any test on a CSP violation
     smoke/            # Playwright smoke test against prod
@@ -98,6 +98,8 @@ BETTER_AUTH_SECRET=dev-secret
 BETTER_AUTH_URL=http://localhost:3000
 ```
 
+Optional: `CONFIG_FILE`, the path of a `config.json` with the default configuration (`alpha`, the four `weight*` values, optional `impressumUrl` / `datenschutzUrl`). The backend reads it on every request; a relative path resolves against the backend's working directory (`apps/backend` in dev). Unset or no file: built-in defaults. An invalid file makes `GET /api/config` and `POST /api/calculate` answer 500 with `error: "CONFIG_INVALID"`.
+
 Single `.env` at the project root, read by the backend (`process.loadEnvFile` in `main.ts`). The frontend has no settings: it calls `/api` on its own origin, and the Vite dev and preview servers proxy that to :3000.
 
 ## Testing
@@ -135,8 +137,8 @@ Playwright runs Chromium only, on a single worker.
 Every backend route lives under `/api/` (ADR 0004); every other GET path gets the SPA's file or `index.html` (ADR 0007).
 
 - `GET /api/health` — health check
-- `GET /api/config` — current readability config
-- `POST /api/config` — update config (requires auth)
+- `GET /api/config` — default configuration from `config.json` (or the built-in defaults), plus the optional footer link URLs
+- `POST /api/config` — writes a `Config` row that nothing reads any more (requires auth; goes with the accounts, #95)
 - `POST /api/calculate` — analyze text readability; nothing is stored or logged (ADR 0008)
 - `/api/auth/*` — Better-Auth endpoints
 
@@ -198,7 +200,7 @@ The app computes German readability indices:
 - **WSTF** (Wiener Sachtextformel variant)
 - **LÜ-LIX** (custom weighted composite score)
 
-Parameters are stored in a `Config` model; the admin page changes the default, and a visitor can override it for one request. Analysis results are not stored (ADR 0008; the `Result` table is empty and goes with the database).
+The default parameters come from a `config.json` (`CONFIG_FILE`), read per request; a visitor can override them for one request in "Erweiterte Einstellungen", and the page sends only the values that differ from the default. The `Config` table and the admin page no longer change the default. Analysis results are not stored (ADR 0008; the `Result` table is empty and goes with the database).
 
 ## Design Context
 

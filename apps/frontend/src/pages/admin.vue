@@ -42,7 +42,7 @@
 </template>
 <script setup lang="ts">
 import Button from 'primevue/button';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import ConfigWeightsForm from '@/components/config-weights-form.vue';
 import { useApiClient } from '@/composables/useApiClient';
 
@@ -56,6 +56,20 @@ const weightComplexSyllables = ref(50);
 const weightMultiMemberedGraphemes = ref(25);
 const weightRareGraphemes = ref(12.5);
 const weightConsonantClusters = ref(12.5);
+
+// Die Maske lädt nichts mehr selbst (#94); die Seite entfällt mit den Konten (#95).
+onMounted(async () => {
+  try {
+    const config = await client.getConfig();
+    alpha.value = config.alpha;
+    weightComplexSyllables.value = config.weightComplexSyllables;
+    weightMultiMemberedGraphemes.value = config.weightMultiMemberedGraphemes;
+    weightRareGraphemes.value = config.weightRareGraphemes;
+    weightConsonantClusters.value = config.weightConsonantClusters;
+  } catch (e) {
+    console.error('Konfiguration konnte nicht geladen werden', e);
+  }
+});
 
 const loading = ref(false);
 const validationError = ref('');

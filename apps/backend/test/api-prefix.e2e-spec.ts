@@ -4,6 +4,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { HealthController } from '../src/health.controller.js';
 import { AppConfigController } from '../src/config/config.controller.js';
+import { DefaultConfigService } from '../src/config/default-config.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { AuthController } from '../src/auth/auth.controller.js';
 import { AuthService } from '../src/auth/auth.service.js';
@@ -18,16 +19,6 @@ import {
  * Routing boundary (ADR 0004): every backend route lives under `/api/`; the
  * frontend owns every other path.
  */
-
-const SEED_CONFIG = {
-  id: 'config-seed',
-  createdAt: new Date('2026-01-01T00:00:00Z'),
-  alpha: 0.3,
-  weightComplexSyllables: 50,
-  weightMultiMemberedGraphemes: 25,
-  weightRareGraphemes: 12.5,
-  weightConsonantClusters: 12.5,
-};
 
 /** Better-Auth's sign-out clears three cookies in one response. */
 const SIGN_OUT_COOKIES = [
@@ -71,10 +62,9 @@ describe('API prefix /api/ (ADR 0004)', () => {
     const moduleRef = await spaTestingModule(fixture.root, {
       controllers: [HealthController, AppConfigController, AuthController],
       providers: [
-        {
-          provide: PrismaService,
-          useValue: { config: { findFirst: vi.fn(async () => SEED_CONFIG) } },
-        },
+        DefaultConfigService,
+        // Only POST /api/config touches the database, and no spec here calls it.
+        { provide: PrismaService, useValue: {} },
         { provide: AuthService, useValue: { auth: { handler: authHandler } } },
       ],
     }).compile();

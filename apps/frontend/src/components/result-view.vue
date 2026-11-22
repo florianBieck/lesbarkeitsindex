@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Chip from 'primevue/chip';
 import Fieldset from 'primevue/fieldset';
+import Message from 'primevue/message';
 import MeterGroup from 'primevue/metergroup';
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import type { ResultData } from '@/composables/useApiClient';
@@ -25,6 +26,8 @@ const chartColors = ref({
 
 const props = defineProps<{
   result: ResultData;
+  /** Das Ergebnis wurde mit anderen Werten als der Standardkonfiguration berechnet (ADR 0008). */
+  deviatesFromDefault?: boolean;
 }>();
 
 const chartData = ref();
@@ -298,6 +301,10 @@ onMounted(() => {
         <i :class="severityStyle.icon" aria-hidden="true" />
         Niveaustufe {{ level }} &mdash; {{ levelInfo.label }}
       </p>
+      <Message v-if="deviatesFromDefault" severity="warn" :closable="false">
+        <strong>Abweichende Einstellungen:</strong> Dieses Ergebnis wurde nicht mit den
+        Standardwerten berechnet (siehe &bdquo;Verwendete Gewichtung&ldquo;).
+      </Message>
     </div>
 
     <div v-if="result.title" class="pb-5 text-center">

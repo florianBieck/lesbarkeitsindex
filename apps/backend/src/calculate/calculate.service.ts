@@ -3,7 +3,7 @@ import {
   ServiceUnavailableException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { DefaultConfigService } from '../config/default-config.service.js';
 import { RSidecarService } from '../r-sidecar/r-sidecar.service.js';
 import {
   computeReadability,
@@ -30,7 +30,7 @@ export interface CalculateParams {
 @Injectable()
 export class CalculateService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly defaultConfig: DefaultConfigService,
     private readonly rSidecar: RSidecarService,
   ) {}
 
@@ -41,23 +41,17 @@ export class CalculateService {
   async calculate(params: CalculateParams) {
     const { text, overrides, textTypeOverride } = params;
 
-    const dbConfig = await this.prisma.config.findFirst({ orderBy: { createdAt: 'desc' } });
-    if (!dbConfig) {
-      throw new InternalServerErrorException('Keine Konfiguration vorhanden');
-    }
-
-    // Effektive Gewichte als Zahlen: gespeicherte Standardkonfiguration, von der
-    // Anfrage überschrieben. Prisma-Decimal wird hier aufgelöst — die Berechnung
-    // bekommt nur noch Zahlen.
+    // Effektive Werte: die Standardkonfiguration aus der config.json, von der
+    // Anfrage überschrieben. Eine fehlerhafte Datei bricht hier ab, bevor gerechnet wird.
+    const defaults = await this.defaultConfig.read();
     const config: ConfigWeights = {
-      alpha: overrides.alpha ?? dbConfig.alpha.toNumber(),
-      weightComplexSyllables:
-        overrides.weightComplexSyllables ?? dbConfig.weightComplexSyllables.toNumber(),
+      alpha: overrides.alpha ?? defaults.alpha,
+      weightComplexSyllables: overrides.weightComplexSyllables ?? defaults.weightComplexSyllables,
       weightMultiMemberedGraphemes:
-        overrides.weightMultiMemberedGraphemes ?? dbConfig.weightMultiMemberedGraphemes.toNumber(),
-      weightRareGraphemes: overrides.weightRareGraphemes ?? dbConfig.weightRareGraphemes.toNumber(),
+        overrides.weightMultiMemberedGraphemes ?? defaults.weightMultiMemberedGraphemes,
+      weightRareGraphemes: overrides.weightRareGraphemes ?? defaults.weightRareGraphemes,
       weightConsonantClusters:
-        overrides.weightConsonantClusters ?? dbConfig.weightConsonantClusters.toNumber(),
+        overrides.weightConsonantClusters ?? defaults.weightConsonantClusters,
     };
 
     // Dieselbe Textgestalt-Auflösung wie in computeReadability (text-shape.ts).

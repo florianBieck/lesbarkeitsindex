@@ -4,8 +4,6 @@ import type { Config } from '@lesbarkeitsindex/api-client';
 import type { ResultData } from '@/composables/useApiClient';
 
 export const makeConfig = (overrides: Partial<Config> = {}): Config => ({
-  id: 'config-1',
-  createdAt: '2026-06-12T08:00:00.000Z',
   alpha: 0.3,
   weightComplexSyllables: 50,
   weightMultiMemberedGraphemes: 25,

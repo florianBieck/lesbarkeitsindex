@@ -52,13 +52,11 @@
 </template>
 <script setup lang="ts">
 import InputNumber from 'primevue/inputnumber';
-import { onMounted } from 'vue';
-import { useApiClient } from '@/composables/useApiClient';
 
 // Gemeinsame Eingabemaske für den Aufschlag α und die vier WK-Gewichte
 // (Startseite „Erweiterte Einstellungen" und Admin-Konfiguration).
-// Die Seiten besitzen den Zustand (v-model); die Maske lädt beim Mount die
-// gespeicherte Konfiguration und schreibt sie in die Modelle zurück.
+// Die Seiten besitzen den Zustand (v-model) und laden die Standardwerte selbst;
+// die Maske zeigt und ändert nur.
 const alpha = defineModel<number>('alpha', { required: true });
 const weightComplexSyllables = defineModel<number>('weightComplexSyllables', { required: true });
 const weightMultiMemberedGraphemes = defineModel<number>('weightMultiMemberedGraphemes', {
@@ -93,19 +91,4 @@ const weightFields = [
     model: weightConsonantClusters,
   },
 ];
-
-const client = useApiClient();
-
-onMounted(async () => {
-  try {
-    const config = await client.getConfig();
-    alpha.value = config.alpha;
-    weightComplexSyllables.value = config.weightComplexSyllables;
-    weightMultiMemberedGraphemes.value = config.weightMultiMemberedGraphemes;
-    weightRareGraphemes.value = config.weightRareGraphemes;
-    weightConsonantClusters.value = config.weightConsonantClusters;
-  } catch (e) {
-    console.error('Konfiguration konnte nicht geladen werden', e);
-  }
-});
 </script>

@@ -44,10 +44,13 @@ export interface ConfigWeights {
   weightConsonantClusters: number;
 }
 
-/** Die gespeicherte Standardkonfiguration, wie `GET /api/config` sie liefert. */
+/**
+ * Die Standardkonfiguration aus der `config.json`, wie `GET /api/config` sie liefert
+ * (ADR 0008): die fünf Werte und die Links der Fußzeile, soweit die Datei sie nennt.
+ */
 export interface Config extends ConfigWeights {
-  id: string;
-  createdAt: string;
+  impressumUrl?: string;
+  datenschutzUrl?: string;
 }
 
 /** Ergebnis einer Analyse. Es existiert nur in dieser Antwort: Die App speichert nichts (ADR 0008). */
@@ -151,7 +154,7 @@ export function createApiClient(fetcher: ApiFetch) {
   return {
     getConfig: () => fetcher<Config>(`${API_PREFIX}/config`),
     updateConfig: (body: UpdateConfigRequest) =>
-      fetcher<Config>(`${API_PREFIX}/config`, { method: 'POST', body }),
+      fetcher<ConfigWeights>(`${API_PREFIX}/config`, { method: 'POST', body }),
     calculate: (body: CalculateRequest) =>
       fetcher<ResultData>(`${API_PREFIX}/calculate`, { method: 'POST', body }),
   };

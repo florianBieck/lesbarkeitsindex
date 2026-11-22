@@ -34,6 +34,22 @@ describe('result-view', () => {
     expect(wrapper.find('[data-testid="chart-stub"]').exists()).toBe(true);
   });
 
+  it('zeigt ohne Abweichung keinen Hinweis auf abweichende Einstellungen', async () => {
+    const wrapper = mount(ResultView, { props: { result: makeResult() } });
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Abweichende Einstellungen');
+  });
+
+  it('weist auf abweichende Einstellungen hin, wenn nicht mit dem Standard gerechnet wurde', async () => {
+    const wrapper = mount(ResultView, {
+      props: { result: makeResult(), deviatesFromDefault: true },
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Abweichende Einstellungen');
+  });
+
   it('zeigt den erkannten Titel mit der Beschriftung "Titel" an', async () => {
     const wrapper = mount(ResultView, {
       props: { result: makeResult({ title: 'Der Igel' }) },

@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
 import { AppConfigController } from '../src/config/config.controller.js';
+import { DefaultConfigService } from '../src/config/default-config.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { AuthGuard } from '../src/auth/auth.guard.js';
 import { Prisma } from '../src/generated/prisma/client.js';
@@ -50,7 +51,7 @@ describe('POST /api/config — Zod-Validierung Admin-Konfiguration (Issue #29, A
     mocks = buildMocks();
     const moduleRef = await Test.createTestingModule({
       controllers: [AppConfigController],
-      providers: [{ provide: PrismaService, useValue: mocks.prisma }],
+      providers: [DefaultConfigService, { provide: PrismaService, useValue: mocks.prisma }],
     })
       .overrideGuard(AuthGuard)
       .useValue({ canActivate: () => true })

@@ -172,11 +172,11 @@ jobs:
           node dist/main.js > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
           curl -fsS --retry 30 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:3000/api/health
 
-      # No-auth smoke only: homepage (incl. the #27 weighting assertion), results
-      # and the not-found page. Auth-dependent specs (login, navigation,
+      # No-auth smoke only: homepage (incl. the #27 weighting assertion) and the
+      # not-found page. Auth-dependent specs (login, navigation,
       # auth-flow) stay local-only.
       - name: Run frontend e2e (no-auth smoke)
-        run: pnpm --filter frontend exec playwright test e2e/homepage.spec.ts e2e/results.spec.ts e2e/not-found.spec.ts
+        run: pnpm --filter frontend exec playwright test e2e/homepage.spec.ts e2e/not-found.spec.ts
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}

@@ -24,27 +24,17 @@ const DB_CONFIG = {
 };
 
 function makeService() {
-  const resultCreateMock = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
-    ...data,
-    id: 'result-1',
-  }));
   const configFindFirstMock = vi.fn(async () => DB_CONFIG);
-  const configCreateMock = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
-    ...DB_CONFIG,
-    ...data,
-    id: 'config-new',
-  }));
   const analyzeTextMock = vi.fn(async () => BODY_ANALYSIS);
-  const prismaMock = {
-    result: { create: resultCreateMock },
-    config: { findFirst: configFindFirstMock, create: configCreateMock },
-  };
+  // Nur Lesezugriff auf die Konfiguration: ein Schreibversuch (config.create,
+  // result.create) schlüge mit einem TypeError fehl.
+  const prismaMock = { config: { findFirst: configFindFirstMock } };
   const rSidecarMock = { analyzeText: analyzeTextMock };
   const service = new CalculateService(
     prismaMock as unknown as PrismaParam,
     rSidecarMock as unknown as SidecarParam,
   );
-  return { service, createMock: resultCreateMock, analyzeTextMock };
+  return { service, analyzeTextMock };
 }
 
 describe('CalculateService', () => {
@@ -53,7 +43,6 @@ describe('CalculateService', () => {
 
     await service.calculate({
       text: 'Der Igel\nIgel sind nachtaktive Tiere.',
-      saveResult: false,
       overrides: {},
     });
 
@@ -65,7 +54,6 @@ describe('CalculateService', () => {
 
     await service.calculate({
       text: 'Igel sind nachtaktive Tiere.',
-      saveResult: false,
       overrides: {},
     });
 
@@ -76,39 +64,64 @@ describe('CalculateService', () => {
     const { service, analyzeTextMock } = makeService();
     const text = 'Das ist ein Satz.\nWeiter geht es hier.';
 
-    await service.calculate({ text, saveResult: false, overrides: {} });
+    await service.calculate({ text, overrides: {} });
 
     expect(analyzeTextMock).toHaveBeenCalledExactlyOnceWith(text);
   });
 
-  test('persistiert den Titel und Fließtext-Kennzahlen bei saveResult=true', async () => {
-    const { service, createMock } = makeService();
+  test('liefert Titel und Fließtext-Kennzahlen zurück', async () => {
+    const { service } = makeService();
     const text = 'Der Igel\nIgel sind nachtaktive Tiere.';
 
-    await service.calculate({ text, saveResult: true, overrides: {} });
+    const result = await service.calculate({ text, overrides: {} });
 
-    expect(createMock).toHaveBeenCalledTimes(1);
-    const { data } = createMock.mock.calls[0]![0];
-    expect(data['title']).toBe('Der Igel');
-    expect(data['text']).toBe(text);
-    expect(data['countWords']).toBe(4);
+    expect(result.title).toBe('Der Igel');
+    expect(result.text).toBe(text);
+    expect(result.countWords).toBe(4);
   });
 
-  test('liefert die effektiven Gewichte (numerisch) in result.config bei saveResult=false', async () => {
-    const { service, createMock } = makeService();
+  test('liefert die Standardkonfiguration als fünf Zahlen in result.config', async () => {
+    const { service } = makeService();
 
     const result = await service.calculate({
       text: 'Der Igel\nIgel sind nachtaktive Tiere.',
-      saveResult: false,
       overrides: {},
     });
 
-    expect(createMock).not.toHaveBeenCalled();
-    expect(result.title).toBe('Der Igel');
-    expect(result.id).toBe('');
-    expect(result.config.id).toBe('config-1');
-    expect(result.config.alpha).toBe(0.3);
-    expect(result.config.weightComplexSyllables).toBe(50);
+    expect(result.config).toEqual({
+      alpha: 0.3,
+      weightComplexSyllables: 50,
+      weightMultiMemberedGraphemes: 25,
+      weightRareGraphemes: 12.5,
+      weightConsonantClusters: 12.5,
+    });
+  });
+
+  test('Overrides der Anfrage ersetzen einzelne Standardwerte in result.config', async () => {
+    const { service } = makeService();
+
+    const result = await service.calculate({
+      text: 'Igel sind nachtaktive Tiere.',
+      overrides: { alpha: 1, weightRareGraphemes: 40 },
+    });
+
+    expect(result.config).toEqual({
+      alpha: 1,
+      weightComplexSyllables: 50,
+      weightMultiMemberedGraphemes: 25,
+      weightRareGraphemes: 40,
+      weightConsonantClusters: 12.5,
+    });
+  });
+
+  test('die Antwort trägt keine Datenbankfelder', async () => {
+    const { service } = makeService();
+
+    const result = await service.calculate({ text: 'Igel sind nachtaktive Tiere.', overrides: {} });
+
+    expect(result).not.toHaveProperty('id');
+    expect(result).not.toHaveProperty('createdAt');
+    expect(result).not.toHaveProperty('configId');
   });
 
   test('liefert leeren Titel für Text ohne Überschrift zurück', async () => {
@@ -116,7 +129,6 @@ describe('CalculateService', () => {
 
     const result = await service.calculate({
       text: 'Igel sind nachtaktive Tiere.',
-      saveResult: false,
       overrides: {},
     });
 
@@ -130,12 +142,12 @@ describe('CalculateService', () => {
     );
 
     await expect(
-      service.calculate({ text: 'Der Igel\nIgel schlafen.', saveResult: false, overrides: {} }),
+      service.calculate({ text: 'Der Igel\nIgel schlafen.', overrides: {} }),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
   test('reicht textTypeOverride durch und schickt bei Liste den vollen Text an den R-Sidecar', async () => {
-    const { service, analyzeTextMock, createMock } = makeService();
+    const { service, analyzeTextMock } = makeService();
     analyzeTextMock.mockResolvedValueOnce({
       sentences: ['Sonne Eis essen Im Garten spielen.', 'Schwimmen'],
       words: ['Sonne', 'Eis', 'essen', 'Im', 'Garten', 'spielen', 'Schwimmen'],
@@ -144,15 +156,14 @@ describe('CalculateService', () => {
     });
     const text = 'Sonne\nEis essen\nIm Garten spielen.\nSchwimmen';
 
-    await service.calculate({ text, saveResult: true, overrides: {}, textTypeOverride: 'list' });
+    const result = await service.calculate({ text, overrides: {}, textTypeOverride: 'list' });
 
     expect(analyzeTextMock).toHaveBeenCalledExactlyOnceWith(text);
-    const { data } = createMock.mock.calls[0]![0];
-    expect(data['textType']).toBe('list');
-    expect(data['readingUnit']).toBe('line');
-    expect(data['countReadingUnits']).toBe(4);
+    expect(result.textType).toBe('list');
+    expect(result.readingUnit).toBe('line');
+    expect(result.countReadingUnits).toBe(4);
     // Titel bleibt leer — die erste Zeile einer Liste ist ein Listenelement.
-    expect(data['title']).toBe('');
+    expect(result.title).toBe('');
   });
 
   test('übersetzt sonstige Fehler in InternalServerErrorException', async () => {
@@ -160,7 +171,7 @@ describe('CalculateService', () => {
     analyzeTextMock.mockRejectedValueOnce(new Error('kaputt'));
 
     await expect(
-      service.calculate({ text: 'Der Igel\nIgel schlafen.', saveResult: false, overrides: {} }),
+      service.calculate({ text: 'Der Igel\nIgel schlafen.', overrides: {} }),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 });

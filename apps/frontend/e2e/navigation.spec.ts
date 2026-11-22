@@ -43,7 +43,7 @@ test.describe('Navigation', () => {
     await expect(page).toHaveURL('/');
   });
 
-  test('authenticated menu shows analyses and logout links', async ({ page }) => {
+  test('authenticated menu shows configuration and logout links', async ({ page }) => {
     await login(page);
 
     const menuButton = page.locator('button[aria-controls="overlay_menu"]');
@@ -54,11 +54,11 @@ test.describe('Navigation', () => {
     await expect(menu).toBeVisible({ timeout: 5000 });
 
     await expect(menu.getByText('Startseite')).toBeVisible();
-    await expect(menu.getByText('Bisherige Analysen')).toBeVisible();
+    await expect(menu.getByText('Konfiguration')).toBeVisible();
     await expect(menu.getByText('Abmelden')).toBeVisible();
   });
 
-  test('navigate to results page from menu after login', async ({ page }) => {
+  test('navigate to the configuration page from menu after login', async ({ page }) => {
     await login(page);
 
     const menuButton = page.locator('button[aria-controls="overlay_menu"]');
@@ -67,7 +67,7 @@ test.describe('Navigation', () => {
 
     const menu = page.locator('#overlay_menu');
     await expect(menu).toBeVisible({ timeout: 5000 });
-    await menu.getByText('Bisherige Analysen').click();
-    await expect(page).toHaveURL('/results');
+    await menu.getByText('Konfiguration').click();
+    await expect(page).toHaveURL('/admin');
   });
 });

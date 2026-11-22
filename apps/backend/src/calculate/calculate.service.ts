@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RSidecarService } from '../r-sidecar/r-sidecar.service.js';
-import { toJsonNumbers } from '../serialize.js';
 import {
   computeReadability,
   resolveTextShape,
@@ -24,7 +23,6 @@ interface ConfigOverrides {
 
 export interface CalculateParams {
   readonly text: string;
-  readonly saveResult: boolean;
   readonly overrides: ConfigOverrides;
   readonly textTypeOverride?: TextType;
 }
@@ -36,20 +34,22 @@ export class CalculateService {
     private readonly rSidecar: RSidecarService,
   ) {}
 
+  /**
+   * Berechnet die Kennzahlen eines Textes. Nichts wird gespeichert: weder der
+   * Text noch das Ergebnis noch die Gewichte der Anfrage (ADR 0008).
+   */
   async calculate(params: CalculateParams) {
-    const { text, saveResult, overrides, textTypeOverride } = params;
+    const { text, overrides, textTypeOverride } = params;
 
     const dbConfig = await this.prisma.config.findFirst({ orderBy: { createdAt: 'desc' } });
     if (!dbConfig) {
       throw new InternalServerErrorException('Keine Konfiguration vorhanden');
     }
 
-    const hasOverrides = Object.values(overrides).some((value) => value != null);
-
     // Effektive Gewichte als Zahlen: gespeicherte Standardkonfiguration, von der
     // Anfrage überschrieben. Prisma-Decimal wird hier aufgelöst — die Berechnung
     // bekommt nur noch Zahlen.
-    const merged = {
+    const config: ConfigWeights = {
       alpha: overrides.alpha ?? dbConfig.alpha.toNumber(),
       weightComplexSyllables:
         overrides.weightComplexSyllables ?? dbConfig.weightComplexSyllables.toNumber(),
@@ -59,14 +59,6 @@ export class CalculateService {
       weightConsonantClusters:
         overrides.weightConsonantClusters ?? dbConfig.weightConsonantClusters.toNumber(),
     };
-
-    // Beim Speichern mit Overrides die exakt genutzte Konfiguration als Zeile
-    // festschreiben (FK des Ergebnisses). Sonst die bestehende Zeile nutzen —
-    // eine Live-Vorschau persistiert nie eine Config.
-    const configRow =
-      saveResult && hasOverrides ? await this.prisma.config.create({ data: merged }) : dbConfig;
-
-    const effectiveConfig: ConfigWeights = { ...merged, id: configRow.id };
 
     // Dieselbe Textgestalt-Auflösung wie in computeReadability (text-shape.ts).
     const shape = resolveTextShape(text, textTypeOverride);
@@ -82,24 +74,8 @@ export class CalculateService {
       throw new InternalServerErrorException(message);
     }
 
-    const resultData = computeReadability(text, analysis, effectiveConfig, textTypeOverride);
-
-    if (saveResult) {
-      const row = await this.prisma.result.create({
-        data: resultData,
-        include: { config: true },
-      });
-      return toJsonNumbers(row);
-    }
-
-    // Live-Vorschau: nichts persistieren. Die effektiven (ggf. übersteuerten)
-    // Gewichte landen numerisch in result.config, damit die Gewichts-Meter
-    // zeigen, was wirklich genutzt wurde.
-    return {
-      ...resultData,
-      config: { ...toJsonNumbers(dbConfig), ...merged },
-      id: '',
-      createdAt: new Date(),
-    };
+    // Die effektiven (ggf. übersteuerten) Gewichte gehen mit zurück, damit die
+    // Gewichts-Meter zeigen, was wirklich genutzt wurde.
+    return { ...computeReadability(text, analysis, config, textTypeOverride), config };
   }
 }

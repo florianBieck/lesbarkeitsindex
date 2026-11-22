@@ -544,7 +544,6 @@ describe('computeReadability syllable buckets', () => {
     weightMultiMemberedGraphemes: 25,
     weightRareGraphemes: 12.5,
     weightConsonantClusters: 12.5,
-    id: 'test-config',
   } satisfies ConfigWeights;
 
   test('counts a 7-syllable word in the 5+ bucket', () => {
@@ -605,7 +604,6 @@ describe('computeReadability Aufschlagsmodell (Issue #28: WK, LÜ-LIX, Niveaustu
     weightMultiMemberedGraphemes: 25,
     weightRareGraphemes: 12.5,
     weightConsonantClusters: 12.5,
-    id: 'test-config',
   } satisfies ConfigWeights;
 
   test('AC2: Komponenten-Anteile bleiben ≤ 1, auch bei Mehrfachvorkommen im Wort', () => {
@@ -701,7 +699,6 @@ describe('computeReadability Texttyp & Leseeinheit (Issue #30, ADR 0002)', () =>
     weightMultiMemberedGraphemes: 25,
     weightRareGraphemes: 12.5,
     weightConsonantClusters: 12.5,
-    id: 'test-config',
   } satisfies ConfigWeights;
 
   describe('Wörterliste ohne Override (AC1): heuristisch als Liste erkannt, plausibler LIX', () => {
@@ -861,7 +858,6 @@ describe('computeReadability Titel-Guard', () => {
     weightMultiMemberedGraphemes: 25,
     weightRareGraphemes: 12.5,
     weightConsonantClusters: 12.5,
-    id: 'test-config',
   } satisfies ConfigWeights;
 
   describe('Einzeiler: kein Titel, voller Text zählt (AC1)', () => {

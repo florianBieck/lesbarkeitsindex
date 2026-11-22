@@ -26,7 +26,6 @@ vi.mock(import('@/composables/useApiClient'), () => ({
     getConfig: getConfigMock,
     updateConfig: vi.fn(),
     calculate: calculateMock,
-    getResults: vi.fn(),
   }),
 }));
 
@@ -44,8 +43,6 @@ const DB_CONFIG: Config = {
 // während des Tests in eine Null-Dereferenzierung läuft. Die Werte selbst
 // sind für die Texttyp-Tests irrelevant.
 const STUB_RESULT: ResultData = {
-  id: 'r1',
-  createdAt: '2026-06-17T10:00:00.000Z',
   countWords: 4,
   countSyllables: 4,
   countWordsWithComplexSyllables: 0,
@@ -97,7 +94,6 @@ const STUB_RESULT: ResultData = {
   wordsWithFiveSyllables: [],
   phrases: [],
   config: DB_CONFIG,
-  configId: 'cfg-1',
 };
 
 interface IndexVm {

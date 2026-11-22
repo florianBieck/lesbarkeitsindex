@@ -15,8 +15,6 @@ export const makeConfig = (overrides: Partial<Config> = {}): Config => ({
 });
 
 export const makeResult = (overrides: Partial<ResultData> = {}): ResultData => ({
-  id: 'result-1',
-  createdAt: '2026-06-12T08:00:00.000Z',
   countWords: 8,
   countSyllables: 13,
   countWordsWithComplexSyllables: 1,
@@ -68,6 +66,5 @@ export const makeResult = (overrides: Partial<ResultData> = {}): ResultData => (
   wordsWithFiveSyllables: [],
   phrases: ['Igel sind nachtaktive Tiere.', 'Sie schlafen am Tag.'],
   config: makeConfig(),
-  configId: 'config-1',
   ...overrides,
 });

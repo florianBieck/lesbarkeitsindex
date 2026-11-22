@@ -15,12 +15,10 @@ test('requests every endpoint under /api/ (ADR 0004)', async () => {
   await client.getConfig();
   await client.updateConfig(weights);
   await client.calculate({ text: 'Ein Satz.' });
-  await client.getResults({ page: 0, limit: 10 });
 
   expect(fetcher.mock.calls).toEqual([
     ['/api/config'],
     ['/api/config', { method: 'POST', body: weights }],
     ['/api/calculate', { method: 'POST', body: { text: 'Ein Satz.' } }],
-    ['/api/results', { query: { page: 0, limit: 10 } }],
   ]);
 });

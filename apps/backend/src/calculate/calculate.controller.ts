@@ -5,7 +5,6 @@ import { z } from 'zod';
 
 const CalculateSchema = z.object({
   text: z.string().min(1).max(100_000),
-  saveResult: z.boolean().optional(),
   alpha: z.number().min(0).max(10).optional(),
   weightComplexSyllables: z.number().min(0).optional(),
   weightMultiMemberedGraphemes: z.number().min(0).optional(),
@@ -28,13 +27,11 @@ export class CalculateController {
       });
     }
 
-    const { text, saveResult, textType, ...overrides } = parsed.data;
+    const { text, textType, ...overrides } = parsed.data;
 
-    // Konfigurations-Auflösung (Standard + Overrides, Persistenz vs. Vorschau)
-    // lebt im Service — der Controller parst und delegiert nur noch.
+    // Konfigurations-Auflösung (Standard + Overrides) lebt im Service — der Controller parst und delegiert nur noch.
     const result = await this.calculateService.calculate({
       text,
-      saveResult: saveResult ?? false,
       overrides,
       textTypeOverride: textType,
     });

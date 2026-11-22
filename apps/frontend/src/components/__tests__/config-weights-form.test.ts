@@ -26,7 +26,6 @@ vi.mock(import('@/composables/useApiClient'), () => ({
     getConfig: getConfigMock,
     updateConfig: vi.fn(),
     calculate: vi.fn(),
-    getResults: vi.fn(),
   }),
 }));
 

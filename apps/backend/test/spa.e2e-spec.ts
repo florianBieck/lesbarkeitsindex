@@ -68,14 +68,14 @@ describe('SPA serving (ADR 0007)', () => {
   });
 
   test('deep links get index.html, so a reload shows the page', async () => {
-    await expectIndex('/results');
+    await expectIndex('/seite');
     await expectIndex('/admin?tab=1');
     await expectIndex('/gibtsnicht/tiefer');
   });
 
   test('a deep link answers If-None-Match with 304', async () => {
-    const first = await expectIndex('/results');
-    const res = await request('/results', {
+    const first = await expectIndex('/seite');
+    const res = await request('/seite', {
       // What a browser sends when it revalidates. Without an explicit Cache-Control,
       // fetch adds `no-cache` to a conditional request, and `send` never answers that with 304.
       headers: { 'if-none-match': first.headers.get('etag') ?? '', 'cache-control': 'max-age=0' },
@@ -85,7 +85,7 @@ describe('SPA serving (ADR 0007)', () => {
   });
 
   test('HEAD on a deep link answers like GET, without a body', async () => {
-    const res = await request('/results', { method: 'HEAD' });
+    const res = await request('/seite', { method: 'HEAD' });
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-cache');
     expect(await res.text()).toBe('');
@@ -121,6 +121,6 @@ describe('SPA serving (ADR 0007)', () => {
   });
 
   test('a POST to an app path is not answered with index.html', async () => {
-    await expectJson404('/results', { method: 'POST' });
+    await expectJson404('/seite', { method: 'POST' });
   });
 });

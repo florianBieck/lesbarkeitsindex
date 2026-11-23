@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, apiFetch, isConfigInvalid } from '@/composables/api-fetch';
+import { ApiError, apiFetch, isConfigInvalid, isRateLimited } from '@/composables/api-fetch';
 
 /**
  * Der `ApiFetch` des API-Clients auf nativem `fetch`: relative URLs zum eigenen
@@ -90,6 +90,23 @@ describe('apiFetch', () => {
 
     expect(error).toMatchObject({ status: 502, code: undefined });
     expect(isConfigInvalid(error)).toBe(false);
+  });
+
+  it('eine 429-Antwort ist als „zu viele Anfragen" erkennbar, andere Fehler nicht', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ statusCode: 429, message: 'ThrottlerException: Too Many Requests' }, 429),
+    );
+    const tooMany = await apiFetch('/api/calculate', {
+      method: 'POST',
+      body: { text: 'Der Igel schläft.' },
+    }).catch((e: unknown) => e);
+
+    expect(isRateLimited(tooMany)).toBe(true);
+    expect(isConfigInvalid(tooMany)).toBe(false);
+    expect(
+      isRateLimited(new ApiError('GET /api/config failed with status 500', 500, undefined)),
+    ).toBe(false);
+    expect(isRateLimited(new TypeError('Failed to fetch'))).toBe(false);
   });
 
   it('ein Netzwerkfehler ist keine fehlerhafte Konfiguration', () => {

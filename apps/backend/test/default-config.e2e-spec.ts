@@ -7,10 +7,8 @@ import { Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
-import { AppConfigController } from '../src/config/config.controller.js';
-import { DefaultConfigService } from '../src/config/default-config.service.js';
-import { CalculateController } from '../src/calculate/calculate.controller.js';
-import { CalculateService } from '../src/calculate/calculate.service.js';
+import { AppConfigModule } from '../src/config/config.module.js';
+import { CalculateModule } from '../src/calculate/calculate.module.js';
 import { RSidecarService } from '../src/r-sidecar/r-sidecar.service.js';
 
 /**
@@ -64,13 +62,11 @@ describe('Standardkonfiguration aus der config.json (Issue #94)', () => {
     vi.stubEnv('CONFIG_FILE', configFile);
 
     const moduleRef = await Test.createTestingModule({
-      controllers: [AppConfigController, CalculateController],
-      providers: [
-        DefaultConfigService,
-        CalculateService,
-        { provide: RSidecarService, useValue: { analyzeText } },
-      ],
-    }).compile();
+      imports: [AppConfigModule, CalculateModule],
+    })
+      .overrideProvider(RSidecarService)
+      .useValue({ analyzeText })
+      .compile();
 
     app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
     configureApp(app);

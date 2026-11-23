@@ -3,9 +3,7 @@ import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { configureApp } from '../src/configure-app.js';
-import { CalculateController } from '../src/calculate/calculate.controller.js';
-import { CalculateService } from '../src/calculate/calculate.service.js';
-import { DefaultConfigService } from '../src/config/default-config.service.js';
+import { CalculateModule } from '../src/calculate/calculate.module.js';
 import { RSidecarService } from '../src/r-sidecar/r-sidecar.service.js';
 
 /**
@@ -42,14 +40,10 @@ describe('POST /api/calculate — Integrationstest (R-Dienst gemockt, AC6)', () 
     // Eine CONFIG_FILE aus der Umgebung des Entwicklers darf die Erwartungen nicht verschieben.
     vi.stubEnv('CONFIG_FILE', '');
     mocks = buildMocks();
-    const moduleRef = await Test.createTestingModule({
-      controllers: [CalculateController],
-      providers: [
-        CalculateService,
-        DefaultConfigService,
-        { provide: RSidecarService, useValue: mocks.rSidecar },
-      ],
-    }).compile();
+    const moduleRef = await Test.createTestingModule({ imports: [CalculateModule] })
+      .overrideProvider(RSidecarService)
+      .useValue(mocks.rSidecar)
+      .compile();
 
     app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);

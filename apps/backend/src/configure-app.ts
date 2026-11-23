@@ -12,6 +12,16 @@ export const API_PREFIX = 'api';
 const JSON_BODY_LIMIT = '1mb';
 
 /**
+ * Zahl der Reverse-Proxys vor dem Backend, deren `X-Forwarded-For` es glaubt: einer,
+ * die Edge (Caddy). So ist `req.ip` die Adresse, die Caddy gesehen hat, und die
+ * Obergrenze von `POST /api/calculate` zählt Besucher statt des Proxys. Caddy verwirft
+ * ein vom Besucher mitgeschicktes `X-Forwarded-For`; was davon doch ankäme, stünde vor
+ * Caddys Eintrag und bliebe unbeachtet. Steht ein weiterer Proxy davor, muss die Zahl
+ * mitwachsen, sonst teilen sich alle Besucher eine Obergrenze.
+ */
+const TRUSTED_PROXY_HOPS = 1;
+
+/**
  * Content-Security-Policy für SPA und API (ADR 0007), vollständig ausgeschrieben.
  * Alles kommt vom eigenen Origin. `style-src` braucht `'unsafe-inline'`, weil
  * PrimeVue sein Theme zur Laufzeit als `<style>`-Elemente einfügt. Eine neue
@@ -49,6 +59,7 @@ export function configureApp(app: NestExpressApplication): void {
       xFrameOptions: { action: 'deny' },
     }),
   );
+  app.set('trust proxy', TRUSTED_PROXY_HOPS);
   app.setGlobalPrefix(API_PREFIX);
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
 }

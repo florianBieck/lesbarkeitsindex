@@ -23,14 +23,9 @@ services:
     image: ghcr.io/florianbieck/lesbarkeitsindex/backend:latest
     restart: unless-stopped
     environment:
-      # The deploy only takes a POSTGRES_PASSWORD made of characters a URL
-      # leaves alone, so it goes into the URL unencoded.
-      - DATABASE_URL=postgresql://admin:${POSTGRES_PASSWORD:?missing from .env}@postgres:5432/lesbarkeitsindex
       - NODE_ENV=production
       - R_SIDECAR_URL=http://r-sidecar:8787
     depends_on:
-      postgres:
-        condition: service_started
       r-sidecar:
         condition: service_healthy
 
@@ -40,21 +35,6 @@ services:
     image: ghcr.io/florianbieck/lesbarkeitsindex/r-sidecar:latest
     build: !reset null
     ports: !reset []
-
-  # The backend reaches Postgres over the compose network, so prod publishes no
-  # port: the base file's 5432 would put the database on the internet, because
-  # Docker's published ports bypass the host firewall (#72). Without a restart
-  # policy a crash or reboot would leave the database down behind a running
-  # backend. Image, user and database name, volume, healthcheck and logging come
-  # from the base file.
-  postgres:
-    restart: unless-stopped
-    ports: !reset []
-    # Replaces the base file's public dev password. Postgres reads it only when
-    # it initialises an empty volume, so every deploy also sets the existing
-    # role's password to it (deploy.yml, #87).
-    environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?missing from .env}
 
 volumes:
   caddy_data:

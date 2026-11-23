@@ -39,9 +39,8 @@ export type { TextType } from './text-type.js';
 
 /**
  * Effektive Konfiguration des Aufschlagsmodells: Aufschlagskoeffizient α plus die
- * vier Gewichte der Wortkomplexitäts-Komponenten — als einfache Zahlen. Der Service
- * löst Prisma-`Decimal` und Request-Overrides vorab auf, sodass die Berechnung
- * selbst keine Decimal-Schnittstelle mehr kennt.
+ * vier Gewichte der Wortkomplexitäts-Komponenten. Der Service löst die
+ * Request-Overrides vorab auf.
  */
 export interface ConfigWeights {
   readonly alpha: number;

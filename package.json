@@ -11,9 +11,7 @@
     "lint": "oxlint",
     "fmt": "oxfmt",
     "check": "oxfmt --check && oxlint",
-    "knip": "KNIP_DISABLE_RAW_TRANSFER=1 knip",
-    "generate": "pnpm --filter backend run generate",
-    "migrate": "pnpm --filter backend run migrate"
+    "knip": "KNIP_DISABLE_RAW_TRANSFER=1 knip"
   },
   "devDependencies": {
     "knip": "^6.42.1",

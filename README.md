@@ -4,7 +4,7 @@ German text readability analysis tool for teachers and educators. Computes reada
 
 ## Tech Stack
 
-- **Backend**: NestJS + Express, Prisma 7, PostgreSQL
+- **Backend**: NestJS + Express; no database
 - **Frontend**: Vue 3 SPA (Vite, vue-router), PrimeVue 4, Tailwind CSS, Chart.js; served by the backend
 - **NLP**: R Plumber sidecar (sentence splitting, syllable counting, POS tagging)
 - **Toolchain**: pnpm, Vite, Vitest, vue-tsc, oxlint, oxfmt
@@ -12,22 +12,19 @@ German text readability analysis tool for teachers and educators. Computes reada
 ## Prerequisites
 
 - Node.js (major in `.node-version`) and pnpm (version in `package.json` → `packageManager`). Node 26 no longer ships corepack: `npm install -g corepack && corepack enable` sets up the pinned pnpm
-- Docker (for PostgreSQL and R sidecar)
+- Docker (for the R sidecar)
 
 ## Quick Start
 
 ```bash
-# Start Postgres + R sidecar
+# Start the R sidecar
 docker compose up -d
 
-# Install dependencies (also generates Prisma client)
+# Install dependencies
 pnpm install
 
 # Copy and edit environment variables
 cp .env.example .env
-
-# Run database migrations
-pnpm --filter backend exec prisma migrate deploy
 
 # Start backend (port 3000) and frontend (port 3001, proxies /api to the backend)
 pnpm dev

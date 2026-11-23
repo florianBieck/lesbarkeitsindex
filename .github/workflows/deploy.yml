@@ -63,22 +63,13 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          for name in SSH_PRIVATE_KEY SSH_KNOWN_HOSTS POSTGRES_PASSWORD; do
+          for name in SSH_PRIVATE_KEY SSH_KNOWN_HOSTS; do
             if [ -z "${!name}" ]; then
               echo "::error::Secret $name is not set on the production environment"
               exit 1
             fi
           done
-          # The prod overlay puts POSTGRES_PASSWORD into the backend's
-          # DATABASE_URL unencoded, so it takes only the characters a URL leaves
-          # alone. `openssl rand -hex 32` makes one.
-          url_safe_pattern='^[A-Za-z0-9._~-]+$'
-          if [[ ! $POSTGRES_PASSWORD =~ $url_safe_pattern ]]; then
-            echo "::error::Secret POSTGRES_PASSWORD may only contain letters, digits and - . _ ~"
-            exit 1
-          fi
 
       - name: Check out the built commit
         uses: actions/checkout@v4
@@ -111,8 +102,6 @@ jobs:
       # in the .env make a plain `docker compose` in DEPLOY_DIR see the whole
       # stack.
       - name: Upload the stack
-        env:
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
           ssh prod "mkdir -p '$DEPLOY_DIR/caddy'"
@@ -122,7 +111,6 @@ jobs:
           {
             echo "COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT"
             echo "COMPOSE_FILE=docker-compose.yml:docker-compose-prod.yml"
-            echo "POSTGRES_PASSWORD='$POSTGRES_PASSWORD'"
           } | ssh prod "install -m 600 /dev/stdin '$DEPLOY_DIR/.env'"
 
       # Caddy doesn't watch its config, so every run reloads it. A reload
@@ -143,19 +131,6 @@ jobs:
               caddy validate --config /etc/caddy/Caddyfile.new --adapter caddyfile
             mv caddy/Caddyfile.new caddy/Caddyfile
             docker compose pull --quiet
-            # Postgres reads POSTGRES_PASSWORD only when it initialises an empty
-            # volume, so every run sets the role's password from the .env, and
-            # a changed secret rotates it (#87). A new secret also restarts
-            # Postgres here. From the ALTER until `up -d` replaces it a few
-            # seconds later, the old backend can't log in with its old URL; the
-            # smoke check proves the end state. A run that stops before the
-            # ALTER leaves the .env with a password the role doesn't have yet:
-            # rerun the deploy rather than a bare `docker compose up`. psql logs
-            # in over the container's socket without a password, and \getenv
-            # (psql 15+) keeps the password off every command line.
-            docker compose up -d --wait postgres
-            printf '%s\n' '\getenv password POSTGRES_PASSWORD' "ALTER ROLE admin PASSWORD :'password';" |
-              docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U admin -d lesbarkeitsindex
             docker compose up -d --remove-orphans
             attempts=0
             until docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; do

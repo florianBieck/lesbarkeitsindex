@@ -11,7 +11,7 @@ Dieser Ordner enthält alles, was der Server braucht:
 
 ## Voraussetzungen
 
-- Ein Linux-Server (x86-64 oder ARM64) mit [Docker](https://docs.docker.com/engine/install/) samt Compose (`docker compose version` zeigt 2.24 oder neuer) und etwa 4 GB freiem Plattenplatz.
+- Ein Linux-Server (x86-64 oder ARM64) mit [Docker](https://docs.docker.com/engine/install/) samt Compose (`docker compose version` zeigt Version 2 oder neuer) und etwa 4 GB freiem Plattenplatz.
 - Eine Domain, deren DNS-Eintrag auf den Server zeigt.
 - Die Ports 80 und 443 sind aus dem Internet erreichbar. Darüber holt der Webserver das TLS-Zertifikat selbst und erneuert es.
 
@@ -31,7 +31,7 @@ Dieser Ordner enthält alles, was der Server braucht:
    docker compose up -d
    ```
 
-Beim ersten Start lädt Docker rund 1 GB herunter. Danach braucht der R-Dienst etwa eine Minute, erst dann startet das Backend. `docker compose ps` zeigt den Stand; sobald alle drei Dienste laufen, ist das Werkzeug unter `https://<Ihre Domain>` erreichbar.
+Beim ersten Start lädt Docker rund 1 GB herunter. Danach braucht der R-Dienst ein bis zwei Minuten, erst dann startet das Backend. `docker compose ps` zeigt den Stand; sobald alle drei Dienste laufen, ist das Werkzeug unter `https://<Ihre Domain>` erreichbar.
 
 Die Dienste starten nach einem Neustart des Servers von selbst wieder.
 
@@ -47,7 +47,7 @@ Die Version steht in der `docker-compose.yml` hinter den beiden Images (`…/bac
    docker compose up -d --force-recreate
    ```
 
-Das Werkzeug ist dabei für etwa eine Minute nicht erreichbar. Zurück zur alten Version geht es genauso mit der alten `docker-compose.yml`.
+Das Werkzeug ist dabei für ein bis zwei Minuten nicht erreichbar. Zurück zur alten Version geht es genauso mit der alten `docker-compose.yml`.
 
 ## Standardkonfiguration ändern
 
@@ -61,11 +61,13 @@ Die Datei `config.json` legt fest, womit das Werkzeug rechnet, solange jemand au
 | `weightRareGraphemes`          | Gewicht „seltene Grapheme“                          | 12.5     |
 | `weightConsonantClusters`      | Gewicht „Konsonantencluster“                        | 12.5     |
 
-Alle fünf Einträge müssen vorhanden sein. Dezimalzahlen stehen mit Punkt (`12.5`), nicht mit Komma. Die vier Gewichte müssen zusammen nicht 100 ergeben.
+Alle fünf Einträge müssen vorhanden sein und dürfen nicht negativ sein. Dezimalzahlen stehen mit Punkt (`12.5`), nicht mit Komma. Die vier Gewichte müssen zusammen nicht 100 ergeben.
 
 Die Datei bearbeiten und speichern, zum Beispiel mit `nano config.json`. Die Änderung gilt sofort für die nächste Berechnung; ein Neustart ist nicht nötig.
 
 Ist die Datei fehlerhaft (ein Tippfehler, ein fehlender oder unbekannter Eintrag), rechnet das Werkzeug nicht, sondern zeigt auf der Seite eine Fehlermeldung. Was genau falsch ist, steht im Protokoll des Backends (siehe „Protokolle lesen“). Sobald die Datei wieder stimmt, läuft das Werkzeug weiter.
+
+Die Datei muss `config.json` heißen und in diesem Ordner liegen. Fehlt sie, rechnet das Werkzeug ohne Fehlermeldung mit den Standardwerten aus der Tabelle oben.
 
 ## Links zu Impressum und Datenschutzerklärung
 

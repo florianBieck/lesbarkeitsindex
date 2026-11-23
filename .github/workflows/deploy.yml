@@ -99,19 +99,22 @@ jobs:
       # Prod runs the handover package (deploy/) exactly as the client gets it:
       # its compose file, Caddyfile and config.json, plus a .env that holds only
       # the domain. The workflow owns these four files in DEPLOY_DIR and nothing
-      # else there. The compose file pins both images to a release tag, so a run
-      # deploys that release, not the commit that started it, and fails at
-      # `pull` until the tag's images exist.
+      # else there. They arrive as *.new; the deploy step puts them in place.
       - name: Upload the stack
         run: |
           # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
           ssh prod "mkdir -p '$DEPLOY_DIR'"
-          scp deploy/docker-compose.yml "prod:$DEPLOY_DIR/"
-          scp deploy/Caddyfile "prod:$DEPLOY_DIR/Caddyfile.new"
-          scp deploy/config.json "prod:$DEPLOY_DIR/config.json.new"
+          for file in docker-compose.yml Caddyfile config.json; do
+            scp "deploy/$file" "prod:$DEPLOY_DIR/$file.new"
+          done
           # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
-          echo "DOMAIN=$DEPLOY_HOST" | ssh prod "install -m 600 /dev/stdin '$DEPLOY_DIR/.env'"
+          echo "DOMAIN=$DEPLOY_HOST" | ssh prod "install -m 600 /dev/stdin '$DEPLOY_DIR/.env.new'"
 
+      # The compose file pins both images to a release tag, so a run deploys
+      # that release, not the commit that started it. Until the tag's images
+      # exist, `pull` fails, and it runs before the new files replace the old
+      # ones, so the server stays as it was.
+      #
       # Caddy doesn't watch its config, so every run reloads it. A reload
       # applies a changed Caddyfile without dropping connections, does nothing
       # when nothing changed, and also applies a Caddyfile an earlier failed
@@ -127,11 +130,12 @@ jobs:
           {
             set -euo pipefail
             cd "$1"
-            docker run --rm --env-file .env -v "$PWD:/etc/caddy:ro" caddy:2-alpine \
+            docker run --rm --env-file .env.new -v "$PWD:/etc/caddy:ro" caddy:2-alpine \
               caddy validate --config /etc/caddy/Caddyfile.new --adapter caddyfile
-            mv Caddyfile.new Caddyfile
-            mv config.json.new config.json
-            docker compose pull --quiet
+            docker compose --env-file .env.new -f docker-compose.yml.new pull --quiet
+            for file in docker-compose.yml Caddyfile config.json .env; do
+              mv "$file.new" "$file"
+            done
             docker compose up -d --remove-orphans
             attempts=0
             until docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; do
@@ -142,6 +146,9 @@ jobs:
               fi
               sleep 3
             done
+            # What the two-file overlay left behind, now that nothing reads it.
+            rm -f docker-compose-prod.yml caddy/Caddyfile
+            rmdir caddy 2>/dev/null || true
           }
           EOF
 

@@ -91,9 +91,11 @@ jobs:
 
   e2e-frontend:
     needs: [changes]
+    # A v* tag changes no file, but the images it publishes are the release.
     if: >-
       needs.changes.outputs.backend == 'true' ||
-      needs.changes.outputs.r-sidecar == 'true'
+      needs.changes.outputs.r-sidecar == 'true' ||
+      startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     # A green run takes about 9 minutes; a hung step (as `playwright install` on
     # Node 26 before Playwright 1.65) would otherwise hold the runner for 6 hours.
@@ -186,7 +188,8 @@ jobs:
     if: needs.changes.outputs.services != '[]'
     runs-on: ${{ matrix.platform.runner }}
     strategy:
-      # One failing build must not cancel the others.
+      # One failing build must not cancel the others. `publish` still waits for
+      # all of them.
       fail-fast: false
       matrix:
         service: ${{ fromJSON(needs.changes.outputs.services) }}
@@ -308,6 +311,11 @@ jobs:
           for digest in *; do
             args+=("$IMAGE@sha256:$digest")
           done
+          # The digest artifacts live for a day: a later re-run finds none.
+          if [ "$(find . -type f | wc -l)" -ne 2 ]; then
+            echo "::error::Expected one digest per platform, found: $(ls)"
+            exit 1
+          fi
           docker buildx imagetools create "${args[@]}"
 
       - name: Inspect the image

@@ -34,7 +34,7 @@ pnpm dev
 
 `deploy/` is everything a server needs: one `docker-compose.yml` (Caddy, backend, R sidecar) with the images pinned to a release tag, a `Caddyfile`, the default `config.json`, and a `.env` that holds only the domain. [`deploy/README.md`](./deploy/README.md) (German) covers starting, updating, changing the default configuration, the footer links and reading logs.
 
-The images are public on `ghcr.io` for amd64 and arm64. A release: set the new tag on both images in `deploy/docker-compose.yml`, merge, then push that `v*` tag from `main`; CI builds both images under it.
+CI builds the images for amd64 and arm64 and pushes them to `ghcr.io`. A release: set the new tag on both images in `deploy/docker-compose.yml`, merge, then push that `v*` tag from `main`; CI builds both images under it.
 
 Submitted texts are never stored or logged (ADR 0008).
 

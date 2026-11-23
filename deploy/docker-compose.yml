@@ -30,7 +30,8 @@ services:
       CONFIG_FILE: /etc/lesbarkeitsindex/config.json
     volumes:
       # Aus demselben Grund der Ordner: Das Backend liest die config.json bei jeder
-      # Anfrage neu, eine Änderung wirkt also ohne Neustart.
+      # Anfrage neu, eine Änderung wirkt also ohne Neustart. Im Ordner liegt
+      # nichts Geheimes: Die .env enthält nur die Domain.
       - .:/etc/lesbarkeitsindex:ro
     depends_on:
       r-sidecar:

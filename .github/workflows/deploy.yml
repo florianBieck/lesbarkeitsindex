@@ -18,13 +18,13 @@ defaults:
   run:
     shell: bash
 
-# Not secret, and a wrong directory or project name (like the deleted 2025
-# workflow's) starts a second stack, so they stay visible here.
+# Not secret, and a wrong directory (like the deleted 2025 workflow's) starts a
+# second stack, so they stay visible here. The project name is in the compose
+# file.
 env:
   DEPLOY_HOST: lix.florianbieck.com
   DEPLOY_USER: root
   DEPLOY_DIR: /root/app/lesbarkeitsindex
-  COMPOSE_PROJECT: lesbarkeitsindex
 
 jobs:
   deploy:
@@ -47,8 +47,7 @@ jobs:
     env:
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
-      # An approved older run would ship its compose files and Caddyfile next to
-      # the newest :latest images.
+      # An approved older run would ship its older deploy/ folder.
       - name: Check that main hasn't moved on
         env:
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
@@ -97,28 +96,29 @@ jobs:
             BatchMode yes
           EOF
 
-      # Owns these four files in DEPLOY_DIR and nothing else there: both compose
-      # files, caddy/Caddyfile and the .env. COMPOSE_FILE and COMPOSE_PROJECT_NAME
-      # in the .env make a plain `docker compose` in DEPLOY_DIR see the whole
-      # stack.
+      # Prod runs the handover package (deploy/) exactly as the client gets it:
+      # its compose file, Caddyfile and config.json, plus a .env that holds only
+      # the domain. The workflow owns these four files in DEPLOY_DIR and nothing
+      # else there. The compose file pins both images to a release tag, so a run
+      # deploys that release, not the commit that started it, and fails at
+      # `pull` until the tag's images exist.
       - name: Upload the stack
         run: |
           # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
-          ssh prod "mkdir -p '$DEPLOY_DIR/caddy'"
-          scp docker-compose.yml docker-compose-prod.yml "prod:$DEPLOY_DIR/"
-          scp caddy/Caddyfile "prod:$DEPLOY_DIR/caddy/Caddyfile.new"
+          ssh prod "mkdir -p '$DEPLOY_DIR'"
+          scp deploy/docker-compose.yml "prod:$DEPLOY_DIR/"
+          scp deploy/Caddyfile "prod:$DEPLOY_DIR/Caddyfile.new"
+          scp deploy/config.json "prod:$DEPLOY_DIR/config.json.new"
           # shellcheck disable=SC2029 # DEPLOY_DIR expands on the runner on purpose
-          {
-            echo "COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT"
-            echo "COMPOSE_FILE=docker-compose.yml:docker-compose-prod.yml"
-          } | ssh prod "install -m 600 /dev/stdin '$DEPLOY_DIR/.env'"
+          echo "DOMAIN=$DEPLOY_HOST" | ssh prod "install -m 600 /dev/stdin '$DEPLOY_DIR/.env'"
 
       # Caddy doesn't watch its config, so every run reloads it. A reload
       # applies a changed Caddyfile without dropping connections, does nothing
       # when nothing changed, and also applies a Caddyfile an earlier failed
-      # run never got to. Caddy sees the renamed file only because the overlay
-      # mounts caddy/ as a directory (#58). Right after `up -d` (re)creates the
-      # container, Caddy's admin API may not answer yet, hence the retries.
+      # run never got to. Caddy and the backend see the renamed files only
+      # because the compose file mounts the directory, not the files (#58).
+      # Right after `up -d` (re)creates the container, Caddy's admin API may not
+      # answer yet, hence the retries.
       - name: Deploy
         run: |
           # The braces make bash read the whole script before it runs any of
@@ -127,16 +127,17 @@ jobs:
           {
             set -euo pipefail
             cd "$1"
-            docker run --rm -v "$PWD/caddy:/etc/caddy:ro" caddy:2-alpine \
+            docker run --rm --env-file .env -v "$PWD:/etc/caddy:ro" caddy:2-alpine \
               caddy validate --config /etc/caddy/Caddyfile.new --adapter caddyfile
-            mv caddy/Caddyfile.new caddy/Caddyfile
+            mv Caddyfile.new Caddyfile
+            mv config.json.new config.json
             docker compose pull --quiet
             docker compose up -d --remove-orphans
             attempts=0
             until docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; do
               attempts=$((attempts + 1))
               if [ "$attempts" -ge 10 ]; then
-                echo "::error::Caddy didn't reload caddy/Caddyfile"
+                echo "::error::Caddy didn't reload the Caddyfile"
                 exit 1
               fi
               sleep 3

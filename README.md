@@ -30,6 +30,14 @@ cp .env.example .env
 pnpm dev
 ```
 
+## Running it in production
+
+`deploy/` is everything a server needs: one `docker-compose.yml` (Caddy, backend, R sidecar) with the images pinned to a release tag, a `Caddyfile`, the default `config.json`, and a `.env` that holds only the domain. [`deploy/README.md`](./deploy/README.md) (German) covers starting, updating, changing the default configuration, the footer links and reading logs.
+
+The images are public on `ghcr.io` for amd64 and arm64. A release: set the new tag on both images in `deploy/docker-compose.yml`, merge, then push that `v*` tag from `main`; CI builds both images under it.
+
+Submitted texts are never stored or logged (ADR 0008).
+
 ## Commands
 
 ```bash
@@ -49,6 +57,7 @@ apps/
 packages/
   api-client/       # Typed API client (injected fetcher)
 r-sidecar/          # R Plumber NLP service (Docker only)
+deploy/             # What a server needs to run the app (compose file, Caddyfile, config.json)
 ```
 
 ## License

@@ -1,0 +1,7 @@
+{
+  "alpha": 0.3,
+  "weightComplexSyllables": 50,
+  "weightMultiMemberedGraphemes": 25,
+  "weightRareGraphemes": 12.5,
+  "weightConsonantClusters": 12.5
+}

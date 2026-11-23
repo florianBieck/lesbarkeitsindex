@@ -58,7 +58,7 @@
       "dependencyDashboardApproval": true
     },
     {
-      "description": "Our own images are built by CI and deployed as :latest; never pin or update them",
+      "description": "Our own images are built by CI; deploy/docker-compose.yml pins them to a release tag that a release sets by hand, so never pin or update them",
       "matchPackageNames": ["ghcr.io/florianbieck/lesbarkeitsindex/**"],
       "enabled": false
     }

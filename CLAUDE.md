@@ -124,7 +124,7 @@ Every backend route lives under `/api/` (ADR 0004); every other GET path gets th
 
 - `GET /api/health` — health check
 - `GET /api/config` — default configuration from `config.json` (or the built-in defaults), plus the optional footer link URLs
-- `POST /api/calculate` — analyze text readability; nothing is stored or logged (ADR 0008)
+- `POST /api/calculate` — analyze text readability; nothing is stored or logged (ADR 0008); limited to 60 requests per minute per IP (`@nestjs/throttler`, in memory), then 429
 
 ## Code Conventions
 
@@ -161,6 +161,7 @@ pnpm run knip
 - **Native build scripts**: `pnpm-workspace.yaml` has an `allowBuilds` map — when adding deps with native code (e.g. `@swc/core`), add them there or `pnpm install` will skip their build scripts.
 - **R sidecar is Docker-only**: The NLP service runs in Docker, not natively. It takes ~60s to start (health check at `/health`)
 - **Same-origin everywhere**: Caddy sends every path to the backend; the Vite dev and preview servers proxy `/api`. The backend sends no CORS headers
+- **One proxy hop is trusted**: `configure-app.ts` sets Express's `trust proxy` to 1, so `req.ip` is the address Caddy saw and the rate limit counts visitors. A second proxy in front (a CDN, a load balancer) needs that number raised, or all visitors share one limit
 - **A new external origin needs a CSP entry**: an image, font or API from another origin needs a change to `CONTENT_SECURITY_POLICY` in `configure-app.ts`, or the browser blocks it and every Playwright test against the backend fails
 - **SPA deep links 404 below a dot-directory**: serve-static refuses paths under a directory starting with `.`, so the backend serves no deep links from a worktree under `.claude/worktrees/`. Run Playwright there against `vite preview`
 - **Backend specs that need the SPA**: build the testing module with `spaTestingModule()` from `test/spa-fixture.ts`. A plain `Test.createTestingModule` with `spaImports` serves nothing, because serve-static picks its loader before the app has an HTTP adapter

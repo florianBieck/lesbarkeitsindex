@@ -1,4 +1,5 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CalculateService } from './calculate.service.js';
 import { z } from 'zod';
@@ -13,7 +14,9 @@ const CalculateSchema = z.object({
   textType: z.enum(['prose', 'list']).optional(),
 });
 
+// Der Guard hängt nur an diesem Controller: Alle anderen Routen bleiben ohne Obergrenze.
 @Controller('calculate')
+@UseGuards(ThrottlerGuard)
 export class CalculateController {
   constructor(private readonly calculateService: CalculateService) {}
 

@@ -105,12 +105,23 @@ import Textarea from 'primevue/textarea';
 import { onMounted, ref, watch } from 'vue';
 import ConfigWeightsForm from '@/components/config-weights-form.vue';
 import ResultView from '@/components/result-view.vue';
-import { isConfigInvalid } from '@/composables/api-fetch';
+import { isConfigInvalid, isRateLimited } from '@/composables/api-fetch';
 import { useApiClient, type ResultData } from '@/composables/useApiClient';
 import { overridesOf, pickWeights } from '@/utils/config-weights';
 
 const CONFIG_INVALID_MESSAGE =
   'Die Konfiguration ist fehlerhaft, bitte wenden Sie sich an die Betreuung';
+
+const RATE_LIMIT_MESSAGE = 'Zu viele Anfragen, bitte kurz warten';
+const CALCULATION_FAILED_MESSAGE =
+  'Die Berechnung ist fehlgeschlagen. Bitte versuchen Sie es erneut.';
+
+/** Die Meldung zu einer gescheiterten Analyse: je Ursache das, was der Besucher tun kann. */
+function calculationErrorMessage(error: unknown): string {
+  if (isConfigInvalid(error)) return CONFIG_INVALID_MESSAGE;
+  if (isRateLimited(error)) return RATE_LIMIT_MESSAGE;
+  return CALCULATION_FAILED_MESSAGE;
+}
 
 const client = useApiClient();
 
@@ -199,9 +210,7 @@ async function calculate() {
     resultDeviates.value = Object.keys(overrides).length > 0;
   } catch (e) {
     console.error(e);
-    validationError.value = isConfigInvalid(e)
-      ? CONFIG_INVALID_MESSAGE
-      : 'Die Berechnung ist fehlgeschlagen. Bitte versuchen Sie es erneut.';
+    validationError.value = calculationErrorMessage(e);
   } finally {
     loading.value = false;
   }

@@ -29,6 +29,13 @@ export class ApiError extends Error {
 export const isConfigInvalid = (error: unknown): boolean =>
   error instanceof ApiError && error.code === CONFIG_INVALID_CODE;
 
+/** HTTP-Status, mit dem das Backend eine Anfrage über der Obergrenze von `POST /api/calculate` ablehnt. */
+const TOO_MANY_REQUESTS = 429;
+
+/** True when the backend refused because this visitor sent too many requests. */
+export const isRateLimited = (error: unknown): boolean =>
+  error instanceof ApiError && error.status === TOO_MANY_REQUESTS;
+
 async function errorCodeOf(response: Response): Promise<string | undefined> {
   try {
     const body: unknown = await response.json();

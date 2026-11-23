@@ -369,6 +369,31 @@ describe('IndexPage — Erweiterte Einstellungen (Issue #94)', () => {
     });
   });
 
+  describe('zu viele Anfragen (Issue #97)', () => {
+    const RATE_LIMIT_MESSAGE = 'Zu viele Anfragen, bitte kurz warten';
+    const rateLimitError = () =>
+      new ApiError('POST /api/calculate failed with status 429', 429, undefined);
+
+    it('zeigt die Meldung, wenn das Backend die Analyse mit 429 ablehnt', async () => {
+      const page = await mountPage();
+      calculateMock.mockRejectedValue(rateLimitError());
+
+      await analyze(page);
+
+      expect(page.find('[role="alert"]').text()).toBe(RATE_LIMIT_MESSAGE);
+    });
+
+    it('die Meldung verschwindet, sobald die nächste Analyse wieder durchgeht', async () => {
+      const page = await mountPage();
+      calculateMock.mockRejectedValueOnce(rateLimitError());
+      await analyze(page);
+
+      await analyze(page);
+
+      expect(page.text()).not.toContain(RATE_LIMIT_MESSAGE);
+    });
+  });
+
   it('ohne erreichbare Konfiguration bleibt die Analyse mit dem Standard des Backends möglich', async () => {
     getConfigMock.mockRejectedValue(new TypeError('Failed to fetch'));
     const page = await mountPage();

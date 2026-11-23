@@ -1,8 +1,0 @@
-lix.florianbieck.com {
-	tls info@florianbieck.com
-	# No preload: that would have to be set on the apex florianbieck.com.
-	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
-	encode zstd gzip
-	# The backend serves the API under /api/ (ADR 0004) and the SPA on every other path (ADR 0007).
-	reverse_proxy backend:3000
-}

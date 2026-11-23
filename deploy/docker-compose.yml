@@ -1,0 +1,53 @@
+# Lesbarkeitsindex (LÜ-LIX): der ganze Dienst in einer Datei. Anleitung: README.md.
+# Braucht daneben nur Caddyfile, config.json und eine .env mit der Domain.
+name: lesbarkeitsindex
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      DOMAIN: ${DOMAIN:?In der Datei .env fehlt die Domain, z. B. DOMAIN=lesbarkeit.example.org}
+    volumes:
+      # Der Ordner, nicht die einzelne Datei: Ein Container, in den nur eine Datei
+      # eingebunden ist, sieht weiter die alte, sobald ein Editor oder ein Upload
+      # die Datei ersetzt statt überschreibt (#58).
+      - .:/etc/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+  backend:
+    image: ghcr.io/florianbieck/lesbarkeitsindex/backend:v1.0.0
+    restart: unless-stopped
+    environment:
+      R_SIDECAR_URL: http://r-sidecar:8787
+      CONFIG_FILE: /etc/lesbarkeitsindex/config.json
+    volumes:
+      # Aus demselben Grund der Ordner: Das Backend liest die config.json bei jeder
+      # Anfrage neu, eine Änderung wirkt also ohne Neustart. Im Ordner liegt
+      # nichts Geheimes: Die .env enthält nur die Domain.
+      - .:/etc/lesbarkeitsindex:ro
+    depends_on:
+      r-sidecar:
+        condition: service_healthy
+
+  r-sidecar:
+    image: ghcr.io/florianbieck/lesbarkeitsindex/r-sidecar:v1.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:8787/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  # Hier liegt das TLS-Zertifikat. `docker compose down -v` löscht es.
+  caddy_data:
+  caddy_config:

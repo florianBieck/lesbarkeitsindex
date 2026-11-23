@@ -1,0 +1,10 @@
+# Die Domain kommt aus der Datei .env (DOMAIN=…). Caddy holt und erneuert das
+# TLS-Zertifikat dafür selbst.
+{$DOMAIN} {
+	header Strict-Transport-Security "max-age=31536000"
+	encode zstd gzip
+	# Kein `log`: Ohne diese Anweisung schreibt Caddy kein Zugriffsprotokoll, und
+	# so soll es bleiben (ADR 0008).
+	# Das Backend liefert die API unter /api/ und auf jedem anderen Pfad die Seite.
+	reverse_proxy backend:3000
+}

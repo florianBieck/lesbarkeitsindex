@@ -50,7 +50,7 @@ apps/
     src/
       main.ts         # createApp, router, PrimeVue (Aura)
       router.ts       # Hand-written route table
-      pages/          # index, not-found
+      pages/          # index, documentation (/dokumentation), not-found
       components/     # result-view, config-weights-form, legal-links
       composables/    # useApiClient + api-fetch (native fetch)
     e2e/              # Playwright specs; fixtures.ts fails any test on a CSP violation

@@ -36,6 +36,22 @@ describe('App shell', () => {
     expect(wrapper.find('nav').exists()).toBe(false);
   });
 
+  it('shows the documentation page at /dokumentation', async () => {
+    const wrapper = await mountAt('/dokumentation');
+
+    expect(wrapper.get('h2').text()).toBe('So wird der LÜ-LIX berechnet');
+  });
+
+  it('links from the start page to the documentation', async () => {
+    const wrapper = await mountAt('/');
+
+    await wrapper.get('a[href="/dokumentation"]').trigger('click');
+    await flushPromises();
+
+    expect(router.currentRoute.value.path).toBe('/dokumentation');
+    expect(wrapper.get('h2').text()).toBe('So wird der LÜ-LIX berechnet');
+  });
+
   it.each(['/login', '/logout', '/admin'])(
     'shows the not-found page at the former account address %s',
     async (path) => {

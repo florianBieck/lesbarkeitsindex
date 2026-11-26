@@ -3,6 +3,9 @@
     <p class="mb-3 leading-normal text-surface-700">
       Fügen Sie einen Text ein, um seine Lesbarkeit zu analysieren. Der LÜ-LIX kombiniert den
       klassischen Lesbarkeitsindex (LIX) mit einem Aufschlag für die Wortkomplexität.
+      <RouterLink to="/dokumentation" class="text-primary-700 hover:underline"
+        >So wird gerechnet</RouterLink
+      >
     </p>
     <Textarea
       v-model="text"
@@ -46,6 +49,9 @@
             Der Aufschlag &alpha; steuert, wie stark die Wortkomplexität (WK) den LIX erhöht (LÜ-LIX
             = LIX + &alpha;&middot;WK). Die vier Gewichte verteilen die WK auf ihre Komponenten.
             Geänderte Werte gelten, bis Sie die Seite neu laden.
+            <RouterLink to="/dokumentation" class="text-primary-700 hover:underline"
+              >Mehr zur Berechnung</RouterLink
+            >
           </p>
           <ConfigWeightsForm
             v-model:alpha="settings.alpha"
@@ -103,6 +109,7 @@ import Fieldset from 'primevue/fieldset';
 import SelectButton from 'primevue/selectbutton';
 import Textarea from 'primevue/textarea';
 import { onMounted, ref, watch } from 'vue';
+import { RouterLink } from 'vue-router';
 import ConfigWeightsForm from '@/components/config-weights-form.vue';
 import ResultView from '@/components/result-view.vue';
 import { isConfigInvalid, isRateLimited } from '@/composables/api-fetch';

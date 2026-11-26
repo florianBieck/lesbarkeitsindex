@@ -5,6 +5,7 @@ import ConfigWeightsForm from '@/components/config-weights-form.vue';
 import { ApiError } from '@/composables/api-fetch';
 import type { ResultData, useApiClient } from '@/composables/useApiClient';
 import IndexPage from '@/pages/index.vue';
+import { router } from '@/router';
 
 /**
  * Frontend-Unit-Test für die Texttyp-/Listen-Erkennung der Startseite
@@ -113,7 +114,7 @@ describe('IndexPage — Texttyp-Schalter (Issue #30, ADR 0002 AC3)', () => {
   });
 
   it('erkennt eine Wörterliste heuristisch als Liste', async () => {
-    const wrapper = mount(IndexPage);
+    const wrapper = mount(IndexPage, { global: { plugins: [router] } });
     await flushPromises();
     const vm = wrapper.vm as unknown as IndexVm;
 
@@ -125,7 +126,7 @@ describe('IndexPage — Texttyp-Schalter (Issue #30, ADR 0002 AC3)', () => {
   });
 
   it('erkennt Fließtext heuristisch als prose', async () => {
-    const wrapper = mount(IndexPage);
+    const wrapper = mount(IndexPage, { global: { plugins: [router] } });
     await flushPromises();
     const vm = wrapper.vm as unknown as IndexVm;
 
@@ -137,7 +138,7 @@ describe('IndexPage — Texttyp-Schalter (Issue #30, ADR 0002 AC3)', () => {
   });
 
   it('schickt den effektiven Texttyp als Override an die API mit', async () => {
-    const wrapper = mount(IndexPage);
+    const wrapper = mount(IndexPage, { global: { plugins: [router] } });
     await flushPromises();
     const vm = wrapper.vm as unknown as IndexVm;
 
@@ -151,7 +152,7 @@ describe('IndexPage — Texttyp-Schalter (Issue #30, ADR 0002 AC3)', () => {
   });
 
   it('Override schlägt die Heuristik und wird an die API geschickt', async () => {
-    const wrapper = mount(IndexPage);
+    const wrapper = mount(IndexPage, { global: { plugins: [router] } });
     await flushPromises();
     const vm = wrapper.vm as unknown as IndexVm;
 
@@ -170,7 +171,7 @@ describe('IndexPage — Texttyp-Schalter (Issue #30, ADR 0002 AC3)', () => {
   });
 
   it('bindet die Texteingabe als einfaches Textfeld (kein Rich-Text-Editor)', async () => {
-    const wrapper = mount(IndexPage);
+    const wrapper = mount(IndexPage, { global: { plugins: [router] } });
     await flushPromises();
 
     const textarea = wrapper.find('textarea');
@@ -203,7 +204,7 @@ describe('IndexPage — Erweiterte Einstellungen (Issue #94)', () => {
   });
 
   async function mountPage() {
-    const wrapper = mount(IndexPage);
+    const wrapper = mount(IndexPage, { global: { plugins: [router] } });
     await flushPromises();
     return wrapper;
   }
